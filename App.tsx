@@ -824,6 +824,14 @@ function App() {
                 0% { transform: translateX(-150%) skewX(-15deg); }
                 100% { transform: translateX(150%) skewX(-15deg); }
             }
+
+            @keyframes neon-pulse {
+                0%, 100% { box-shadow: 0 0 10px #9333ea, 0 0 20px #9333ea; border-color: #9333ea; }
+                50% { box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e; border-color: #22c55e; }
+            }
+            .animate-neon-pulse {
+                animation: neon-pulse 2s infinite;
+            }
             
             /* 3D Victory Text */
             .victory-text {
@@ -893,21 +901,21 @@ function App() {
                     {showInstallButton && (
                          <button 
                             onClick={handleInstallClick}
-                            className="group relative px-5 py-2 rounded-full bg-black overflow-hidden shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:shadow-[0_0_30px_rgba(236,72,153,0.8)] transition-all duration-300 hover:scale-105 active:scale-95 border border-fuchsia-500/50"
+                            className="group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 animate-neon-pulse mr-2 border-2"
                         >
-                            {/* Animated Background Gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-orange-500 opacity-80 group-hover:opacity-100 transition-opacity duration-300 animate-gradient-xy"></div>
-
+                            {/* Gradiente Roxo e Verde */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                            
                             {/* Shimmer Effect */}
-                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent z-10"></div>
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
 
                             {/* Content */}
                             <div className="relative flex items-center gap-2 z-20">
-                                <div className="bg-white text-fuchsia-600 rounded-full p-1 animate-bounce">
-                                    <Download className="w-3.5 h-3.5 stroke-[3]" />
+                                <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
+                                    <Smartphone className="w-4 h-4 stroke-[2.5]" />
                                 </div>
-                                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white drop-shadow-md">
-                                    Instalar App
+                                <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                                    Instalar
                                 </span>
                             </div>
                         </button>
