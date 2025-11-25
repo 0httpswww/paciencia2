@@ -1249,33 +1249,35 @@
                         <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-yellow-500/80 font-mono mt-0.5"><Crown className="w-3 h-3" /><span className="uppercase font-bold tracking-wider">{levelInfo.title}</span><span className="text-white/40">•</span><span>Lvl {levelInfo.level}</span></div>
                       </div>
                     </div>
-                    <button onClick={() => setIsNightMode(!isNightMode)} className="md:hidden bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
+                    {/* Mobile Night Mode + Install Button Area */}
+                    <div className="flex items-center gap-2 md:hidden">
+                        {(showInstallButton || isInstalled) && (
+                            <button 
+                                onClick={isInstalled ? undefined : handleInstallClick}
+                                className={`p-1.5 rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.5)] border border-white/20 transition-all active:scale-95 ${isInstalled ? 'bg-green-900/50 grayscale' : 'bg-gradient-to-br from-purple-600 to-green-500 animate-pulse'}`}
+                            >
+                                <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-6 h-6 object-contain drop-shadow-md" alt="Instalar" />
+                            </button>
+                        )}
+                        <button onClick={() => setIsNightMode(!isNightMode)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 justify-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                    {(showInstallButton || isInstalled) && (
-                      <button 
-                          onClick={isInstalled ? undefined : handleInstallClick}
-                          disabled={isInstalled}
-                          title="Instalar App e Criar Atalho"
-                          className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 mr-2 border-2 ${isInstalled ? 'border-green-500/50 cursor-default' : 'hover:scale-110 active:scale-95 animate-neon-pulse border-white/20'}`}
-                      >
-                          <div className={`absolute inset-0 opacity-90 ${isInstalled ? 'bg-gradient-to-r from-emerald-800 to-green-900' : 'bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 animate-gradient-xy group-hover:opacity-100'}`}></div>
-                          {!isInstalled && <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>}
-                          <div className="relative flex items-center gap-2 z-20">
-                              <div className={`rounded-full p-0.5 shadow-lg ${isInstalled ? 'bg-green-500 text-white' : 'bg-white/90 text-purple-700 animate-bounce overflow-hidden'}`}>
-                                  {isInstalled ? <CheckCircle2 className="w-5 h-5 stroke-[3] p-0.5" /> : <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-6 h-6 object-cover drop-shadow-[0_0_5px_rgba(147,51,234,0.8)]" alt="Icon" />}
-                              </div>
-                              <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                                  {isInstalled ? 'Instalado' : 'Instalar'}
-                              </span>
-                          </div>
-                      </button>
-                    )}
                     <div className="flex bg-black/40 rounded-lg p-1 border border-white/10 whitespace-nowrap">
                       <button onClick={() => setGameMode(GameMode.FreeCell)} className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.FreeCell ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>FreeCell</button>
                       <button onClick={() => setGameMode(GameMode.Klondike)} className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.Klondike ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Clássica</button>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Desktop Install Button Next to Night Mode */}
+                      {(showInstallButton || isInstalled) && (
+                          <button 
+                              onClick={isInstalled ? undefined : handleInstallClick}
+                              className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-all shadow-lg border border-white/10 ${isInstalled ? 'bg-white/5 text-white/30 cursor-default' : 'bg-gradient-to-r from-purple-600 via-green-500 to-purple-600 animate-gradient-xy text-white hover:scale-105 active:scale-95 hover:shadow-[0_0_15px_rgba(34,197,94,0.6)]'}`}
+                          >
+                              <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-5 h-5 object-contain drop-shadow-md" />
+                              {isInstalled ? 'Instalado' : 'Instalar Jogo'}
+                          </button>
+                      )}
                       <button onClick={() => setIsNightMode(!isNightMode)} className="hidden md:flex bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                       <button onClick={() => setShowTasksModal(true)} className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><CalendarCheck className="w-5 h-5" />{hasPendingRewards && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>}</button>
                       <button onClick={() => startNewGame(true)} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><RotateCcw className="w-5 h-5" /></button>
