@@ -503,6 +503,36 @@
         );
       };
 
+      const InstallModal = ({ onInstall, onClose }) => {
+          return (
+            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500">
+                <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-white/10 shadow-[0_0_50px_rgba(147,51,234,0.3)] overflow-hidden">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-tr from-purple-600/20 to-green-500/20 blur-3xl pointer-events-none"></div>
+                    
+                    <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"><X className="w-6 h-6" /></button>
+
+                    <div className="relative z-10">
+                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-28 h-28 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(147,51,234,0.6)] animate-bounce object-contain" alt="Install Icon" />
+                        
+                        <h2 className="text-2xl font-bold text-white mb-2 font-serif">Instalar Aplicativo</h2>
+                        <p className="text-gray-400 mb-8 text-sm">Adicione à tela inicial para jogar em tela cheia e sem travamentos!</p>
+                        
+                        <button 
+                            onClick={onInstall}
+                            className="w-full py-3.5 rounded-xl font-bold text-lg uppercase tracking-wider text-white relative overflow-hidden group animate-neon-pulse shadow-xl transition-transform active:scale-95"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-700 via-green-600 to-purple-700 animate-gradient-xy"></div>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white transition-opacity"></div>
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                <Smartphone className="w-5 h-5 fill-white" /> Instalar Agora
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+          );
+      };
+
       const Confetti = () => {
         const canvasRef = useRef(null);
         useEffect(() => {
@@ -664,6 +694,7 @@
         const [visitCount, setVisitCount] = useState(843210);
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         const [showInstallButton, setShowInstallButton] = useState(false);
+        const [showInstallModal, setShowInstallModal] = useState(false); // State for the popup
         const [isInstalled, setIsInstalled] = useState(false);
         const isFirstLoad = useRef(true);
 
@@ -681,6 +712,12 @@
                 e.preventDefault();
                 setDeferredPrompt(e);
                 setShowInstallButton(true);
+                // Automatically show modal on load if not installed and not dismissed previously (optional, here showing always on new session for effect)
+                // Use session storage to avoid annoyance in same session
+                if (!sessionStorage.getItem('install_modal_shown')) {
+                    setShowInstallModal(true);
+                    sessionStorage.setItem('install_modal_shown', 'true');
+                }
             };
             window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -690,12 +727,13 @@
 
         const handleInstallClick = async () => {
             if (!deferredPrompt) return;
+            setShowInstallModal(false); // Close modal
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') { 
                 setDeferredPrompt(null); 
-                // Instead of hiding, we change state to installed
                 setIsInstalled(true); 
+                setShowInstallButton(false);
             }
         };
 
@@ -991,6 +1029,7 @@
             {gameState.gameWon && <Confetti />}
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
+            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} />}
 
             <style dangerouslySetInnerHTML={{__html: `
                 ::view-transition-group(*) { animation-duration: 0.4s; animation-timing-function: cubic-bezier(0.2, 0, 0, 1); }
@@ -1111,11 +1150,11 @@
 
             <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none">
               <div className="flex items-center gap-4 bg-[#0a1f16]/90 backdrop-blur-xl p-2 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-auto transform transition-all hover:scale-105">
-                <button onClick={handleUndo} disabled={history.length === 0} className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-all active:scale-95 ${history.length === 0 ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed' : 'bg-gradient-to-br from-red-900 to-[#450a0a] border-red-500/30 text-red-100 shadow-lg shadow-red-900/40 hover:from-red-800 hover:to-red-900'}`}><Undo2 className={`w-6 h-6 mb-0.5 ${history.length > 0 ? 'drop-shadow-md' : ''}`} /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Undo</span></button>
+                <button onClick={handleUndo} disabled={history.length === 0} className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-all active:scale-95 ${history.length === 0 ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed' : 'bg-gradient-to-br from-red-900 to-[#450a0a] border-red-500/50 text-red-100 shadow-lg shadow-red-900/40 hover:from-red-800 hover:to-red-900 ring-1 ring-white/10'}`}><Undo2 className={`w-6 h-6 mb-0.5 ${history.length > 0 ? 'drop-shadow-md' : ''}`} /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Undo</span></button>
                 <div className="w-px h-8 bg-white/10"></div>
-                <button onClick={handleHint} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-white transition-all active:scale-95 hover:bg-white/15 hover:border-yellow-400/50 hover:text-yellow-200 shadow-lg"><Lightbulb className="w-6 h-6 mb-0.5 group-hover:fill-yellow-400/20 drop-shadow-md transition-all" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Dica</span></button>
+                <button onClick={handleHint} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-white transition-all active:scale-95 hover:bg-white/20 hover:border-yellow-400/50 hover:text-yellow-200 shadow-lg ring-1 ring-white/5"><Lightbulb className="w-6 h-6 mb-0.5 group-hover:fill-yellow-400/20 drop-shadow-md transition-all" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Dica</span></button>
                 <div className="w-px h-8 bg-white/10"></div>
-                <button onClick={handleMagicWand} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-500/30 text-emerald-100 transition-all active:scale-95 hover:from-emerald-700 hover:to-emerald-900 shadow-lg shadow-emerald-900/40"><div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div><Wand2 className="w-6 h-6 mb-0.5 drop-shadow-md" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Auto</span></button>
+                <button onClick={handleMagicWand} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-500/50 text-emerald-100 transition-all active:scale-95 hover:from-emerald-700 hover:to-emerald-900 shadow-lg shadow-emerald-900/40 ring-1 ring-white/10"><div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div><Wand2 className="w-6 h-6 mb-0.5 drop-shadow-md" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Auto</span></button>
               </div>
             </div>
 
