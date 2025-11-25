@@ -70,6 +70,7 @@
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').then(function(registration) {
             console.log('Monetag SW registered with scope:', registration.scope);
+            registration.update();
           }, function(err) {
             console.log('Monetag SW registration failed:', err);
           });
