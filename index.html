@@ -42,6 +42,9 @@
           extend: {
             fontFamily: {
               serif: ['"Crimson Pro"', 'serif'],
+            },
+            screens: {
+                'xs': '400px', // Extra small screen breakpoint
             }
           }
         }
@@ -55,11 +58,33 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
+      /* CRITICAL: Disable browser gestures and scrolling interference */
       body {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
-        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        overscroll-behavior-y: none;
+        touch-action: pan-x pan-y; /* Allow scrolling on non-game areas */
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      /* Game Board areas should not scroll when interacting */
+      .game-board, .card-draggable {
+        touch-action: none !important;
+      }
+
+      /* Fix iOS bounce */
+      html, body {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      
+      #root {
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
     </style>
 
@@ -75,7 +100,7 @@
 }
 </script>
 </head>
-  <body class="bg-[#0f3526] text-white overflow-x-hidden">
+  <body class="bg-[#0f3526] text-white">
     <div id="root"></div>
     
     <!-- Monetag Service Worker Registration -->
@@ -353,7 +378,6 @@
         const L = '20%', C = '50%', R = '80%';
         const T = '15%', M = '50%', B = '85%'; 
 
-        // Simplified pip logic for single file
         if(rank===2){pips.push({t:T,l:C},{t:B,l:C,i:1})}
         else if(rank===3){pips.push({t:T,l:C},{t:M,l:C},{t:B,l:C,i:1})}
         else if(rank===4){pips.push({t:T,l:L},{t:T,l:R},{t:B,l:L,i:1},{t:B,l:R,i:1})}
@@ -379,38 +403,33 @@
         );
       };
 
-      const SolitaireCard = memo(({ card, onClick, onDoubleClick, isSelected, className = '', style, draggable, onDragStart, onDragOver, onDrop }) => {
+      const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
         const isFaceCard = card.rank === Rank.Jack || card.rank === Rank.Queen || card.rank === Rank.King;
         const isNumberCard = card.rank >= 2 && card.rank <= 10;
         const isAce = card.rank === Rank.Ace;
         const color = getCardColor(card.suit);
         const textColor = color === 'red' ? 'text-[#d40000]' : 'text-[#1a1a1a]';
+        const cardRef = useRef(null);
 
-        // Prevent click from propagating to potential underlying ads
-        const handleClick = (e) => {
-           e.stopPropagation();
-           e.preventDefault();
-           e.nativeEvent.stopImmediatePropagation(); // Crucial for blocking ad scripts
-           if (onClick) onClick(e);
-        };
-
-        const handleDoubleClick = (e) => {
-           e.stopPropagation();
-           e.preventDefault();
-           e.nativeEvent.stopImmediatePropagation();
-           if (onDoubleClick) onDoubleClick(e);
+        // We do NOT use onCLick here anymore for movement logic. onPointerDown handles it all.
+        // We stop propagation to avoid AdSense clicks from catching the card tap.
+        const handlePointerDown = (e) => {
+            if (onPointerDown) {
+                // IMPORTANT: Stop propagation immediately so ads don't steal the click
+                e.stopPropagation();
+                // We do NOT preventDefault here if we want to allow scrolling elsewhere, 
+                // but since we want to drag the card, we SHOULD prevent default browser drag behavior
+                // The 'touch-action: none' CSS handles scrolling prevention.
+                onPointerDown(e, cardRef.current); 
+            }
         };
 
         return (
           <div
-            className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
-            onClick={handleClick}
-            onDoubleClick={handleDoubleClick}
-            draggable={draggable}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex }}
+            ref={cardRef}
+            className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
+            onPointerDown={handlePointerDown}
+            style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
             <div className={`w-full h-full relative transition-transform duration-200 ease-out [transform-style:preserve-3d] ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
               {/* FRONT */}
@@ -705,6 +724,9 @@
         const [showInstallButton, setShowInstallButton] = useState(false);
         const [showInstallModal, setShowInstallModal] = useState(false); 
         const [isInstalled, setIsInstalled] = useState(false);
+        
+        // DRAG AND DROP STATE
+        const activeDragRef = useRef(null); // Stores { card, pileType, pileIndex, cardIndex, offsetX, offsetY, startX, startY, element }
         const isFirstLoad = useRef(true);
 
         useEffect(() => {
@@ -720,7 +742,6 @@
                 e.preventDefault();
                 setDeferredPrompt(e);
                 setShowInstallButton(true);
-                // Aggressive show on open if available
                 setShowInstallModal(true); 
             };
             window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -728,6 +749,128 @@
         }, []);
 
         useEffect(() => { document.body.style.backgroundColor = isNightMode ? '#0f172a' : '#0f3526'; }, [isNightMode]);
+
+        // DRAG EVENT HANDLERS (Native Pointer Events for High Performance)
+        const handleGlobalPointerMove = useCallback((e) => {
+            if (!activeDragRef.current) return;
+            const { element, offsetX, offsetY } = activeDragRef.current;
+            
+            // Move the element via transform (High Performance, No React Render)
+            element.style.position = 'fixed';
+            element.style.pointerEvents = 'none'; // Allow clicking through to detect drops
+            element.style.zIndex = '9999';
+            element.style.width = activeDragRef.current.rect.width + 'px';
+            element.style.left = '0px';
+            element.style.top = '0px';
+            element.style.transform = `translate(${e.clientX - offsetX}px, ${e.clientY - offsetY}px) scale(1.05)`;
+            element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+        }, []);
+
+        const handleGlobalPointerUp = useCallback((e) => {
+            if (!activeDragRef.current) return;
+            const { card, pileType, pileIndex, cardIndex, element, startX, startY } = activeDragRef.current;
+            
+            // Clean up global listeners
+            window.removeEventListener('pointermove', handleGlobalPointerMove);
+            window.removeEventListener('pointerup', handleGlobalPointerUp);
+            window.removeEventListener('pointercancel', handleGlobalPointerUp);
+
+            // Determine if it was a CLICK or a DRAG
+            const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+            
+            // Reset styles
+            element.style.position = '';
+            element.style.width = '';
+            element.style.left = '';
+            element.style.top = '';
+            element.style.transform = '';
+            element.style.zIndex = '';
+            element.style.pointerEvents = '';
+            element.style.boxShadow = '';
+            
+            activeDragRef.current = null;
+
+            if (dist < 10) {
+                // Click/Tap Detected - Trigger Smart Move
+                handleCardClick(card, pileType, pileIndex, cardIndex);
+            } else {
+                // Drag Drop Logic
+                // 1. Find what we dropped on using hit testing
+                // We momentarily hide the dragged element to peek under it, but we already reset style so it's back in place.
+                // Actually, since we reset style, it's back in list. The drop target is under the mouse cursor.
+                
+                const elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
+                let dropTarget = null;
+                
+                // Find a valid drop zone in the elements below
+                for (let el of elementsBelow) {
+                    const zone = el.closest('[data-drop-zone]');
+                    if (zone) {
+                        dropTarget = {
+                            type: zone.dataset.dropType,
+                            index: parseInt(zone.dataset.dropIndex),
+                            suit: zone.dataset.dropSuit // For foundations
+                        };
+                        break;
+                    }
+                }
+
+                if (dropTarget) {
+                   handleDropAttempt(card, pileType, pileIndex, cardIndex, dropTarget);
+                }
+            }
+        }, []);
+
+        const startDrag = (e, card, pileType, pileIndex, cardIndex, domElement) => {
+            if (!card.isFaceUp) return;
+            // Only allow dragging from top of stack (or valid stack)
+            if (pileType === 'tableau') {
+                const col = gameState.tableau[pileIndex];
+                const stack = col.slice(cardIndex);
+                if (!isStackValid(stack)) return;
+            }
+
+            const rect = domElement.getBoundingClientRect();
+            
+            activeDragRef.current = {
+                card,
+                pileType,
+                pileIndex,
+                cardIndex,
+                startX: e.clientX,
+                startY: e.clientY,
+                offsetX: e.clientX - rect.left,
+                offsetY: e.clientY - rect.top,
+                element: domElement,
+                rect: rect
+            };
+
+            window.addEventListener('pointermove', handleGlobalPointerMove);
+            window.addEventListener('pointerup', handleGlobalPointerUp);
+            window.addEventListener('pointercancel', handleGlobalPointerUp);
+        };
+
+        const handleDropAttempt = (card, sourcePile, sourceIndex, sourceCardIndex, target) => {
+            let targetCard = null;
+            
+            if (target.type === 'tableau') {
+                const col = gameState.tableau[target.index];
+                if (col.length > 0) targetCard = col[col.length - 1];
+            } else if (target.type === 'foundation') {
+                const pile = gameState.foundation[target.suit];
+                if (pile.length > 0) targetCard = pile[pile.length - 1];
+            } else if (target.type === 'freeCell') {
+                targetCard = gameState.freeCells[target.index];
+            }
+
+            // Validate Move
+            // Need to reconstruct source data structure for legacy handleCardMove
+            const sourceData = { card, pileType: sourcePile, pileIndex: sourceIndex, cardIndex: sourceCardIndex };
+            
+            if (isMoveValid(card, targetCard, target.type, gameState.mode, target.suit)) {
+                handleCardMove(sourceData, target.type, target.index, target.suit);
+            }
+        };
 
         const handleInstallClick = async () => {
             if (!deferredPrompt) return;
@@ -777,7 +920,6 @@
             return () => window.removeEventListener('keydown', handleKeyDown);
         }, [history, isPlaying]);
 
-        // REFACTORED startNewGame to handle Ads correctly based on User Interaction vs Load
         const startNewGame = useCallback((forceAd = false) => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
@@ -805,16 +947,12 @@
             setGameState({ ...INITIAL_GAME_STATE, mode: gameMode, tableau: newTableau, stock, waste });
             setHistory([]); setSelected(null); setHint(null); setIsPlaying(true); setShowWinningBounce(false); setIsAutoCollecting(false);
 
-            // AD LOGIC
             if (forceAd) {
-                // User clicked "Reiniciar" or "Jogar Novamente" -> Immediate Ad
                 setShowInterstitial(true); 
                 setInterstitialTimer(5); 
                 setIsAdPaused(false);
             } else {
-                // Automatic Load / Mode Switch
                 if (isFirstLoad.current) {
-                    // First Load: Wait 30s
                     setTimeout(() => { setShowInterstitial(true); setInterstitialTimer(5); setIsAdPaused(false); }, 30000);
                 }
             }
@@ -1000,23 +1138,65 @@
             updateTaskProgress('play_moves', 1); setSelected(null);
         };
 
+        // Improved Click/Tap Logic (Smart Move)
         const handleCardClick = (card, pileType, pileIndex, cardIndex) => {
-            if (!card) {
-                if (selected) {
-                    if (pileType === 'freeCell' && isMoveValid(selected.card, null, 'freeCell', gameState.mode)) handleCardMove(selected, 'freeCell', pileIndex);
-                    else if (pileType === 'tableau' && isMoveValid(selected.card, null, 'tableau', gameState.mode)) handleCardMove(selected, 'tableau', pileIndex);
+            if (!card) return;
+            
+            // Smart Move: Try Foundation then Tableau
+            if (pileType === 'tableau' && !card.isFaceUp) return;
+
+            // 1. Try Foundation
+            const pile = gameState.foundation[card.suit];
+            const target = pile.length > 0 ? pile[pile.length - 1] : null;
+            if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) {
+                // Must ensure it's the top card of stack if in tableau
+                let isTop = true;
+                if(pileType === 'tableau') {
+                    if(cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
                 }
-                return;
+                if(isTop) {
+                    handleCardMove({ card, pileType, pileIndex, cardIndex }, 'foundation', undefined, card.suit);
+                    return;
+                }
             }
-            if (!card.isFaceUp && pileType === 'tableau') return;
-            if (selected) {
-                if (selected.card.id === card.id) { setSelected(null); return; }
-                if (pileType === 'tableau' && isMoveValid(selected.card, card, 'tableau', gameState.mode)) { handleCardMove(selected, 'tableau', pileIndex); return; }
+
+            // 2. Try Tableau
+            // Simple loop to find valid tableau spot
+            for(let i=0; i<gameState.tableau.length; i++) {
+                if(i === pileIndex && pileType === 'tableau') continue;
+                const col = gameState.tableau[i];
+                const top = col.length > 0 ? col[col.length - 1] : null;
+                if(isMoveValid(card, top, 'tableau', gameState.mode)) {
+                    handleCardMove({ card, pileType, pileIndex, cardIndex }, 'tableau', i);
+                    return;
+                }
             }
-            if (pileType === 'freeCell' || pileType === 'waste') setSelected({ card, pileType, pileIndex, cardIndex: 0 });
-            else if (pileType === 'tableau') {
-                const stack = gameState.tableau[pileIndex].slice(cardIndex);
-                if (isStackValid(stack)) setSelected({ card, pileType, pileIndex, cardIndex });
+
+            // 3. FreeCell (if empty spot exists)
+             if (gameMode === GameMode.FreeCell && pileType !== 'freeCell') {
+                for(let i=0; i<4; i++) {
+                    if(gameState.freeCells[i] === null) {
+                         let isTop = true;
+                         if(pileType === 'tableau') {
+                             if(cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
+                         }
+                         if(isTop) {
+                             handleCardMove({ card, pileType, pileIndex, cardIndex }, 'freeCell', i);
+                             return;
+                         }
+                    }
+                }
+             }
+
+            // Selection Logic (Fallback if no auto move)
+            if (selected && selected.card.id === card.id) {
+                setSelected(null);
+            } else {
+                if (pileType === 'freeCell' || pileType === 'waste') setSelected({ card, pileType, pileIndex, cardIndex: 0 });
+                else if (pileType === 'tableau') {
+                    const stack = gameState.tableau[pileIndex].slice(cardIndex);
+                    if (isStackValid(stack)) setSelected({ card, pileType, pileIndex, cardIndex });
+                }
             }
         };
 
@@ -1118,8 +1298,8 @@
                     <div className={`grid ${gameMode === GameMode.FreeCell ? 'grid-cols-8' : 'grid-cols-7'} gap-1 sm:gap-4 px-1 sm:px-2`}>
                         {gameMode === GameMode.FreeCell ? (
                             gameState.freeCells.map((card, i) => (
-                                <div key={`freecell-${i}`} className={`col-span-1 relative group aspect-[2.5/3.5] ${hint?.targetId === `freecell-${i}` ? 'hint-target rounded-lg' : ''}`} onClick={() => handleCardClick(card, 'freeCell', i)} onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>handleDrop(e, 'freeCell', i)}>
-                                    {card ? <SolitaireCard card={card} draggable={true} onDragStart={(e) => { const d = { card, pileType: 'freeCell', pileIndex: i, cardIndex: 0 }; e.dataTransfer.setData('application/json', JSON.stringify(d)); setSelected(d); }} onClick={(e) => { e.stopPropagation(); handleCardClick(card, 'freeCell', i); }} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center hover:bg-white/5 transition-colors shadow-inner"><LayoutGrid className="w-6 h-6 text-white/5" /></div>}
+                                <div key={`freecell-${i}`} data-drop-zone="true" data-drop-type="freeCell" data-drop-index={i} className={`col-span-1 relative group aspect-[2.5/3.5] ${hint?.targetId === `freecell-${i}` ? 'hint-target rounded-lg' : ''}`}>
+                                    {card ? <SolitaireCard card={card} onPointerDown={(e, el) => startDrag(e, card, 'freeCell', i, 0, el)} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center hover:bg-white/5 transition-colors shadow-inner"><LayoutGrid className="w-6 h-6 text-white/5" /></div>}
                                 </div>
                             ))
                         ) : (
@@ -1127,22 +1307,22 @@
                                 <div className="col-span-1 relative group aspect-[2.5/3.5]" onClick={handleStockClick}>
                                     {gameState.stock.length > 0 ? <div className="relative w-full h-full"><SolitaireCard card={gameState.stock[gameState.stock.length - 1]} className="shadow-md relative" /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><RefreshCw className="w-8 h-8 text-white/50 opacity-0 group-hover:opacity-100 transition-opacity" /></div></div> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-white/5 transition-colors shadow-inner"><RefreshCw className="w-8 h-8 text-white/20" /></div>}
                                 </div>
-                                <div className="col-span-1 relative aspect-[2.5/3.5]">{gameState.waste.length > 0 ? <SolitaireCard card={gameState.waste[gameState.waste.length - 1]} draggable={true} onDragStart={(e) => { const d = { card: gameState.waste[gameState.waste.length - 1], pileType: 'waste', pileIndex: 0, cardIndex: 0 }; e.dataTransfer.setData('application/json', JSON.stringify(d)); setSelected(d); }} onClick={(e) => { e.stopPropagation(); handleCardClick(gameState.waste[gameState.waste.length - 1], 'waste'); }} isSelected={selected?.card.id === gameState.waste[gameState.waste.length - 1].id} className={hint?.sourceId === gameState.waste[gameState.waste.length - 1].id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border border-white/5 bg-transparent"></div>}</div>
+                                <div className="col-span-1 relative aspect-[2.5/3.5]">{gameState.waste.length > 0 ? <SolitaireCard card={gameState.waste[gameState.waste.length - 1]} onPointerDown={(e, el) => startDrag(e, gameState.waste[gameState.waste.length - 1], 'waste', 0, 0, el)} isSelected={selected?.card.id === gameState.waste[gameState.waste.length - 1].id} className={hint?.sourceId === gameState.waste[gameState.waste.length - 1].id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border border-white/5 bg-transparent"></div>}</div>
                                 <div className="col-span-1"></div>
                             </>
                         )}
                         {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((suit, i) => (
-                            <div key={suit} className={`col-span-1 relative group aspect-[2.5/3.5] ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `foundation-${suit}` ? 'hint-target rounded-lg' : ''}`} style={{ animationDelay: `${i * 0.1}s` }} onClick={() => handleFoundationClick(suit)} onDragOver={(e)=>e.preventDefault()} onDrop={(e)=> { e.preventDefault(); const data = JSON.parse(e.dataTransfer.getData('application/json')); handleCardMove(data, 'foundation', undefined, suit); }}>
+                            <div key={suit} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={suit} className={`col-span-1 relative group aspect-[2.5/3.5] ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `foundation-${suit}` ? 'hint-target rounded-lg' : ''}`} style={{ animationDelay: `${i * 0.1}s` }} onClick={() => handleFoundationClick(suit)}>
                                 {gameState.foundation[suit].length > 0 ? <SolitaireCard card={gameState.foundation[suit][gameState.foundation[suit].length - 1]} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition-colors shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">{suit === Suit.Hearts ? <Heart className="w-8 h-8 text-white/10" /> : suit === Suit.Diamonds ? <Diamond className="w-8 h-8 text-white/10" /> : suit === Suit.Clubs ? <Club className="w-8 h-8 text-white/10" /> : <Spade className="w-8 h-8 text-white/10" />}</div>}
                             </div>
                         ))}
                     </div>
                     <div className={`grid ${gameMode === GameMode.FreeCell ? 'grid-cols-8' : 'grid-cols-7'} gap-1 sm:gap-4 min-h-[60vh] px-1 sm:px-2 pb-4`}>
                         {gameState.tableau.map((col, colIdx) => (
-                            <div key={colIdx} className={`relative w-full h-full ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `tableau-${colIdx}` ? 'hint-target rounded-t-lg' : ''}`} style={{ animationDelay: `${(colIdx + 4) * 0.1}s` }} onClick={() => col.length === 0 && handleCardClick(null, 'tableau', colIdx)} onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>{ e.preventDefault(); const d=JSON.parse(e.dataTransfer.getData('application/json')); if(isMoveValid(d.card, col.length>0?col[col.length-1]:null, 'tableau', gameState.mode)) handleCardMove(d, 'tableau', colIdx); }}>
+                            <div key={colIdx} data-drop-zone="true" data-drop-type="tableau" data-drop-index={colIdx} className={`relative w-full h-full ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `tableau-${colIdx}` ? 'hint-target rounded-t-lg' : ''}`} style={{ animationDelay: `${(colIdx + 4) * 0.1}s` }} onClick={() => col.length === 0 && handleCardClick(null, 'tableau', colIdx)}>
                                 {col.length === 0 ? <div className="w-full aspect-[2.5/3.5] rounded-[5%] border border-white/5 bg-black/5 mx-auto"></div> : col.map((card, cardIdx) => (
                                     <div key={card.id} className="absolute w-full" style={{ top: `${cardIdx * (gameMode === GameMode.Klondike && !card.isFaceUp ? 12 : 28)}px`, zIndex: cardIdx }}>
-                                        <SolitaireCard card={card} draggable={card.isFaceUp} onDragStart={(e) => { if(!card.isFaceUp)return; const d = { card, pileType: 'tableau', pileIndex: colIdx, cardIndex: cardIdx }; e.dataTransfer.setData('application/json', JSON.stringify(d)); setSelected(d); }} onClick={(e) => { e.stopPropagation(); handleCardClick(card, 'tableau', colIdx, cardIndex); }} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} />
+                                        <SolitaireCard card={card} onPointerDown={(e, el) => startDrag(e, card, 'tableau', colIdx, cardIdx, el)} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} />
                                     </div>
                                 ))}
                             </div>
