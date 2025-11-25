@@ -417,9 +417,8 @@
             if (onPointerDown) {
                 // IMPORTANT: Stop propagation immediately so ads don't steal the click
                 e.stopPropagation();
-                // We do NOT preventDefault here if we want to allow scrolling elsewhere, 
-                // but since we want to drag the card, we SHOULD prevent default browser drag behavior
-                // The 'touch-action: none' CSS handles scrolling prevention.
+                // Stops native DOM propagation, preventing external scripts (Monetag popups) attached to document from firing
+                e.nativeEvent.stopImmediatePropagation();
                 onPointerDown(e, cardRef.current); 
             }
         };
@@ -429,6 +428,8 @@
             ref={cardRef}
             className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
             onPointerDown={handlePointerDown}
+            // Add click handler just in case to stop propagation there too, though pointerdown usually catches it
+            onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
             <div className={`w-full h-full relative transition-transform duration-200 ease-out [transform-style:preserve-3d] ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
@@ -1306,7 +1307,7 @@
                             ))
                         ) : (
                             <>
-                                <div className="col-span-1 relative group aspect-[2.5/3.5]" onClick={handleStockClick}>
+                                <div className="col-span-1 relative group aspect-[2.5/3.5]" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleStockClick(); }}>
                                     {gameState.stock.length > 0 ? <div className="relative w-full h-full"><SolitaireCard card={gameState.stock[gameState.stock.length - 1]} className="shadow-md relative" /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><RefreshCw className="w-8 h-8 text-white/50 opacity-0 group-hover:opacity-100 transition-opacity" /></div></div> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-white/5 transition-colors shadow-inner"><RefreshCw className="w-8 h-8 text-white/20" /></div>}
                                 </div>
                                 <div className="col-span-1 relative aspect-[2.5/3.5]">{gameState.waste.length > 0 ? <SolitaireCard card={gameState.waste[gameState.waste.length - 1]} onPointerDown={(e, el) => startDrag(e, gameState.waste[gameState.waste.length - 1], 'waste', 0, 0, el)} isSelected={selected?.card.id === gameState.waste[gameState.waste.length - 1].id} className={hint?.sourceId === gameState.waste[gameState.waste.length - 1].id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border border-white/5 bg-transparent"></div>}</div>
@@ -1314,14 +1315,14 @@
                             </>
                         )}
                         {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((suit, i) => (
-                            <div key={suit} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={suit} className={`col-span-1 relative group aspect-[2.5/3.5] ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `foundation-${suit}` ? 'hint-target rounded-lg' : ''}`} style={{ animationDelay: `${i * 0.1}s` }} onClick={() => handleFoundationClick(suit)}>
+                            <div key={suit} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={suit} className={`col-span-1 relative group aspect-[2.5/3.5] ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `foundation-${suit}` ? 'hint-target rounded-lg' : ''}`} style={{ animationDelay: `${i * 0.1}s` }} onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleFoundationClick(suit); }}>
                                 {gameState.foundation[suit].length > 0 ? <SolitaireCard card={gameState.foundation[suit][gameState.foundation[suit].length - 1]} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition-colors shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">{suit === Suit.Hearts ? <Heart className="w-8 h-8 text-white/10" /> : suit === Suit.Diamonds ? <Diamond className="w-8 h-8 text-white/10" /> : suit === Suit.Clubs ? <Club className="w-8 h-8 text-white/10" /> : <Spade className="w-8 h-8 text-white/10" />}</div>}
                             </div>
                         ))}
                     </div>
                     <div className={`grid ${gameMode === GameMode.FreeCell ? 'grid-cols-8' : 'grid-cols-7'} gap-1 sm:gap-4 min-h-[60vh] px-1 sm:px-2 pb-4`}>
                         {gameState.tableau.map((col, colIdx) => (
-                            <div key={colIdx} data-drop-zone="true" data-drop-type="tableau" data-drop-index={colIdx} className={`relative w-full h-full ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `tableau-${colIdx}` ? 'hint-target rounded-t-lg' : ''}`} style={{ animationDelay: `${(colIdx + 4) * 0.1}s` }} onClick={() => col.length === 0 && handleCardClick(null, 'tableau', colIdx)}>
+                            <div key={colIdx} data-drop-zone="true" data-drop-type="tableau" data-drop-index={colIdx} className={`relative w-full h-full ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `tableau-${colIdx}` ? 'hint-target rounded-t-lg' : ''}`} style={{ animationDelay: `${(colIdx + 4) * 0.1}s` }} onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); col.length === 0 && handleCardClick(null, 'tableau', colIdx); }}>
                                 {col.length === 0 ? <div className="w-full aspect-[2.5/3.5] rounded-[5%] border border-white/5 bg-black/5 mx-auto"></div> : col.map((card, cardIdx) => (
                                     <div key={card.id} className="absolute w-full" style={{ top: `${cardIdx * (gameMode === GameMode.Klondike && !card.isFaceUp ? 12 : 28)}px`, zIndex: cardIdx }}>
                                         <SolitaireCard card={card} onPointerDown={(e, el) => startDrag(e, card, 'tableau', colIdx, cardIdx, el)} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} />
