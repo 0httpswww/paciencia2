@@ -140,7 +140,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare, Check, XCircle, Banknote, Coins } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare, Check, XCircle, Banknote, Coins, Menu } from 'lucide-react';
 
       // --- TYPES ---
       const Suit = {
@@ -555,7 +555,7 @@
         );
       };
 
-      const InstallModal = ({ onInstall, onClose, isIOS }) => {
+      const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => {
           return (
             <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500" style={{ touchAction: 'none' }}>
                 <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden hardware-accelerated">
@@ -567,38 +567,49 @@
                         <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl will-change-transform" alt="Install Icon" />
                         
                         <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
-                           Criar Atalho do Jogo?
+                           Criar Atalho
                         </h2>
-                        <p className="text-gray-300 mb-8 text-sm font-medium">
-                            Adicione o atalho à sua tela inicial para jogar em tela cheia e sem travamentos.
+                        <p className="text-gray-300 mb-6 text-sm font-medium">
+                            {hasNativePrompt ? "Instale o app para jogar em tela cheia." : "Adicione à tela inicial para acesso rápido."}
                         </p>
                         
                         {isIOS ? (
                             <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
-                                <p className="text-sm text-yellow-200 font-bold mb-2">Como adicionar no iPhone:</p>
+                                <p className="text-sm text-yellow-200 font-bold mb-2">No iPhone/iPad:</p>
                                 <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                                    <li>Toque no botão <span className="inline-block"><Share className="w-3 h-3 inline" /></span> <strong>Compartilhar</strong> abaixo.</li>
-                                    <li>Role para baixo e toque em <strong className="text-white">Adicionar à Tela de Início</strong>.</li>
+                                    <li>Toque no botão <span className="inline-block"><Share className="w-3 h-3 inline" /></span> <strong>Compartilhar</strong>.</li>
+                                    <li>Role e toque em <strong className="text-white">Adicionar à Tela de Início</strong>.</li>
                                 </ol>
                             </div>
-                        ) : (
-                            <div className="flex gap-3">
-                                <button 
-                                    onClick={onClose}
-                                    className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 border border-white/10 hover:bg-white/5 transition-colors active:scale-95"
-                                >
-                                    Agora Não
-                                </button>
+                        ) : !hasNativePrompt ? (
+                             <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
+                                <p className="text-sm text-yellow-200 font-bold mb-2">No Android / Chrome:</p>
+                                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                                    <li>Toque no menu <span className="inline-block"><Menu className="w-3 h-3 inline" /></span> (Três pontos).</li>
+                                    <li>Selecione <strong className="text-white">Instalar App</strong> ou <strong className="text-white">Adicionar à Tela Inicial</strong>.</li>
+                                </ol>
+                            </div>
+                        ) : null}
+
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={onClose}
+                                className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 border border-white/10 hover:bg-white/5 transition-colors active:scale-95"
+                            >
+                                Fechar
+                            </button>
+                            
+                            {hasNativePrompt && (
                                 <button 
                                     onClick={onInstall}
                                     className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse-fast"
                                 >
                                     <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
-                                        CRIAR ATALHO
+                                        INSTALAR
                                     </span>
                                 </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -797,14 +808,14 @@
         
         // PWA State
         const [deferredPrompt, setDeferredPrompt] = useState(null);
-        const [showInstallButton, setShowInstallButton] = useState(true); // Always true initially
+        const [showInstallButton, setShowInstallButton] = useState(true); 
         const [showInstallModal, setShowInstallModal] = useState(false); 
         const [isInstalled, setIsInstalled] = useState(false);
         const [isIOS, setIsIOS] = useState(false);
         
         // DRAG AND DROP STATE
         const activeDragRef = useRef(null); 
-        const dragRaf = useRef(null); // Reference for Animation Frame
+        const dragRaf = useRef(null); 
 
         // 30 SECOND AD TIMER ON MOUNT
         useEffect(() => {
@@ -812,7 +823,7 @@
                 setShowInterstitial(true);
                 setInterstitialTimer(5);
                 setIsAdPaused(false);
-            }, 30000); // Strict 30 seconds delay
+            }, 30000); 
             
             // Show Reward Modal immediately on open
             const rewardTimer = setTimeout(() => {
@@ -830,7 +841,6 @@
             
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             setIsInstalled(isStandalone);
-            if (isStandalone) setShowInstallButton(true); // Ensure 'Instalado' shows
             
             const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             setIsIOS(ios);
@@ -842,7 +852,6 @@
                 setShowInstallButton(true);
                 // Auto show modal if not installed and prompt captured
                 if (!isStandalone) {
-                     // Wait a bit if Reward Modal is showing, else show
                      setTimeout(() => setShowInstallModal(true), 1500);
                 }
             };
@@ -850,7 +859,6 @@
 
             // For iOS which doesn't fire beforeinstallprompt, we show modal on load if not standalone
             if (ios && !isStandalone) {
-                 // Slight delay for smoother entry
                  setTimeout(() => setShowInstallModal(true), 2000);
             }
 
@@ -863,27 +871,22 @@
         const handleGlobalPointerMove = useCallback((e) => {
             if (!activeDragRef.current) return;
             
-            // Use requestAnimationFrame to sync with screen refresh
             if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
 
             dragRaf.current = requestAnimationFrame(() => {
                 if (!activeDragRef.current) return;
                 const { elements, offsetX, offsetY } = activeDragRef.current;
                 
-                // Move ALL elements in the stack
                 elements.forEach((el, index) => {
-                    // Use translate3d for GPU acceleration
                     el.style.position = 'fixed';
                     el.style.pointerEvents = 'none'; 
-                    el.style.zIndex = (9999 + index).toString(); // Stack z-index
+                    el.style.zIndex = (9999 + index).toString(); 
                     el.style.width = activeDragRef.current.rect.width + 'px';
                     el.style.left = '0px';
                     el.style.top = '0px';
                     
-                    // Maintain vertical offset for stacks
                     const verticalOffset = index * (activeDragRef.current.stackOffset || 0); 
 
-                    // Force GPU layer and scale
                     el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + verticalOffset}px, 0) scale(1.05)`;
                     el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4)';
                 });
@@ -902,7 +905,6 @@
 
             const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
             
-            // Reset styles for ALL elements
             elements.forEach(el => {
                 el.style.position = '';
                 el.style.width = '';
@@ -912,17 +914,14 @@
                 el.style.zIndex = '';
                 el.style.pointerEvents = '';
                 el.style.boxShadow = '';
-                // CRITICAL: Re-enable transition for smooth snapping/updates
                 el.style.transition = ''; 
             });
             
             activeDragRef.current = null;
 
             if (dist < 10) {
-                // Click/Tap Detected - Smart Move
                 handleCardClick(card, pileType, pileIndex, cardIndex);
             } else {
-                // Drag Drop Logic
                 const elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
                 let dropTarget = null;
                 
@@ -945,7 +944,7 @@
         }, []);
 
         const startDrag = (e, card, pileType, pileIndex, cardIndex, domElement) => {
-            stopAdEvent(e); // Stop Ad Interference on Drag Start
+            stopAdEvent(e); 
             if (!card.isFaceUp) return;
             if (pileType === 'tableau') {
                 const col = gameState.tableau[pileIndex];
@@ -955,7 +954,6 @@
 
             const rect = domElement.getBoundingClientRect();
             
-            // Stack Collection Logic
             let elementsToDrag = [domElement];
             let stackOffset = 0;
 
@@ -972,7 +970,6 @@
                 }
             }
             
-            // CRITICAL: Disable transition instantly for lag-free dragging on ALL elements
             elementsToDrag.forEach(el => el.style.transition = 'none');
 
             activeDragRef.current = {
@@ -1356,7 +1353,7 @@
             {gameState.gameWon && <Confetti />}
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
-            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} />}
+            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} hasNativePrompt={!!deferredPrompt} />}
             {showRewardModal && <RewardMessageModal onClose={() => setShowRewardModal(false)} />}
 
             <style dangerouslySetInnerHTML={{__html: `
