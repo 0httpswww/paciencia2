@@ -389,12 +389,14 @@
         // Prevent click from propagating to potential underlying ads
         const handleClick = (e) => {
            e.stopPropagation();
+           e.preventDefault();
            e.nativeEvent.stopImmediatePropagation(); // Crucial for blocking ad scripts
            if (onClick) onClick(e);
         };
 
         const handleDoubleClick = (e) => {
            e.stopPropagation();
+           e.preventDefault();
            e.nativeEvent.stopImmediatePropagation();
            if (onDoubleClick) onDoubleClick(e);
         };
@@ -817,7 +819,6 @@
                     // First Load: Wait 30s
                     setTimeout(() => { setShowInterstitial(true); setInterstitialTimer(5); setIsAdPaused(false); }, 30000);
                 }
-                // Subsequent mode switches don't enforce an immediate ad unless explicitly requested, or could default to no ad to be less annoying.
             }
             
             isFirstLoad.current = false;
