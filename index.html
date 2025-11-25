@@ -442,8 +442,8 @@
             onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
-            {/* Optimized transition curve (cubic-bezier) and faster duration (200ms) */}
-            <div className={`w-full h-full relative transition-transform duration-200 ease-[cubic-bezier(0.25,0.8,0.25,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
+            {/* Native-like "Snappy" transition curve */}
+            <div className={`w-full h-full relative transition-transform duration-200 ease-[cubic-bezier(0.19,1,0.22,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
               {/* FRONT */}
               <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-200 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`}>
                 <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50" style={{ backgroundImage: PARCHMENT_TEXTURE }}></div>
@@ -559,36 +559,28 @@
                         <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl will-change-transform" alt="Install Icon" />
                         
                         <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
-                           {isIOS ? 'Instalar App' : 'Deseja Instalar?'}
+                           Deseja Instalar o App?
                         </h2>
                         <p className="text-gray-300 mb-8 text-sm font-medium">
-                            {isIOS ? "Para instalar no iPhone, siga as instruções abaixo:" : "Instale agora para jogar offline e sem travamentos."}
+                            Instale agora para jogar offline e sem travamentos.
                         </p>
                         
-                        {isIOS ? (
-                             <div className="flex flex-col gap-4 text-sm text-gray-300 bg-white/5 p-4 rounded-xl border border-white/10">
-                                <div className="flex items-center gap-3"><span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center font-bold text-yellow-400">1</span><span>Toque em <Share className="w-4 h-4 inline mx-1" /> (Compartilhar)</span></div>
-                                <div className="flex items-center gap-3"><span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center font-bold text-yellow-400">2</span><span>Selecione <PlusSquare className="w-4 h-4 inline mx-1" /> <strong>Adicionar à Tela de Início</strong></span></div>
-                                <div className="animate-bounce mt-2 text-yellow-400"><Download className="w-6 h-6 mx-auto" /></div>
-                            </div>
-                        ) : (
-                            <div className="flex gap-3">
-                                <button 
-                                    onClick={onClose}
-                                    className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 border border-white/10 hover:bg-white/5 transition-colors active:scale-95"
-                                >
-                                    Não
-                                </button>
-                                <button 
-                                    onClick={onInstall}
-                                    className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse-fast"
-                                >
-                                    <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
-                                        SIM, INSTALAR
-                                    </span>
-                                </button>
-                            </div>
-                        )}
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={onClose}
+                                className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 border border-white/10 hover:bg-white/5 transition-colors active:scale-95"
+                            >
+                                Não
+                            </button>
+                            <button 
+                                onClick={onInstall}
+                                className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse-fast"
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
+                                    SIM, INSTALAR
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -812,19 +804,25 @@
 
             dragRaf.current = requestAnimationFrame(() => {
                 if (!activeDragRef.current) return;
-                const { element, offsetX, offsetY } = activeDragRef.current;
+                const { elements, offsetX, offsetY } = activeDragRef.current;
                 
-                // Move the element via transform3d for GPU acceleration
-                element.style.position = 'fixed';
-                element.style.pointerEvents = 'none'; 
-                element.style.zIndex = '9999';
-                element.style.width = activeDragRef.current.rect.width + 'px';
-                element.style.left = '0px';
-                element.style.top = '0px';
-                
-                // Force GPU layer and scale
-                element.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY}px, 0) scale(1.1)`;
-                element.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4)';
+                // Move ALL elements in the stack
+                elements.forEach((el, index) => {
+                    // Use translate3d for GPU acceleration
+                    el.style.position = 'fixed';
+                    el.style.pointerEvents = 'none'; 
+                    el.style.zIndex = (9999 + index).toString(); // Stack z-index
+                    el.style.width = activeDragRef.current.rect.width + 'px';
+                    el.style.left = '0px';
+                    el.style.top = '0px';
+                    
+                    // Maintain vertical offset for stacks
+                    const verticalOffset = index * (activeDragRef.current.stackOffset || 0); 
+
+                    // Force GPU layer and scale
+                    el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + verticalOffset}px, 0) scale(1.05)`;
+                    el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4)';
+                });
             });
         }, []);
 
@@ -832,7 +830,7 @@
             if (!activeDragRef.current) return;
             if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
             
-            const { card, pileType, pileIndex, cardIndex, element, startX, startY } = activeDragRef.current;
+            const { card, pileType, pileIndex, cardIndex, elements, startX, startY } = activeDragRef.current;
             
             window.removeEventListener('pointermove', handleGlobalPointerMove);
             window.removeEventListener('pointerup', handleGlobalPointerUp);
@@ -840,17 +838,19 @@
 
             const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
             
-            // Reset styles
-            element.style.position = '';
-            element.style.width = '';
-            element.style.left = '';
-            element.style.top = '';
-            element.style.transform = '';
-            element.style.zIndex = '';
-            element.style.pointerEvents = '';
-            element.style.boxShadow = '';
-            // CRITICAL: Re-enable transition for smooth snapping/updates
-            element.style.transition = ''; 
+            // Reset styles for ALL elements
+            elements.forEach(el => {
+                el.style.position = '';
+                el.style.width = '';
+                el.style.left = '';
+                el.style.top = '';
+                el.style.transform = '';
+                el.style.zIndex = '';
+                el.style.pointerEvents = '';
+                el.style.boxShadow = '';
+                // CRITICAL: Re-enable transition for smooth snapping/updates
+                el.style.transition = ''; 
+            });
             
             activeDragRef.current = null;
 
@@ -890,8 +890,33 @@
 
             const rect = domElement.getBoundingClientRect();
             
-            // CRITICAL: Disable transition instantly for lag-free dragging
-            domElement.style.transition = 'none';
+            // Stack Collection Logic
+            let elementsToDrag = [domElement];
+            let stackOffset = 0;
+
+            if (pileType === 'tableau') {
+                // Find all subsequent siblings (cards on top)
+                // The structure is col > div(absolute) > SolitaireCard
+                // domElement is the inner card div provided by SolitaireCard ref
+                // Its parent is the absolute wrapper
+                const wrapper = domElement.parentElement;
+                if (wrapper && wrapper.parentElement) {
+                    const allWrappers = Array.from(wrapper.parentElement.children);
+                    const startIndex = allWrappers.indexOf(wrapper);
+                    if (startIndex > -1) {
+                         // Get all wrappers from start index
+                         const stackWrappers = allWrappers.slice(startIndex);
+                         // Map back to the inner card element which we want to animate (child of wrapper)
+                         elementsToDrag = stackWrappers.map(w => w.firstElementChild);
+                         
+                         // Calculate visual offset between cards (approximate based on CSS logic)
+                         stackOffset = gameMode === GameMode.Klondike ? 12 : 28;
+                    }
+                }
+            }
+            
+            // CRITICAL: Disable transition instantly for lag-free dragging on ALL elements
+            elementsToDrag.forEach(el => el.style.transition = 'none');
 
             activeDragRef.current = {
                 card,
@@ -902,8 +927,9 @@
                 startY: e.clientY,
                 offsetX: e.clientX - rect.left,
                 offsetY: e.clientY - rect.top,
-                element: domElement,
-                rect: rect
+                elements: elementsToDrag,
+                rect: rect,
+                stackOffset: stackOffset
             };
 
             window.addEventListener('pointermove', handleGlobalPointerMove);
@@ -1201,43 +1227,51 @@
         const handleCardClick = (card, pileType, pileIndex, cardIndex) => {
             if (!card) return;
             
-            // Smart Move: Try Foundation then Tableau
+            // Smart Move: Try Foundation then Tableau (including Stacks)
             if (pileType === 'tableau' && !card.isFaceUp) return;
 
-            const pile = gameState.foundation[card.suit];
-            const target = pile.length > 0 ? pile[pile.length - 1] : null;
-            if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) {
-                let isTop = true;
-                if(pileType === 'tableau') {
-                    if(cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
-                }
-                if(isTop) {
-                    handleCardMove({ card, pileType, pileIndex, cardIndex }, 'foundation', undefined, card.suit);
-                    return;
-                }
+            // 1. Try Foundation (Only for top card)
+            let isTop = true;
+            if(pileType === 'tableau' && cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
+
+            if (isTop) {
+                 const pile = gameState.foundation[card.suit];
+                 const target = pile.length > 0 ? pile[pile.length - 1] : null;
+                 if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) {
+                     handleCardMove({ card, pileType, pileIndex, cardIndex }, 'foundation', undefined, card.suit);
+                     return;
+                 }
             }
 
+            // 2. Try Tableau (Smart Stack Move)
             for(let i=0; i<gameState.tableau.length; i++) {
                 if(i === pileIndex && pileType === 'tableau') continue;
                 const col = gameState.tableau[i];
                 const top = col.length > 0 ? col[col.length - 1] : null;
+                
+                // Check if move valid (handles rank/color rules)
                 if(isMoveValid(card, top, 'tableau', gameState.mode)) {
+                    // If moving a stack in FreeCell, check capacity
+                    if (gameState.mode === GameMode.FreeCell && pileType === 'tableau' && !isTop) {
+                         const stackSize = gameState.tableau[pileIndex].length - cardIndex;
+                         const emptyFC = gameState.freeCells.filter(c => c === null).length;
+                         let emptyTab = gameState.tableau.filter(c => c.length === 0).length;
+                         if (col.length === 0) emptyTab = Math.max(0, emptyTab - 1);
+                         
+                         if (stackSize > getMaxMovableStack(emptyFC, emptyTab)) continue;
+                    }
+                    
                     handleCardMove({ card, pileType, pileIndex, cardIndex }, 'tableau', i);
                     return;
                 }
             }
 
-             if (gameMode === GameMode.FreeCell && pileType !== 'freeCell') {
+             // 3. Try FreeCell
+             if (gameMode === GameMode.FreeCell && pileType !== 'freeCell' && isTop) {
                 for(let i=0; i<4; i++) {
                     if(gameState.freeCells[i] === null) {
-                         let isTop = true;
-                         if(pileType === 'tableau') {
-                             if(cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
-                         }
-                         if(isTop) {
-                             handleCardMove({ card, pileType, pileIndex, cardIndex }, 'freeCell', i);
-                             return;
-                         }
+                         handleCardMove({ card, pileType, pileIndex, cardIndex }, 'freeCell', i);
+                         return;
                     }
                 }
              }
