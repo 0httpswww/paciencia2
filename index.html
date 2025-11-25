@@ -7,7 +7,7 @@
     <meta name="description" content="Jogue FreeCell Solitaire online grátis. Layout profissional, estilo luxuoso e responsivo." />
     
     <!-- PWA Manifest & Theme -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0f3526">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -79,7 +79,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(registration) {
+          navigator.serviceWorker.register('./sw.js').then(function(registration) {
             console.log('Monetag SW registered with scope:', registration.scope);
             registration.update();
           }, function(err) {
