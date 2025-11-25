@@ -127,7 +127,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare } from 'lucide-react';
 
       // --- TYPES ---
       const Suit = {
@@ -403,6 +403,8 @@
         );
       };
 
+      // OPTIMIZED CARD COMPONENT
+      // Faster transitions (200ms) and will-change hint
       const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
         const isFaceCard = card.rank === Rank.Jack || card.rank === Rank.Queen || card.rank === Rank.King;
         const isNumberCard = card.rank >= 2 && card.rank <= 10;
@@ -411,13 +413,9 @@
         const textColor = color === 'red' ? 'text-[#d40000]' : 'text-[#1a1a1a]';
         const cardRef = useRef(null);
 
-        // We do NOT use onCLick here anymore for movement logic. onPointerDown handles it all.
-        // We stop propagation to avoid AdSense clicks from catching the card tap.
         const handlePointerDown = (e) => {
             if (onPointerDown) {
-                // IMPORTANT: Stop propagation immediately so ads don't steal the click
                 e.stopPropagation();
-                // Stops native DOM propagation, preventing external scripts (Monetag popups) attached to document from firing
                 e.nativeEvent.stopImmediatePropagation();
                 onPointerDown(e, cardRef.current); 
             }
@@ -428,11 +426,11 @@
             ref={cardRef}
             className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
             onPointerDown={handlePointerDown}
-            // Add click handler just in case to stop propagation there too, though pointerdown usually catches it
             onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
-            <div className={`w-full h-full relative transition-transform duration-200 ease-out [transform-style:preserve-3d] ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
+            {/* Reduced duration from 500 to 200 for snappy feel */}
+            <div className={`w-full h-full relative transition-transform duration-200 ease-out [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
               {/* FRONT */}
               <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-200 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`}>
                 <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50" style={{ backgroundImage: PARCHMENT_TEXTURE }}></div>
@@ -536,7 +534,7 @@
         );
       };
 
-      const InstallModal = ({ onInstall, onClose }) => {
+      const InstallModal = ({ onInstall, onClose, isIOS }) => {
           return (
             <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500">
                 <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden">
@@ -545,21 +543,26 @@
                     <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"><X className="w-6 h-6" /></button>
 
                     <div className="relative z-10">
-                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-32 h-32 mx-auto mb-6 drop-shadow-[0_0_25px_rgba(147,51,234,0.8)] animate-bounce object-contain rounded-xl" alt="Install Icon" />
+                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl" alt="Install Icon" />
                         
-                        <h2 className="text-3xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">Instalar Jogo Grátis</h2>
+                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">Instalar Jogo Grátis</h2>
                         <p className="text-gray-300 mb-8 text-sm font-medium">Salve o atalho agora e jogue sem travamentos!</p>
                         
-                        <button 
-                            onClick={onInstall}
-                            className="w-full py-4 rounded-xl font-black text-xl uppercase tracking-widest text-white relative overflow-hidden group animate-neon-pulse shadow-[0_0_20px_rgba(34,197,94,0.6)] transition-transform active:scale-95"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-500 to-green-600 animate-gradient-xy"></div>
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white transition-opacity"></div>
-                            <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
-                                <Download className="w-6 h-6 stroke-[3]" /> INSTALAR AGORA
-                            </span>
-                        </button>
+                        {isIOS ? (
+                            <div className="text-left bg-black/40 p-4 rounded-xl border border-white/10 text-sm space-y-3">
+                                <p className="flex items-center gap-2"><Share className="w-5 h-5 text-blue-400" /> 1. Toque em <b>Compartilhar</b></p>
+                                <p className="flex items-center gap-2"><PlusSquare className="w-5 h-5 text-gray-400" /> 2. Role e escolha <b>Adicionar à Tela de Início</b></p>
+                            </div>
+                        ) : (
+                            <button 
+                                onClick={onInstall}
+                                className="w-full py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
+                                    <Download className="w-5 h-5" /> INSTALAR AGORA
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -721,13 +724,16 @@
         const [isAdMuted, setIsAdMuted] = useState(false);
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
+        
+        // PWA State
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         const [showInstallButton, setShowInstallButton] = useState(false);
         const [showInstallModal, setShowInstallModal] = useState(false); 
         const [isInstalled, setIsInstalled] = useState(false);
+        const [isIOS, setIsIOS] = useState(false);
         
         // DRAG AND DROP STATE
-        const activeDragRef = useRef(null); // Stores { card, pileType, pileIndex, cardIndex, offsetX, offsetY, startX, startY, element }
+        const activeDragRef = useRef(null); 
         const isFirstLoad = useRef(true);
 
         useEffect(() => {
@@ -736,16 +742,29 @@
             setLevelInfo(getLevelInfo(xp));
             setDailyTasks(getDailyTasks());
             
+            // Platform Detection
+            const iosCheck = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            setIsIOS(iosCheck);
+            
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             setIsInstalled(isStandalone);
 
+            // Install Logic
             const handleBeforeInstallPrompt = (e) => {
                 e.preventDefault();
                 setDeferredPrompt(e);
                 setShowInstallButton(true);
-                setShowInstallModal(true); 
+                // Auto show modal if not installed
+                if (!isStandalone) setShowInstallModal(true);
             };
             window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+            // If iOS and not installed, we can also show the button
+            if (iosCheck && !isStandalone) {
+                setShowInstallButton(true);
+                setShowInstallModal(true);
+            }
+
             return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         }, []);
 
@@ -756,13 +775,14 @@
             if (!activeDragRef.current) return;
             const { element, offsetX, offsetY } = activeDragRef.current;
             
-            // Move the element via transform (High Performance, No React Render)
+            // Move the element via transform
             element.style.position = 'fixed';
-            element.style.pointerEvents = 'none'; // Allow clicking through to detect drops
+            element.style.pointerEvents = 'none'; 
             element.style.zIndex = '9999';
             element.style.width = activeDragRef.current.rect.width + 'px';
             element.style.left = '0px';
             element.style.top = '0px';
+            // Scale up slightly for feedback
             element.style.transform = `translate(${e.clientX - offsetX}px, ${e.clientY - offsetY}px) scale(1.05)`;
             element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
         }, []);
@@ -771,12 +791,10 @@
             if (!activeDragRef.current) return;
             const { card, pileType, pileIndex, cardIndex, element, startX, startY } = activeDragRef.current;
             
-            // Clean up global listeners
             window.removeEventListener('pointermove', handleGlobalPointerMove);
             window.removeEventListener('pointerup', handleGlobalPointerUp);
             window.removeEventListener('pointercancel', handleGlobalPointerUp);
 
-            // Determine if it was a CLICK or a DRAG
             const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
             
             // Reset styles
@@ -788,29 +806,26 @@
             element.style.zIndex = '';
             element.style.pointerEvents = '';
             element.style.boxShadow = '';
+            // CRITICAL: Re-enable transition for smooth snapping/updates
+            element.style.transition = ''; 
             
             activeDragRef.current = null;
 
             if (dist < 10) {
-                // Click/Tap Detected - Trigger Smart Move
+                // Click/Tap Detected - Smart Move
                 handleCardClick(card, pileType, pileIndex, cardIndex);
             } else {
                 // Drag Drop Logic
-                // 1. Find what we dropped on using hit testing
-                // We momentarily hide the dragged element to peek under it, but we already reset style so it's back in place.
-                // Actually, since we reset style, it's back in list. The drop target is under the mouse cursor.
-                
                 const elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
                 let dropTarget = null;
                 
-                // Find a valid drop zone in the elements below
                 for (let el of elementsBelow) {
                     const zone = el.closest('[data-drop-zone]');
                     if (zone) {
                         dropTarget = {
                             type: zone.dataset.dropType,
                             index: parseInt(zone.dataset.dropIndex),
-                            suit: zone.dataset.dropSuit // For foundations
+                            suit: zone.dataset.dropSuit 
                         };
                         break;
                     }
@@ -824,7 +839,6 @@
 
         const startDrag = (e, card, pileType, pileIndex, cardIndex, domElement) => {
             if (!card.isFaceUp) return;
-            // Only allow dragging from top of stack (or valid stack)
             if (pileType === 'tableau') {
                 const col = gameState.tableau[pileIndex];
                 const stack = col.slice(cardIndex);
@@ -833,6 +847,9 @@
 
             const rect = domElement.getBoundingClientRect();
             
+            // CRITICAL: Disable transition instantly for lag-free dragging
+            domElement.style.transition = 'none';
+
             activeDragRef.current = {
                 card,
                 pileType,
@@ -853,7 +870,6 @@
 
         const handleDropAttempt = (card, sourcePile, sourceIndex, sourceCardIndex, target) => {
             let targetCard = null;
-            
             if (target.type === 'tableau') {
                 const col = gameState.tableau[target.index];
                 if (col.length > 0) targetCard = col[col.length - 1];
@@ -864,24 +880,27 @@
                 targetCard = gameState.freeCells[target.index];
             }
 
-            // Validate Move
-            // Need to reconstruct source data structure for legacy handleCardMove
-            const sourceData = { card, pileType: sourcePile, pileIndex: sourceIndex, cardIndex: sourceCardIndex };
-            
             if (isMoveValid(card, targetCard, target.type, gameState.mode, target.suit)) {
-                handleCardMove(sourceData, target.type, target.index, target.suit);
+                handleCardMove({ card, pileType: sourcePile, pileIndex: sourceIndex, cardIndex: sourceCardIndex }, target.type, target.index, target.suit);
             }
         };
 
         const handleInstallClick = async () => {
-            if (!deferredPrompt) return;
-            setShowInstallModal(false); 
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') { 
-                setDeferredPrompt(null); 
-                setIsInstalled(true); 
-                setShowInstallButton(false);
+            if (deferredPrompt) {
+                setShowInstallModal(false); 
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { 
+                    setDeferredPrompt(null); 
+                    setIsInstalled(true); 
+                    setShowInstallButton(false);
+                }
+            } else if (isIOS) {
+                // Just open the modal to show instructions, user has to do it manually
+                setShowInstallModal(true);
+            } else {
+                // Fallback for desktop/other
+                alert("Para instalar, use o menu do navegador e selecione 'Adicionar à Tela Inicial' ou 'Instalar Aplicativo'.");
             }
         };
 
@@ -1139,18 +1158,15 @@
             updateTaskProgress('play_moves', 1); setSelected(null);
         };
 
-        // Improved Click/Tap Logic (Smart Move)
         const handleCardClick = (card, pileType, pileIndex, cardIndex) => {
             if (!card) return;
             
             // Smart Move: Try Foundation then Tableau
             if (pileType === 'tableau' && !card.isFaceUp) return;
 
-            // 1. Try Foundation
             const pile = gameState.foundation[card.suit];
             const target = pile.length > 0 ? pile[pile.length - 1] : null;
             if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) {
-                // Must ensure it's the top card of stack if in tableau
                 let isTop = true;
                 if(pileType === 'tableau') {
                     if(cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
@@ -1161,8 +1177,6 @@
                 }
             }
 
-            // 2. Try Tableau
-            // Simple loop to find valid tableau spot
             for(let i=0; i<gameState.tableau.length; i++) {
                 if(i === pileIndex && pileType === 'tableau') continue;
                 const col = gameState.tableau[i];
@@ -1173,7 +1187,6 @@
                 }
             }
 
-            // 3. FreeCell (if empty spot exists)
              if (gameMode === GameMode.FreeCell && pileType !== 'freeCell') {
                 for(let i=0; i<4; i++) {
                     if(gameState.freeCells[i] === null) {
@@ -1189,7 +1202,6 @@
                 }
              }
 
-            // Selection Logic (Fallback if no auto move)
             if (selected && selected.card.id === card.id) {
                 setSelected(null);
             } else {
@@ -1218,7 +1230,7 @@
             {gameState.gameWon && <Confetti />}
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
-            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} />}
+            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} />}
 
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
