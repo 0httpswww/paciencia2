@@ -8,7 +8,7 @@ import { createDeck, shuffleDeck, isMoveValid, isStackValid, getMaxMovableStack 
 import { getStoredXP, addXP, getLevelInfo } from './utils/progression';
 import { getDailyTasks, saveDailyTasks, checkTaskCompletion } from './utils/dailyTasks';
 import { CardType, GameState, PileType, Rank, SelectedCard, Suit, GameMode, DailyTask, TaskType } from './types';
-import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Download, Moon, Sun } from 'lucide-react';
+import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Download, Moon, Sun, Smartphone } from 'lucide-react';
 
 // --- Constants ---
 const INITIAL_GAME_STATE: GameState = {
@@ -811,6 +811,20 @@ function App() {
             @keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } }
             @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } }
             
+            /* Install Button Animations */
+            @keyframes gradient-xy {
+                0%, 100% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+            }
+            .animate-gradient-xy {
+                background-size: 200% 200%;
+                animation: gradient-xy 3s ease infinite;
+            }
+            @keyframes shimmer {
+                0% { transform: translateX(-150%) skewX(-15deg); }
+                100% { transform: translateX(150%) skewX(-15deg); }
+            }
+            
             /* 3D Victory Text */
             .victory-text {
                 font-family: 'Crimson Pro', serif;
@@ -877,12 +891,25 @@ function App() {
                 <div className="flex items-center gap-2 justify-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                     {/* Install Button - Visible on all devices if prompt is available */}
                     {showInstallButton && (
-                        <button 
+                         <button 
                             onClick={handleInstallClick}
-                            className="whitespace-nowrap bg-gradient-to-r from-fuchsia-600 to-purple-600 border border-fuchsia-400/50 hover:from-fuchsia-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(192,38,211,0.5)] flex items-center gap-1.5 animate-pulse transition-all transform hover:scale-105"
+                            className="group relative px-5 py-2 rounded-full bg-black overflow-hidden shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:shadow-[0_0_30px_rgba(236,72,153,0.8)] transition-all duration-300 hover:scale-105 active:scale-95 border border-fuchsia-500/50"
                         >
-                            <Download className="w-4 h-4" />
-                            <span>Instalar App</span>
+                            {/* Animated Background Gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-orange-500 opacity-80 group-hover:opacity-100 transition-opacity duration-300 animate-gradient-xy"></div>
+
+                            {/* Shimmer Effect */}
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent z-10"></div>
+
+                            {/* Content */}
+                            <div className="relative flex items-center gap-2 z-20">
+                                <div className="bg-white text-fuchsia-600 rounded-full p-1 animate-bounce">
+                                    <Download className="w-3.5 h-3.5 stroke-[3]" />
+                                </div>
+                                <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white drop-shadow-md">
+                                    Instalar App
+                                </span>
+                            </div>
                         </button>
                     )}
 
