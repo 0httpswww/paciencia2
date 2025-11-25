@@ -63,6 +63,20 @@
 </head>
   <body class="bg-[#0f3526] text-white overflow-x-hidden">
     <div id="root"></div>
+    
+    <!-- Monetag Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(registration) {
+            console.log('Monetag SW registered with scope:', registration.scope);
+          }, function(err) {
+            console.log('Monetag SW registration failed:', err);
+          });
+        });
+      }
+    </script>
+
     <!-- CRITICAL: Entry point script -->
     <script type="module" src="./index.tsx"></script>
   </body>

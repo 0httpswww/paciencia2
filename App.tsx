@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SolitaireCard } from './components/SolitaireCard';
 import { AdBanner } from './components/AdBanner';
@@ -894,8 +893,8 @@ function App() {
          </div>
       </header>
 
-      {/* Main Area */}
-      <main className="flex-grow flex justify-center p-2 sm:p-4 z-10 relative pb-24">
+      {/* Main Area with increased bottom padding to avoid anchor ads overlap */}
+      <main className="flex-grow flex justify-center p-2 sm:p-4 z-10 relative pb-40">
          <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6">
              
             <div className="hidden lg:flex flex-col gap-4">
@@ -1046,8 +1045,8 @@ function App() {
          </div>
       </main>
 
-      {/* Floating Action Bar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-black/70 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-500">
+      {/* Floating Action Bar - Moved up (bottom-24) to avoid bottom sticky ads */}
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-black/70 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-500">
          <button 
             onClick={handleUndo} 
             disabled={history.length === 0}
