@@ -664,6 +664,7 @@
         const [visitCount, setVisitCount] = useState(843210);
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         const [showInstallButton, setShowInstallButton] = useState(false);
+        const [isInstalled, setIsInstalled] = useState(false);
         const isFirstLoad = useRef(true);
 
         useEffect(() => {
@@ -672,6 +673,10 @@
             setLevelInfo(getLevelInfo(xp));
             setDailyTasks(getDailyTasks());
             
+            // Check if already in standalone mode
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            setIsInstalled(isStandalone);
+
             const handleBeforeInstallPrompt = (e) => {
                 e.preventDefault();
                 setDeferredPrompt(e);
@@ -687,7 +692,11 @@
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') { setDeferredPrompt(null); setShowInstallButton(false); }
+            if (outcome === 'accepted') { 
+                setDeferredPrompt(null); 
+                // Instead of hiding, we change state to installed
+                setIsInstalled(true); 
+            }
         };
 
         useEffect(() => {
@@ -1018,11 +1027,22 @@
                     <button onClick={() => setIsNightMode(!isNightMode)} className="md:hidden bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                   </div>
                   <div className="flex items-center gap-2 justify-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                    {showInstallButton && (
-                      <button onClick={handleInstallClick} className="group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 animate-neon-pulse mr-2 border-2">
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                        <div className="relative flex items-center gap-2 z-20"><div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg"><Smartphone className="w-4 h-4 stroke-[2.5]" /></div><span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">Instalar</span></div>
+                    {(showInstallButton || isInstalled) && (
+                      <button 
+                          onClick={isInstalled ? undefined : handleInstallClick}
+                          disabled={isInstalled}
+                          className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 mr-2 border-2 ${isInstalled ? 'border-green-500/50 cursor-default' : 'hover:scale-110 active:scale-95 animate-neon-pulse border-white/20'}`}
+                      >
+                          <div className={`absolute inset-0 opacity-90 ${isInstalled ? 'bg-gradient-to-r from-emerald-800 to-green-900' : 'bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 animate-gradient-xy group-hover:opacity-100'}`}></div>
+                          {!isInstalled && <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>}
+                          <div className="relative flex items-center gap-2 z-20">
+                              <div className={`rounded-full p-1 shadow-lg ${isInstalled ? 'bg-green-500 text-white' : 'bg-white text-purple-700 animate-bounce'}`}>
+                                  {isInstalled ? <CheckCircle2 className="w-4 h-4 stroke-[3]" /> : <Smartphone className="w-4 h-4 stroke-[2.5]" />}
+                              </div>
+                              <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                                  {isInstalled ? 'Instalado' : 'Instalar'}
+                              </span>
+                          </div>
                       </button>
                     )}
                     <div className="flex bg-black/40 rounded-lg p-1 border border-white/10 whitespace-nowrap">
