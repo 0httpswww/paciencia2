@@ -865,7 +865,7 @@ function App() {
                     {showInstallButton && (
                         <button 
                             onClick={handleInstallClick}
-                            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-lg flex items-center gap-1.5 animate-pulse"
+                            className="bg-gradient-to-r from-fuchsia-600 to-purple-600 border border-fuchsia-400/50 hover:from-fuchsia-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(192,38,211,0.5)] flex items-center gap-1.5 animate-pulse transition-all transform hover:scale-105"
                         >
                             <Download className="w-4 h-4" />
                             <span className="hidden sm:inline">Instalar App</span>
