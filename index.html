@@ -814,6 +814,7 @@
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
         const [showRewardModal, setShowRewardModal] = useState(false);
+        const isFirstLoad = useRef(true);
         
         // PWA State
         const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -1070,7 +1071,7 @@
             return () => window.removeEventListener('keydown', handleKeyDown);
         }, [history, isPlaying]);
 
-        const startNewGame = useCallback((forceAd = false) => {
+        const startNewGame = useCallback((requestAd = false) => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
             if (gameMode === GameMode.FreeCell) {
@@ -1097,10 +1098,18 @@
             setGameState({ ...INITIAL_GAME_STATE, mode: gameMode, tableau: newTableau, stock, waste });
             setHistory([]); setSelected(null); setHint(null); setIsPlaying(true); setShowWinningBounce(false); setIsAutoCollecting(false);
 
-            if (forceAd) {
-                setShowInterstitial(true); 
-                setInterstitialTimer(5); 
-                setIsAdPaused(false);
+            if (isFirstLoad.current) {
+                isFirstLoad.current = false;
+                // No ad here, let the 30s timer handle it
+            } else if (requestAd) {
+                // 30% chance to skip ads on restart to reduce annoyance
+                if (Math.random() > 0.3) {
+                    setTimeout(() => {
+                        setShowInterstitial(true); 
+                        setInterstitialTimer(5); 
+                        setIsAdPaused(false);
+                    }, 1000);
+                }
             } 
         }, [gameMode]);
 
@@ -1170,7 +1179,15 @@
                 const newTotalXP = addXP(100); setPlayerXP(newTotalXP); setLevelInfo(getLevelInfo(newTotalXP));
                 updateTaskProgress('win_game');
                 setShowWinningBounce(true);
-                setTimeout(() => { setShowWinningBounce(false); setShowInterstitial(true); setInterstitialTimer(5); setIsAdPaused(false); }, 6000);
+                setTimeout(() => { 
+                    setShowWinningBounce(false); 
+                    // 30% reduction in ads on win
+                    if (Math.random() > 0.3) {
+                        setShowInterstitial(true); 
+                        setInterstitialTimer(5); 
+                        setIsAdPaused(false); 
+                    }
+                }, 6000);
             }
         }, [gameState.foundation, gameState.gameWon]);
 
