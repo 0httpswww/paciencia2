@@ -1001,6 +1001,8 @@
         };
 
         const handleInstallClick = async () => {
+            if (isInstalled) return;
+
             if (deferredPrompt) {
                 setShowInstallModal(false); 
                 deferredPrompt.prompt();
@@ -1012,6 +1014,7 @@
                 }
             } else {
                 // Should not happen for Android if prompted correctly, but fallback exists
+                setShowInstallModal(true);
             }
         };
 
@@ -1378,23 +1381,22 @@
                     </div>
                     {/* Mobile Night Mode + Install Button Area */}
                     <div className="flex items-center gap-2 md:hidden">
-                        {(showInstallButton || isInstalled) && (
-                            <button 
-                                onClick={isInstalled ? undefined : handleInstallClick}
-                                className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 animate-neon-pulse mr-2 border-2`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                                <div className="relative flex items-center gap-2 z-20">
-                                    <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
-                                        <Smartphone className="w-4 h-4 stroke-[2.5]" />
-                                    </div>
-                                    <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                                        {isInstalled ? 'Instalado' : 'Instalar'}
-                                    </span>
+                        <button 
+                            onClick={handleInstallClick}
+                            disabled={isInstalled}
+                            className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 ${isInstalled ? 'opacity-50 cursor-default' : 'hover:scale-110 active:scale-95 animate-neon-pulse'} mr-2 border-2`}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
+                            <div className="relative flex items-center gap-2 z-20">
+                                <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
+                                    <Smartphone className="w-4 h-4 stroke-[2.5]" />
                                 </div>
-                            </button>
-                        )}
+                                <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                                    {isInstalled ? 'Instalado' : 'Instalar'}
+                                </span>
+                            </div>
+                        </button>
                         <button onClick={() => setIsNightMode(!isNightMode)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                     </div>
                   </div>
@@ -1405,23 +1407,22 @@
                     </div>
                     <div className="flex items-center gap-2">
                       {/* Desktop Install Button Next to Night Mode */}
-                      {(showInstallButton || isInstalled) && (
-                          <button 
-                              onClick={isInstalled ? undefined : handleInstallClick}
-                              className={`hidden md:flex group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse border-2`}
-                          >
-                               <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                               <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                               <div className="relative flex items-center gap-2 z-20">
-                                   <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
-                                       <Smartphone className="w-3 h-3 stroke-[2.5]" />
-                                   </div>
-                                   <span className="text-[10px] font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                                       {isInstalled ? 'Instalado' : 'Instalar App'}
-                                   </span>
+                      <button 
+                          onClick={handleInstallClick}
+                          disabled={isInstalled}
+                          className={`hidden md:flex group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 ${isInstalled ? 'opacity-50 cursor-default' : 'hover:scale-105 active:scale-95 animate-neon-pulse'} border-2`}
+                      >
+                           <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                           <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
+                           <div className="relative flex items-center gap-2 z-20">
+                               <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
+                                   <Smartphone className="w-3 h-3 stroke-[2.5]" />
                                </div>
-                          </button>
-                      )}
+                               <span className="text-[10px] font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                                   {isInstalled ? 'Instalado' : 'Instalar App'}
+                               </span>
+                           </div>
+                      </button>
                       <button onClick={() => setIsNightMode(!isNightMode)} className="hidden md:flex bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                       <button onClick={() => setShowTasksModal(true)} className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><CalendarCheck className="w-5 h-5" />{hasPendingRewards && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>}</button>
                       <button onClick={() => startNewGame(true)} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><RotateCcw className="w-5 h-5" /></button>
