@@ -404,7 +404,7 @@
       };
 
       // OPTIMIZED CARD COMPONENT
-      // Faster transitions (200ms) and will-change hint
+      // Uses will-change-transform and optimized CSS transitions
       const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
         const isFaceCard = card.rank === Rank.Jack || card.rank === Rank.Queen || card.rank === Rank.King;
         const isNumberCard = card.rank >= 2 && card.rank <= 10;
@@ -429,10 +429,10 @@
             onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
-            {/* Reduced duration from 500 to 200 for snappy feel */}
-            <div className={`w-full h-full relative transition-transform duration-200 ease-out [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
+            {/* Smoother transition curve (cubic-bezier) and optimized props */}
+            <div className={`w-full h-full relative transition-transform duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
               {/* FRONT */}
-              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-200 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`}>
+              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-300 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`}>
                 <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50" style={{ backgroundImage: PARCHMENT_TEXTURE }}></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-transparent pointer-events-none"></div>
                 <div className={`absolute top-[3%] left-[4%] flex flex-col items-center leading-none ${textColor} w-[18%]`}>
@@ -459,7 +459,7 @@
               </div>
 
               {/* BACK */}
-              <div className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-200 ${isSelected ? 'shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`} style={{ backgroundColor: '#7f1d1d' }}>
+              <div className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-300 ${isSelected ? 'shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`} style={{ backgroundColor: '#7f1d1d' }}>
                 <div className="absolute inset-1.5 border border-[#fbbf24]/20 rounded-[4.5%]" style={{ backgroundImage: BACK_PATTERN, backgroundColor: '#7f1d1d' }}></div>
                 <div className="relative w-[35%] h-[25%] bg-[#450a0a] rounded-[50%] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] border-2 border-[#fbbf24]/40 z-10">
                     <Crown className="w-[60%] h-[60%] text-[#fbbf24] drop-shadow-md" strokeWidth={1.5} />
@@ -534,7 +534,7 @@
         );
       };
 
-      const InstallModal = ({ onInstall, onClose, isIOS }) => {
+      const InstallModal = ({ onInstall, onClose }) => {
           return (
             <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500">
                 <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden">
@@ -545,24 +545,17 @@
                     <div className="relative z-10">
                         <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl" alt="Install Icon" />
                         
-                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">Instalar Jogo Grátis</h2>
+                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">Instalar Aplicativo</h2>
                         <p className="text-gray-300 mb-8 text-sm font-medium">Salve o atalho agora e jogue sem travamentos!</p>
                         
-                        {isIOS ? (
-                            <div className="text-left bg-black/40 p-4 rounded-xl border border-white/10 text-sm space-y-3">
-                                <p className="flex items-center gap-2"><Share className="w-5 h-5 text-blue-400" /> 1. Toque em <b>Compartilhar</b></p>
-                                <p className="flex items-center gap-2"><PlusSquare className="w-5 h-5 text-gray-400" /> 2. Role e escolha <b>Adicionar à Tela de Início</b></p>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={onInstall}
-                                className="w-full py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
-                            >
-                                <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
-                                    <Download className="w-5 h-5" /> INSTALAR AGORA
-                                </span>
-                            </button>
-                        )}
+                        <button 
+                            onClick={onInstall}
+                            className="w-full py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
+                                <Download className="w-5 h-5" /> INSTALAR AGORA
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -730,21 +723,17 @@
         const [showInstallButton, setShowInstallButton] = useState(false);
         const [showInstallModal, setShowInstallModal] = useState(false); 
         const [isInstalled, setIsInstalled] = useState(false);
-        const [isIOS, setIsIOS] = useState(false);
         
         // DRAG AND DROP STATE
         const activeDragRef = useRef(null); 
         const isFirstLoad = useRef(true);
+        const dragRaf = useRef(null); // Reference for Animation Frame
 
         useEffect(() => {
             const xp = getStoredXP();
             setPlayerXP(xp);
             setLevelInfo(getLevelInfo(xp));
             setDailyTasks(getDailyTasks());
-            
-            // Platform Detection
-            const iosCheck = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            setIsIOS(iosCheck);
             
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             setIsInstalled(isStandalone);
@@ -754,16 +743,10 @@
                 e.preventDefault();
                 setDeferredPrompt(e);
                 setShowInstallButton(true);
-                // Auto show modal if not installed
+                // Auto show modal if not installed and prompt captured
                 if (!isStandalone) setShowInstallModal(true);
             };
             window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-            // If iOS and not installed, we can also show the button
-            if (iosCheck && !isStandalone) {
-                setShowInstallButton(true);
-                setShowInstallModal(true);
-            }
 
             return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         }, []);
@@ -773,22 +756,32 @@
         // DRAG EVENT HANDLERS (Native Pointer Events for High Performance)
         const handleGlobalPointerMove = useCallback((e) => {
             if (!activeDragRef.current) return;
-            const { element, offsetX, offsetY } = activeDragRef.current;
             
-            // Move the element via transform
-            element.style.position = 'fixed';
-            element.style.pointerEvents = 'none'; 
-            element.style.zIndex = '9999';
-            element.style.width = activeDragRef.current.rect.width + 'px';
-            element.style.left = '0px';
-            element.style.top = '0px';
-            // Scale up slightly for feedback
-            element.style.transform = `translate(${e.clientX - offsetX}px, ${e.clientY - offsetY}px) scale(1.05)`;
-            element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+            // Use requestAnimationFrame to sync with screen refresh
+            if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
+
+            dragRaf.current = requestAnimationFrame(() => {
+                if (!activeDragRef.current) return;
+                const { element, offsetX, offsetY } = activeDragRef.current;
+                
+                // Move the element via transform3d for GPU acceleration
+                element.style.position = 'fixed';
+                element.style.pointerEvents = 'none'; 
+                element.style.zIndex = '9999';
+                element.style.width = activeDragRef.current.rect.width + 'px';
+                element.style.left = '0px';
+                element.style.top = '0px';
+                
+                // Force GPU layer and scale
+                element.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY}px, 0) scale(1.1)`;
+                element.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4)';
+            });
         }, []);
 
         const handleGlobalPointerUp = useCallback((e) => {
             if (!activeDragRef.current) return;
+            if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
+            
             const { card, pileType, pileIndex, cardIndex, element, startX, startY } = activeDragRef.current;
             
             window.removeEventListener('pointermove', handleGlobalPointerMove);
@@ -895,12 +888,9 @@
                     setIsInstalled(true); 
                     setShowInstallButton(false);
                 }
-            } else if (isIOS) {
-                // Just open the modal to show instructions, user has to do it manually
-                setShowInstallModal(true);
             } else {
-                // Fallback for desktop/other
-                alert("Para instalar, use o menu do navegador e selecione 'Adicionar à Tela Inicial' ou 'Instalar Aplicativo'.");
+                // Fallback for desktop/other if prompt somehow missing but button showed
+                alert("Para instalar, use o menu do navegador e selecione 'Adicionar à Tela Inicial'.");
             }
         };
 
@@ -1230,7 +1220,7 @@
             {gameState.gameWon && <Confetti />}
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
-            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} />}
+            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} />}
 
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
