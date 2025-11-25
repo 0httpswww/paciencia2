@@ -1341,9 +1341,9 @@
                         {(showInstallButton || isInstalled) && (
                             <button 
                                 onClick={isInstalled ? undefined : handleInstallClick}
-                                className={`p-2 rounded-full border transition-all active:scale-95 flex items-center justify-center ${isInstalled ? 'bg-green-900/50 border-green-500/30' : 'bg-gradient-to-r from-purple-600 via-green-500 to-purple-600 bg-[length:200%_200%] animate-gradient-xy border-white/20 shadow-[0_0_10px_#9333ea] animate-neon-pulse'}`}
+                                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all active:scale-95 shadow-[0_0_10px_rgba(147,51,234,0.5)] ${isInstalled ? 'bg-green-900/50 border-green-500/30' : 'bg-gradient-to-br from-purple-600 via-green-500 to-purple-600 bg-[length:200%_200%] animate-gradient-xy border-white/20 animate-neon-pulse'}`}
                             >
-                                {isInstalled ? <Check className="w-5 h-5 text-green-500" /> : <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-5 h-5 object-contain" alt="Instalar" />}
+                                {isInstalled ? <Check className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5 text-white drop-shadow-md" />}
                             </button>
                         )}
                         <button onClick={() => setIsNightMode(!isNightMode)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
@@ -1359,9 +1359,9 @@
                       {(showInstallButton || isInstalled) && (
                           <button 
                               onClick={isInstalled ? undefined : handleInstallClick}
-                              className={`hidden md:flex items-center gap-2 px-4 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-widest transition-all border ${isInstalled ? 'bg-white/5 border-white/10 text-white/50 cursor-default' : 'bg-gradient-to-r from-purple-600 via-green-500 to-purple-600 bg-[length:200%_200%] animate-gradient-xy text-white border-white/20 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.5)] animate-neon-pulse'}`}
+                              className={`hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full font-bold uppercase text-[10px] tracking-widest transition-all border shadow-[0_0_15px_rgba(147,51,234,0.5)] ${isInstalled ? 'bg-white/5 border-white/10 text-white/50 cursor-default' : 'bg-gradient-to-r from-purple-600 via-green-500 to-purple-600 bg-[length:200%_200%] animate-gradient-xy text-white border-white/20 hover:scale-105 active:scale-95 animate-neon-pulse'}`}
                           >
-                              <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-5 h-5 object-contain drop-shadow-md" />
+                              {isInstalled ? <CheckCircle2 className="w-4 h-4" /> : <Download className="w-4 h-4" />}
                               {isInstalled ? 'Instalado' : 'Instalar App'}
                           </button>
                       )}
