@@ -8,7 +8,7 @@ import { createDeck, shuffleDeck, isMoveValid, isStackValid, getMaxMovableStack 
 import { getStoredXP, addXP, getLevelInfo } from './utils/progression';
 import { getDailyTasks, saveDailyTasks, checkTaskCompletion } from './utils/dailyTasks';
 import { CardType, GameState, PileType, Rank, SelectedCard, Suit, GameMode, DailyTask, TaskType } from './types';
-import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck } from 'lucide-react';
+import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Download } from 'lucide-react';
 
 // --- Constants ---
 const INITIAL_GAME_STATE: GameState = {
@@ -71,6 +71,10 @@ function App() {
   // Simulated Stats
   const [onlineCount, setOnlineCount] = useState(150);
   const [visitCount, setVisitCount] = useState(843210);
+  
+  // PWA Install Prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
   // Track if it's the first time the app is loading to show ad on mobile start
   const isFirstLoad = useRef(true);
@@ -83,7 +87,30 @@ function App() {
 
     const tasks = getDailyTasks();
     setDailyTasks(tasks);
+    
+    // PWA Install Listener
+    const handleBeforeInstallPrompt = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setShowInstallButton(true);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+          setShowInstallButton(false);
+      }
+  };
 
   // Update Pending Rewards Indicator
   useEffect(() => {
@@ -833,39 +860,52 @@ function App() {
                     </div>
                 </div>
 
-                <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
-                    <button 
-                       onClick={() => setGameMode(GameMode.FreeCell)}
-                       className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.FreeCell ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                    >
-                        FreeCell
-                    </button>
-                    <button 
-                       onClick={() => setGameMode(GameMode.Klondike)}
-                       className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.Klondike ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Clássica
-                    </button>
-                </div>
-
                 <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setShowTasksModal(true)}
-                      className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"
-                      title="Tarefas Diárias"
-                    >
-                       <CalendarCheck className="w-5 h-5" />
-                       {hasPendingRewards && (
-                           <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>
-                       )}
-                    </button>
-                    <button 
-                      onClick={startNewGame}
-                      className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"
-                      title="Reiniciar Jogo"
-                    >
-                       <RotateCcw className="w-5 h-5" />
-                    </button>
+                    {/* Install Button */}
+                    {showInstallButton && (
+                        <button 
+                            onClick={handleInstallClick}
+                            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-lg flex items-center gap-1.5 animate-pulse"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span className="hidden sm:inline">Instalar App</span>
+                        </button>
+                    )}
+
+                    <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
+                        <button 
+                        onClick={() => setGameMode(GameMode.FreeCell)}
+                        className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.FreeCell ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                        >
+                            FreeCell
+                        </button>
+                        <button 
+                        onClick={() => setGameMode(GameMode.Klondike)}
+                        className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.Klondike ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Clássica
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button 
+                        onClick={() => setShowTasksModal(true)}
+                        className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"
+                        title="Tarefas Diárias"
+                        >
+                        <CalendarCheck className="w-5 h-5" />
+                        {hasPendingRewards && (
+                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>
+                        )}
+                        </button>
+                        <button 
+                        onClick={startNewGame}
+                        className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"
+                        title="Reiniciar Jogo"
+                        >
+                        <RotateCcw className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -2,10 +2,17 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>FreeCell Pro | Jogo de Cartas Online</title>
     <meta name="description" content="Jogue FreeCell Solitaire online grátis. Layout profissional, estilo luxuoso e responsivo." />
     
+    <!-- PWA Manifest & Theme -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f3526">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2869/2869382.png">
+
     <!-- Monetag Verification -->
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
@@ -50,6 +57,7 @@
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
       }
     </style>
 

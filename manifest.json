@@ -1,0 +1,21 @@
+{
+  "name": "Paciência Pro",
+  "short_name": "Paciência",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f3526",
+  "theme_color": "#0f3526",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2869/2869382.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2869/2869382.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
