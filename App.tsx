@@ -893,8 +893,8 @@ function App() {
          </div>
       </header>
 
-      {/* Main Area with increased bottom padding to avoid anchor ads overlap */}
-      <main className="flex-grow flex justify-center p-2 sm:p-4 z-10 relative pb-48">
+      {/* Main Area with significant bottom padding to allow scrolling past fixed elements */}
+      <main className="flex-grow flex justify-center p-2 sm:p-4 z-10 relative pb-40">
          <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6">
              
             <div className="hidden lg:flex flex-col gap-4">
@@ -1045,39 +1045,50 @@ function App() {
          </div>
       </main>
 
-      {/* Floating Action Bar - Moved up (bottom-36) to avoid bottom sticky ads */}
-      <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-black/70 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-500">
-         <button 
-            onClick={handleUndo} 
-            disabled={history.length === 0}
-            className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${history.length === 0 ? 'text-white/20 cursor-not-allowed' : 'text-white hover:bg-white/10 hover:text-yellow-400'}`}
-            title="Desfazer (Ctrl+Z)"
-         >
-             <Undo2 className="w-6 h-6" />
-             <span className="text-[10px] font-bold uppercase tracking-wider">Undo</span>
-         </button>
+      {/* Modern Compact Floating Action Bar - Adjusted position to bottom-32 to be above ad area but compact */}
+      <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none">
+         <div className="flex items-center gap-4 bg-[#0a1f16]/90 backdrop-blur-xl p-2 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-auto transform transition-all hover:scale-105">
+             
+             {/* Undo Button - Premium Gold/Red style */}
+             <button 
+                onClick={handleUndo} 
+                disabled={history.length === 0}
+                className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-all active:scale-95 ${
+                    history.length === 0 
+                    ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed' 
+                    : 'bg-gradient-to-br from-red-900 to-[#450a0a] border-red-500/30 text-red-100 shadow-lg shadow-red-900/40 hover:from-red-800 hover:to-red-900'
+                }`}
+                title="Desfazer (Ctrl+Z)"
+             >
+                 <Undo2 className={`w-6 h-6 mb-0.5 ${history.length > 0 ? 'drop-shadow-md' : ''}`} />
+                 <span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Undo</span>
+             </button>
 
-         <div className="w-px h-8 bg-white/10"></div>
+             <div className="w-px h-8 bg-white/10"></div>
 
-         <button 
-            onClick={handleHint}
-            className="p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-white hover:bg-white/10 hover:text-yellow-400 group"
-            title="Dica"
-         >
-             <Lightbulb className="w-6 h-6 group-hover:fill-yellow-400 group-hover:text-yellow-400 transition-colors" />
-             <span className="text-[10px] font-bold uppercase tracking-wider">Dica</span>
-         </button>
+             {/* Hint Button - Glass/Neutral style */}
+             <button 
+                onClick={handleHint}
+                className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-white transition-all active:scale-95 hover:bg-white/15 hover:border-yellow-400/50 hover:text-yellow-200 shadow-lg"
+                title="Dica"
+             >
+                 <Lightbulb className="w-6 h-6 mb-0.5 group-hover:fill-yellow-400/20 drop-shadow-md transition-all" />
+                 <span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Dica</span>
+             </button>
 
-         <div className="w-px h-8 bg-white/10"></div>
-         
-         <button 
-            onClick={handleMagicWand}
-            className="p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
-            title="Auto-Completar Jogadas"
-         >
-             <Wand2 className="w-6 h-6" />
-             <span className="text-[10px] font-bold uppercase tracking-wider">Auto</span>
-         </button>
+             <div className="w-px h-8 bg-white/10"></div>
+             
+             {/* Auto Button - Premium Emerald/Gold style */}
+             <button 
+                onClick={handleMagicWand}
+                className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-500/30 text-emerald-100 transition-all active:scale-95 hover:from-emerald-700 hover:to-emerald-900 shadow-lg shadow-emerald-900/40"
+                title="Auto-Completar Jogadas"
+             >
+                 <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                 <Wand2 className="w-6 h-6 mb-0.5 drop-shadow-md" />
+                 <span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Auto</span>
+             </button>
+         </div>
       </div>
 
       {/* 3D Victory Text Overlay */}
