@@ -8,7 +8,7 @@ import { createDeck, shuffleDeck, isMoveValid, isStackValid, getMaxMovableStack 
 import { getStoredXP, addXP, getLevelInfo } from './utils/progression';
 import { getDailyTasks, saveDailyTasks, checkTaskCompletion } from './utils/dailyTasks';
 import { CardType, GameState, PileType, Rank, SelectedCard, Suit, GameMode, DailyTask, TaskType } from './types';
-import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Download } from 'lucide-react';
+import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Download, Moon, Sun } from 'lucide-react';
 
 // --- Constants ---
 const INITIAL_GAME_STATE: GameState = {
@@ -52,6 +52,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAutoCollecting, setIsAutoCollecting] = useState(false);
   
+  // Theme State
+  const [isNightMode, setIsNightMode] = useState(false);
+
   // Progression & Tasks State
   const [playerXP, setPlayerXP] = useState(0);
   const [levelInfo, setLevelInfo] = useState(getLevelInfo(0));
@@ -102,6 +105,11 @@ function App() {
     };
   }, []);
 
+  // Update Body Background for overscroll
+  useEffect(() => {
+      document.body.style.backgroundColor = isNightMode ? '#0f172a' : '#0f3526';
+  }, [isNightMode]);
+
   const handleInstallClick = async () => {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
@@ -133,7 +141,7 @@ function App() {
             return task;
         });
         
-        // Check for completion inside mapping (moved logic to checkTaskCompletion utility but doing inline for state update efficiency)
+        // Check for completion inside mapping
         const checked = updated.map(task => {
              const targetVal = task.type === 'play_time' ? task.target * 60 : task.target;
              if (!task.completed && task.current >= targetVal) {
@@ -205,7 +213,7 @@ function App() {
                 }
             }
             
-            // Remaining cards to stock (all face down initially for logic, but visually stock pile is face down)
+            // Remaining cards to stock
             stock = deck.slice(cardIdx).map(c => ({ ...c, isFaceUp: false }));
         }
 
@@ -224,8 +232,7 @@ function App() {
         setIsAutoCollecting(false);
     });
 
-    // Ad Logic: Show interstitial on ALL platforms
-    // Delay 4s on first load, 1s on subsequent restarts
+    // Ad Logic
     const delay = isFirstLoad.current ? 4000 : 1000;
     
     setTimeout(() => {
@@ -282,8 +289,6 @@ function App() {
 
   // --- Auto Collect Detection ---
   useEffect(() => {
-      // Logic to trigger auto-collection
-      // Currently only strictly safe for Klondike when all cards are face up
       if (gameMode === GameMode.Klondike && isPlaying && !isAutoCollecting && !gameState.gameWon) {
           const stockEmpty = gameState.stock.length === 0;
           const wasteEmpty = gameState.waste.length === 0;
@@ -304,7 +309,6 @@ function App() {
               let moved = false;
               let newState = JSON.parse(JSON.stringify(gameState));
               
-              // Helper to check valid move to foundation
               const tryMoveToFoundation = (card: CardType) => {
                   const pile = newState.foundation[card.suit];
                   const target = pile.length > 0 ? pile[pile.length - 1] : null;
@@ -321,12 +325,12 @@ function App() {
                           newState.foundation[card.suit].push(card);
                           newState.score += 10;
                           moved = true;
-                          break; // Only one move per tick
+                          break; 
                       }
                   }
               }
 
-              // 2. Scan FreeCells (if mode is FreeCell, though auto-collect trigger is strict for Klondike now, logic stays generic)
+              // 2. Scan FreeCells
               if (!moved && newState.freeCells) {
                   for (let i = 0; i < newState.freeCells.length; i++) {
                       const card = newState.freeCells[i];
@@ -408,8 +412,6 @@ function App() {
   // --- Game Features: Undo, Hint, Magic ---
 
   const saveHistory = () => {
-      // Deep copy gamestate to history
-      // Limit history to 20 moves to prevent memory issues
       setHistory(prev => {
           const newHistory = [...prev, JSON.parse(JSON.stringify(gameState))];
           if (newHistory.length > 50) return newHistory.slice(newHistory.length - 50);
@@ -434,7 +436,6 @@ function App() {
       // Priority: 1. Tableau to Foundation, 2. FreeCell to Foundation, 3. Tableau to Tableau
       
       // Check moves to Foundation
-      const suits = [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades];
       
       // 1. Check FreeCells to Foundation
       for (let i = 0; i < gameState.freeCells.length; i++) {
@@ -485,7 +486,6 @@ function App() {
 
   const handleMagicWand = () => {
       // Auto move cards to foundation if possible
-      // This is a simplified "Auto Win" helper
       if (!isPlaying) return;
 
       let moved = false;
@@ -513,9 +513,8 @@ function App() {
                   newState.score += 10;
                   moved = true;
                   movesAdded++;
-                  // Task Update
                   updateTaskProgress('foundation_drops', 1);
-                  break; // Only one move at a time to allow animation
+                  break; 
               }
           }
       }
@@ -534,7 +533,6 @@ function App() {
                         newState.score += 10;
                         moved = true;
                         movesAdded++;
-                        // Task Update
                         updateTaskProgress('foundation_drops', 1);
                         break;
                     }
@@ -569,12 +567,10 @@ function App() {
             cardsToMove = [newState.waste[newState.waste.length - 1]];
             newState.waste.pop();
         } else if (source.pileType === 'tableau') {
-            // Check "Supermove" rule for moving stacks (FreeCell only really, but Klondike follows simple stack rules)
             const column = newState.tableau[source.pileIndex!];
             cardsToMove = column.slice(source.cardIndex);
             
             if (prev.mode === GameMode.FreeCell && cardsToMove.length > 1) {
-                // Calculate max capacity for FreeCell
                 const emptyFreeCells = newState.freeCells.filter(c => c === null).length;
                 let emptyTableauCols = newState.tableau.filter(c => c.length === 0).length;
                 if (targetPile === 'tableau' && newState.tableau[targetIndex!].length === 0) {
@@ -592,7 +588,7 @@ function App() {
                 const newTopCard = newState.tableau[source.pileIndex!][newState.tableau[source.pileIndex!].length - 1];
                 if (!newTopCard.isFaceUp) {
                     newTopCard.isFaceUp = true;
-                    newState.score += 5; // Points for turning over a card
+                    newState.score += 5; 
                 }
             }
         }
@@ -798,7 +794,7 @@ function App() {
   const getCardTransitionName = (id: string) => `card-${id.replace(/[^a-zA-Z0-9]/g, '')}`;
 
   return (
-    <div className="min-h-screen bg-[#0f3526] flex flex-col font-sans relative overflow-x-hidden selection:bg-yellow-500/30">
+    <div className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden selection:bg-yellow-500/30 transition-colors duration-700 ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'}`}>
         {/* Confetti & Winning Bounce & Tasks Modal */}
         {gameState.gameWon && <Confetti />}
         {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
@@ -832,7 +828,14 @@ function App() {
             }
         `}} />
         
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e5940_0%,_#051c14_100%)] pointer-events-none"></div>
+      {/* Background Gradient */}
+      <div className={`absolute inset-0 transition-colors duration-700 pointer-events-none ${
+          isNightMode 
+          ? 'bg-[radial-gradient(circle_at_center,_#1e293b_0%,_#020617_100%)]' 
+          : 'bg-[radial-gradient(circle_at_center,_#1e5940_0%,_#051c14_100%)]'
+      }`}></div>
+      
+      {/* Texture Overlay */}
       <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
@@ -842,37 +845,48 @@ function App() {
          <div className="max-w-[1600px] mx-auto px-4 py-2 flex flex-col items-center gap-2">
             
             {/* Top Bar: Logo & Mode Switcher & Rank */}
-            <div className="w-full flex justify-between items-center text-white mb-1">
-                 <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-2 rounded-lg shadow-lg hidden sm:block border border-yellow-400/30">
-                        <Trophy className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-md leading-none">
-                            Solitaire Pro
-                        </h1>
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-yellow-500/80 font-mono mt-0.5">
-                            <Crown className="w-3 h-3" />
-                            <span className="uppercase font-bold tracking-wider">{levelInfo.title}</span>
-                            <span className="text-white/40">•</span>
-                            <span>Lvl {levelInfo.level}</span>
+            <div className="w-full flex flex-col md:flex-row justify-between items-center text-white mb-1 gap-2 md:gap-0">
+                 <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-2 rounded-lg shadow-lg hidden sm:block border border-yellow-400/30">
+                            <Trophy className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl md:text-2xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-md leading-none">
+                                Solitaire Pro
+                            </h1>
+                            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-yellow-500/80 font-mono mt-0.5">
+                                <Crown className="w-3 h-3" />
+                                <span className="uppercase font-bold tracking-wider">{levelInfo.title}</span>
+                                <span className="text-white/40">•</span>
+                                <span>Lvl {levelInfo.level}</span>
+                            </div>
                         </div>
                     </div>
+                    
+                    {/* Theme Toggle Mobile Position */}
+                    <button 
+                         onClick={() => setIsNightMode(!isNightMode)}
+                         className="md:hidden bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300"
+                         title={isNightMode ? "Modo Dia" : "Modo Noite"}
+                    >
+                         {isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Install Button */}
+                <div className="flex items-center gap-2 justify-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    {/* Install Button - Visible on all devices if prompt is available */}
                     {showInstallButton && (
                         <button 
                             onClick={handleInstallClick}
-                            className="bg-gradient-to-r from-fuchsia-600 to-purple-600 border border-fuchsia-400/50 hover:from-fuchsia-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(192,38,211,0.5)] flex items-center gap-1.5 animate-pulse transition-all transform hover:scale-105"
+                            className="whitespace-nowrap bg-gradient-to-r from-fuchsia-600 to-purple-600 border border-fuchsia-400/50 hover:from-fuchsia-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(192,38,211,0.5)] flex items-center gap-1.5 animate-pulse transition-all transform hover:scale-105"
                         >
                             <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline">Instalar App</span>
+                            <span>Instalar App</span>
                         </button>
                     )}
 
-                    <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
+                    <div className="flex bg-black/40 rounded-lg p-1 border border-white/10 whitespace-nowrap">
                         <button 
                         onClick={() => setGameMode(GameMode.FreeCell)}
                         className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.FreeCell ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
@@ -888,6 +902,15 @@ function App() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                         {/* Theme Toggle Desktop */}
+                         <button 
+                             onClick={() => setIsNightMode(!isNightMode)}
+                             className="hidden md:flex bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all text-yellow-300"
+                             title={isNightMode ? "Modo Dia" : "Modo Noite"}
+                         >
+                             {isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                         </button>
+                         
                         <button 
                         onClick={() => setShowTasksModal(true)}
                         className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"
@@ -934,7 +957,7 @@ function App() {
       </header>
 
       {/* Main Area with significant bottom padding to allow scrolling past fixed elements */}
-      <main className="flex-grow flex justify-center p-2 sm:p-4 z-10 relative pb-40">
+      <main className="flex-grow flex flex-col justify-between items-center p-2 sm:p-4 z-10 relative pb-40">
          <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6">
              
             <div className="hidden lg:flex flex-col gap-4">
@@ -1082,6 +1105,11 @@ function App() {
             <div className="hidden lg:flex flex-col gap-4">
                <AdBanner className="w-[160px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5" slotId={ADSENSE_SLOT_ID} format="auto" />
             </div>
+         </div>
+         
+         {/* Bottom Ad Container for Monetag/AdSense separation */}
+         <div className="w-full max-w-[1000px] mt-8 mb-8 min-h-[100px] bg-black/10 rounded-lg flex items-center justify-center text-white/10 uppercase font-bold text-xs tracking-widest border-t border-white/5">
+            Publicidade
          </div>
       </main>
 
