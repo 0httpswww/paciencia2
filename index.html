@@ -13,6 +13,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
 
+    <!-- Preload Critical Assets for Speed -->
+    <link rel="preload" as="image" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- Monetag Verification -->
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
@@ -30,8 +35,6 @@
     </script>
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
@@ -45,6 +48,9 @@
             },
             screens: {
                 'xs': '400px', // Extra small screen breakpoint
+            },
+            animation: {
+                'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }
           }
         }
@@ -85,6 +91,13 @@
         height: 100%;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+      }
+
+      /* Performance Optimizations */
+      .hardware-accelerated {
+        transform: translateZ(0);
+        will-change: transform;
+        backface-visibility: hidden;
       }
     </style>
 
@@ -127,7 +140,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare, Check, XCircle } from 'lucide-react';
 
       // --- TYPES ---
       const Suit = {
@@ -534,28 +547,48 @@
         );
       };
 
-      const InstallModal = ({ onInstall, onClose }) => {
+      const InstallModal = ({ onInstall, onClose, isIOS }) => {
           return (
-            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500">
-                <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden">
+            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500" style={{ touchAction: 'none' }}>
+                <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden hardware-accelerated">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-tr from-purple-600/20 to-green-500/20 blur-3xl pointer-events-none"></div>
                     
                     <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"><X className="w-6 h-6" /></button>
 
                     <div className="relative z-10">
-                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl" alt="Install Icon" />
+                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl will-change-transform" alt="Install Icon" />
                         
-                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">Instalar Aplicativo</h2>
-                        <p className="text-gray-300 mb-8 text-sm font-medium">Salve o atalho agora e jogue sem travamentos!</p>
+                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
+                           {isIOS ? 'Instalar App' : 'Deseja Instalar?'}
+                        </h2>
+                        <p className="text-gray-300 mb-8 text-sm font-medium">
+                            {isIOS ? "Para instalar no iPhone, siga as instruções abaixo:" : "Instale agora para jogar offline e sem travamentos."}
+                        </p>
                         
-                        <button 
-                            onClick={onInstall}
-                            className="w-full py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
-                        >
-                            <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
-                                <Download className="w-5 h-5" /> INSTALAR AGORA
-                            </span>
-                        </button>
+                        {isIOS ? (
+                             <div className="flex flex-col gap-4 text-sm text-gray-300 bg-white/5 p-4 rounded-xl border border-white/10">
+                                <div className="flex items-center gap-3"><span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center font-bold text-yellow-400">1</span><span>Toque em <Share className="w-4 h-4 inline mx-1" /> (Compartilhar)</span></div>
+                                <div className="flex items-center gap-3"><span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center font-bold text-yellow-400">2</span><span>Selecione <PlusSquare className="w-4 h-4 inline mx-1" /> <strong>Adicionar à Tela de Início</strong></span></div>
+                                <div className="animate-bounce mt-2 text-yellow-400"><Download className="w-6 h-6 mx-auto" /></div>
+                            </div>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={onClose}
+                                    className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 border border-white/10 hover:bg-white/5 transition-colors active:scale-95"
+                                >
+                                    Não
+                                </button>
+                                <button 
+                                    onClick={onInstall}
+                                    className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse-fast"
+                                >
+                                    <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
+                                        SIM, INSTALAR
+                                    </span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -728,6 +761,7 @@
         const [showInstallButton, setShowInstallButton] = useState(false);
         const [showInstallModal, setShowInstallModal] = useState(false); 
         const [isInstalled, setIsInstalled] = useState(false);
+        const [isIOS, setIsIOS] = useState(false);
         
         // DRAG AND DROP STATE
         const activeDragRef = useRef(null); 
@@ -742,16 +776,27 @@
             
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             setIsInstalled(isStandalone);
+            
+            const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            setIsIOS(ios);
 
-            // Install Logic
+            // Install Logic - Capture prompt and SHOW MODAL IMMEDIATELY
             const handleBeforeInstallPrompt = (e) => {
                 e.preventDefault();
                 setDeferredPrompt(e);
                 setShowInstallButton(true);
                 // Auto show modal if not installed and prompt captured
-                if (!isStandalone) setShowInstallModal(true);
+                if (!isStandalone) {
+                     setShowInstallModal(true);
+                }
             };
             window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+            // For iOS which doesn't fire beforeinstallprompt, we show modal on load if not standalone
+            if (ios && !isStandalone) {
+                 // Slight delay for smoother entry
+                 setTimeout(() => setShowInstallModal(true), 1000);
+            }
 
             return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         }, []);
@@ -894,8 +939,7 @@
                     setShowInstallButton(false);
                 }
             } else {
-                // Fallback for desktop/other if prompt somehow missing but button showed
-                alert("Para instalar, use o menu do navegador e selecione 'Adicionar à Tela Inicial'.");
+                // Should not happen for Android if prompted correctly, but fallback exists
             }
         };
 
@@ -1226,7 +1270,7 @@
             {gameState.gameWon && <Confetti />}
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
-            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} />}
+            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} />}
 
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
