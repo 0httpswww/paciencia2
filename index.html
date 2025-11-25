@@ -1031,13 +1031,14 @@
                       <button 
                           onClick={isInstalled ? undefined : handleInstallClick}
                           disabled={isInstalled}
+                          title="Instalar App e Criar Atalho"
                           className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 mr-2 border-2 ${isInstalled ? 'border-green-500/50 cursor-default' : 'hover:scale-110 active:scale-95 animate-neon-pulse border-white/20'}`}
                       >
                           <div className={`absolute inset-0 opacity-90 ${isInstalled ? 'bg-gradient-to-r from-emerald-800 to-green-900' : 'bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 animate-gradient-xy group-hover:opacity-100'}`}></div>
                           {!isInstalled && <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>}
                           <div className="relative flex items-center gap-2 z-20">
-                              <div className={`rounded-full p-1 shadow-lg ${isInstalled ? 'bg-green-500 text-white' : 'bg-white text-purple-700 animate-bounce'}`}>
-                                  {isInstalled ? <CheckCircle2 className="w-4 h-4 stroke-[3]" /> : <Smartphone className="w-4 h-4 stroke-[2.5]" />}
+                              <div className={`rounded-full p-0.5 shadow-lg ${isInstalled ? 'bg-green-500 text-white' : 'bg-white/90 text-purple-700 animate-bounce overflow-hidden'}`}>
+                                  {isInstalled ? <CheckCircle2 className="w-5 h-5 stroke-[3] p-0.5" /> : <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-6 h-6 object-cover drop-shadow-[0_0_5px_rgba(147,51,234,0.8)]" alt="Icon" />}
                               </div>
                               <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                                   {isInstalled ? 'Instalado' : 'Instalar'}
