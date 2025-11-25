@@ -801,7 +801,8 @@
                 setGameState({ ...INITIAL_GAME_STATE, mode: gameMode, tableau: newTableau, stock, waste });
                 setHistory([]); setSelected(null); setHint(null); setIsPlaying(true); setShowWinningBounce(false); setIsAutoCollecting(false);
             });
-            const delay = isFirstLoad.current ? 4000 : 1000;
+            // Changed delay: 30s on first load, 2s on restarts
+            const delay = isFirstLoad.current ? 30000 : 2000;
             setTimeout(() => { setShowInterstitial(true); setInterstitialTimer(5); setIsAdPaused(false); }, delay);
             isFirstLoad.current = false;
         }, [gameMode]);
