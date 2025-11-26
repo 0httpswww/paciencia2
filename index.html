@@ -135,6 +135,9 @@
     
     <!-- Monetag Additional Script (Zone 187944) -->
     <script src="https://fpyf8.com/88/tag.min.js" data-zone="187944" async data-cfasync="false"></script>
+    
+    <!-- Monetag Additional Script (Zone 10236160) -->
+    <script>(function(s){s.dataset.zone='10236160',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
     <!-- MAIN APP SCRIPT (Consolidated) -->
     <script type="text/babel" data-type="module" data-presets="typescript,react">
@@ -625,39 +628,6 @@
           );
       };
 
-      const RewardMessageModal = ({ onClose }) => {
-        return (
-            <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-                <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border-2 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.6)] overflow-hidden hardware-accelerated transform transition-all scale-100">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(34,197,94,0.15),_transparent)] pointer-events-none"></div>
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 blur-3xl rounded-full"></div>
-                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full"></div>
-
-                    <div className="relative z-10">
-                        <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/30 animate-bounce">
-                             <span className="text-4xl drop-shadow-md">💸</span>
-                        </div>
-
-                        <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter drop-shadow-md">
-                            Ganhe <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">R$ 0,25</span>
-                        </h2>
-
-                        <p className="text-gray-200 mb-8 text-lg font-bold leading-relaxed">
-                            Complete <span className="text-yellow-400">1 missão diária</span> e receba <span className="text-green-400">25 centavos</span> pra cada missão completada!
-                        </p>
-
-                        <button
-                            onClick={onClose}
-                            className="w-full py-4 rounded-xl font-black text-xl uppercase tracking-widest text-white relative overflow-hidden shadow-[0_0_20px_rgba(34,197,94,0.5)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse"
-                        >
-                            COMEÇAR AGORA
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )
-      }
-
       const Confetti = () => {
         const canvasRef = useRef(null);
         useEffect(() => {
@@ -813,7 +783,6 @@
         const [isAdMuted, setIsAdMuted] = useState(false);
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
-        const [showRewardModal, setShowRewardModal] = useState(false);
         const isFirstLoad = useRef(true);
         
         // PWA State
@@ -835,12 +804,7 @@
                 setIsAdPaused(false);
             }, 30000); 
             
-            // Show Reward Modal immediately on open
-            const rewardTimer = setTimeout(() => {
-                setShowRewardModal(true);
-            }, 500);
-
-            return () => { clearTimeout(timer); clearTimeout(rewardTimer); };
+            return () => { clearTimeout(timer); };
         }, []);
 
         useEffect(() => {
@@ -1380,7 +1344,6 @@
             {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
             {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
             {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} hasNativePrompt={!!deferredPrompt} />}
-            {showRewardModal && <RewardMessageModal onClose={() => setShowRewardModal(false)} />}
 
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
