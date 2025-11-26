@@ -1,143 +1,81 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>FreeCell Pro | Jogo de Cartas Online</title>
-    <meta name="description" content="Jogue FreeCell Solitaire online grátis. Layout profissional, estilo luxuoso e responsivo." />
-    
-    <!-- PWA Manifest & Theme -->
-    <link rel="manifest" href="./manifest.json">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Paciência Pro - Solitaire</title>
+    <meta name="description" content="Jogue Paciência (Solitaire) Grátis. Leve, rápido e funciona offline.">
     <meta name="theme-color" content="#0f3526">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
-
-    <!-- Preload Critical Assets for Speed -->
-    <link rel="preload" as="image" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
+    
+    <!-- Preload Assets -->
+    <link rel="preload" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" as="image">
+    
     <!-- Monetag Verification -->
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
-    
-    <!-- AdSense Meta Tag -->
-    <meta name="google-adsense-account" content="ca-pub-3768566268455535">
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2G3BLR9FC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-F2G3BLR9FC');
-    </script>
 
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              serif: ['"Crimson Pro"', 'serif'],
-            },
-            screens: {
-                'xs': '400px', // Extra small screen breakpoint
-            },
-            animation: {
-                'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            }
-          }
-        }
-      }
-    </script>
-
-    <!-- AdSense Script -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3768566268455535" crossorigin="anonymous"></script>
     
-    <!-- Babel Standalone for in-browser JSX/TS compilation -->
+    <!-- Babel for React -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3768566268455535" crossorigin="anonymous"></script>
+
+    <!-- Monetag Scripts -->
+    <script src="https://fpyf8.com/88/tag.min.js" data-zone="187944" async data-cfasync="false"></script>
+    <script>(function(s){s.dataset.zone='10234172',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <script>(function(s){s.dataset.zone='10236160',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
     <style>
-      /* CRITICAL: Disable browser gestures and scrolling interference */
-      body {
-        -webkit-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        overscroll-behavior-y: none;
-        touch-action: pan-x pan-y; /* Allow scrolling on non-game areas */
-        -webkit-tap-highlight-color: transparent;
-      }
-      
-      /* Game Board areas should not scroll when interacting */
-      .game-board, .card-draggable {
-        touch-action: none !important;
-      }
-
-      /* Fix iOS bounce */
-      html, body {
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      
-      #root {
-        height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* Performance Optimizations */
-      .hardware-accelerated {
-        transform: translateZ(0);
-        will-change: transform;
-        backface-visibility: hidden;
-      }
+        body { 
+            overscroll-behavior: none; 
+            touch-action: pan-x pan-y; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent pull-to-refresh on mobile */
+            background-color: #0f3526;
+        }
+        .card-draggable { 
+            touch-action: none; 
+        }
+        /* Hardware Acceleration Class */
+        .hardware-accelerated {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     </style>
 
     <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
 </head>
-  <body class="bg-[#0f3526] text-white">
+<body>
+    <!-- ROOT ELEMENT IS ESSENTIAL -->
     <div id="root"></div>
-    
-    <!-- Monetag Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('./sw.js').then(function(registration) {
-            console.log('Monetag SW registered with scope:', registration.scope);
-            registration.update();
-          }, function(err) {
-            console.log('Monetag SW registration failed:', err);
-          });
-        });
-      }
-    </script>
-
-    <!-- Monetag Ad Script -->
-    <script>(function(s){s.dataset.zone='10234172',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-    
-    <!-- Monetag Additional Script (Zone 187944) -->
-    <script src="https://fpyf8.com/88/tag.min.js" data-zone="187944" async data-cfasync="false"></script>
-    
-    <!-- Monetag Additional Script (Zone 10236160) -->
-    <script>(function(s){s.dataset.zone='10236160',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
     <!-- MAIN APP SCRIPT (Consolidated) -->
     <script type="text/babel" data-type="module" data-presets="typescript,react">
@@ -167,6 +105,7 @@
       const stopAdEvent = (e) => {
           if (!e) return;
           e.stopPropagation();
+          e.preventDefault(); // Aggressively prevent default behavior
           if (e.nativeEvent) {
               e.nativeEvent.stopImmediatePropagation();
           }
@@ -429,7 +368,6 @@
       };
 
       // OPTIMIZED CARD COMPONENT
-      // Uses will-change-transform and optimized CSS transitions (150ms)
       const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
         const isFaceCard = card.rank === Rank.Jack || card.rank === Rank.Queen || card.rank === Rank.King;
         const isNumberCard = card.rank >= 2 && card.rank <= 10;
@@ -445,12 +383,18 @@
             }
         };
 
+        const handleClick = (e) => {
+            stopAdEvent(e);
+        };
+
         return (
           <div
             ref={cardRef}
             className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
             onPointerDown={handlePointerDown}
-            onClick={stopAdEvent}
+            onMouseDown={stopAdEvent}
+            onTouchStart={stopAdEvent}
+            onClick={handleClick}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
           >
             {/* Native-like "Snappy" transition curve (150ms) */}
@@ -567,22 +511,26 @@
                     <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"><X className="w-6 h-6" /></button>
 
                     <div className="relative z-10">
-                        <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-24 h-24 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)] object-contain rounded-xl will-change-transform" alt="Install Icon" />
+                        {/* ICON PULSANTE */}
+                        <div className="mb-6 relative inline-block">
+                             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                             <div className="relative bg-white/10 p-4 rounded-full border border-white/20 backdrop-blur-sm">
+                                 <Smartphone className="w-12 h-12 text-white drop-shadow-lg" />
+                             </div>
+                        </div>
                         
-                        <h2 className="text-2xl font-black text-white mb-4 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
+                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
                            Criar Atalho?
                         </h2>
                         
-                        {!isIOS && hasNativePrompt && (
-                             <p className="text-gray-300 mb-6 text-sm font-medium">
-                                Instale o aplicativo para uma experiência melhor e acesso rápido.
-                            </p>
-                        )}
+                        <p className="text-gray-300 mb-6 text-sm font-medium leading-relaxed">
+                            Adicione o jogo à sua tela inicial para jogar em tela cheia e sem travar.
+                        </p>
                         
                         {(isIOS || (!hasNativePrompt && !isIOS)) && (
                              <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
-                                <p className="text-sm text-yellow-200 font-bold mb-2">Para instalar:</p>
-                                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                                <p className="text-xs text-yellow-200 font-bold mb-2 uppercase tracking-wide">Como instalar:</p>
+                                <ol className="text-xs text-gray-300 space-y-2 list-decimal list-inside">
                                     {isIOS ? (
                                         <>
                                             <li>Toque em <span className="inline-block"><Share className="w-3 h-3 inline" /></span> <strong>Compartilhar</strong>.</li>
@@ -591,7 +539,7 @@
                                     ) : (
                                         <>
                                              <li>Toque no menu <span className="inline-block"><Menu className="w-3 h-3 inline" /></span> (Três pontos).</li>
-                                            <li>Selecione <strong className="text-white">Instalar App</strong>.</li>
+                                            <li>Selecione <strong className="text-white">Instalar App</strong> ou <strong>Adicionar à Tela Inicial</strong>.</li>
                                         </>
                                     )}
                                 </ol>
@@ -783,7 +731,6 @@
         const [isAdMuted, setIsAdMuted] = useState(false);
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
-        const isFirstLoad = useRef(true);
         
         // PWA State
         const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -796,15 +743,30 @@
         const activeDragRef = useRef(null); 
         const dragRaf = useRef(null); 
 
-        // 30 SECOND AD TIMER ON MOUNT
+        // AD SCHEDULING (1 Minute Initial, then every 5 Minutes)
         useEffect(() => {
-            const timer = setTimeout(() => {
+            // First ad triggers after 60 seconds (1 minute)
+            const initialAdTimer = setTimeout(() => {
                 setShowInterstitial(true);
                 setInterstitialTimer(5);
                 setIsAdPaused(false);
-            }, 30000); 
+                
+                // After the first ad, set up recurring interval every 5 minutes (300000ms)
+                const recurringAdInterval = setInterval(() => {
+                     // Check if tab is active to avoid stacking ads in background
+                     if (!document.hidden) {
+                        setShowInterstitial(true);
+                        setInterstitialTimer(5);
+                        setIsAdPaused(false);
+                     }
+                }, 5 * 60 * 1000); // 5 minutes
+
+                // Cleanup recursive interval if component unmounts
+                return () => clearInterval(recurringAdInterval);
+
+            }, 60 * 1000); // 1 minute
             
-            return () => { clearTimeout(timer); };
+            return () => clearTimeout(initialAdTimer);
         }, []);
 
         useEffect(() => {
@@ -1035,7 +997,7 @@
             return () => window.removeEventListener('keydown', handleKeyDown);
         }, [history, isPlaying]);
 
-        const startNewGame = useCallback((requestAd = false) => {
+        const startNewGame = useCallback(() => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
             if (gameMode === GameMode.FreeCell) {
@@ -1061,23 +1023,11 @@
 
             setGameState({ ...INITIAL_GAME_STATE, mode: gameMode, tableau: newTableau, stock, waste });
             setHistory([]); setSelected(null); setHint(null); setIsPlaying(true); setShowWinningBounce(false); setIsAutoCollecting(false);
-
-            if (isFirstLoad.current) {
-                isFirstLoad.current = false;
-                // No ad here, let the 30s timer handle it
-            } else if (requestAd) {
-                // 30% chance to skip ads on restart to reduce annoyance
-                if (Math.random() > 0.3) {
-                    setTimeout(() => {
-                        setShowInterstitial(true); 
-                        setInterstitialTimer(5); 
-                        setIsAdPaused(false);
-                    }, 1000);
-                }
-            } 
+            
+            // NO ADS ON RESTART - ONLY TIME BASED
         }, [gameMode]);
 
-        useEffect(() => { startNewGame(false); }, [startNewGame]);
+        useEffect(() => { startNewGame(); }, [startNewGame]);
 
         useEffect(() => {
             const onlineInterval = setInterval(() => { setOnlineCount(prev => Math.max(100, prev + (Math.floor(Math.random() * 5) - 2))); }, 3000);
@@ -1145,12 +1095,7 @@
                 setShowWinningBounce(true);
                 setTimeout(() => { 
                     setShowWinningBounce(false); 
-                    // 30% reduction in ads on win
-                    if (Math.random() > 0.3) {
-                        setShowInterstitial(true); 
-                        setInterstitialTimer(5); 
-                        setIsAdPaused(false); 
-                    }
+                    // NO ADS ON WIN - ONLY TIME BASED
                 }, 6000);
             }
         }, [gameState.foundation, gameState.gameWon]);
@@ -1425,7 +1370,7 @@
                       )}
                       <button onClick={() => setIsNightMode(!isNightMode)} className="hidden md:flex bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
                       <button onClick={() => setShowTasksModal(true)} className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><CalendarCheck className="w-5 h-5" />{hasPendingRewards && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>}</button>
-                      <button onClick={() => startNewGame(true)} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><RotateCcw className="w-5 h-5" /></button>
+                      <button onClick={() => startNewGame()} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><RotateCcw className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -1520,7 +1465,13 @@
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-2 mt-4">
-                    {interstitialTimer > 0 ? <div className="flex items-center gap-2 text-white font-mono text-lg">{isAdPaused ? <span className="text-yellow-400 font-bold uppercase text-sm tracking-wider">Pausado</span> : <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div><span className="text-sm">O anúncio termina em {interstitialTimer}s...</span></>}</div> : <button onClick={() => setShowInterstitial(false)} className="bg-white text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2 animate-in fade-in zoom-in"><X className="w-5 h-5" /> Fechar Anúncio</button>}
+                    {interstitialTimer > 0 ? (
+                        <div className="flex items-center gap-2 text-white font-mono text-lg">
+                             {isAdPaused ? <span className="text-yellow-400 font-bold uppercase text-sm tracking-wider">Pausado</span> : <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div><span className="text-sm">O anúncio termina em {interstitialTimer}s...</span></>}
+                        </div>
+                    ) : (
+                        <button onClick={() => setShowInterstitial(false)} className="bg-white text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2 animate-in fade-in zoom-in"><X className="w-5 h-5" /> Fechar Anúncio</button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1528,19 +1479,19 @@
 
             {gameState.gameWon && !showInterstitial && !showWinningBounce && (
               <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-md p-4 animate-in fade-in duration-300">
-                <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl transform scale-105 border-4 border-yellow-400 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>
-                  <div className="inline-flex p-4 rounded-full bg-yellow-50 mb-4 ring-4 ring-yellow-100 shadow-lg animate-bounce"><Trophy className="w-16 h-16 text-yellow-600 drop-shadow-sm" /></div>
-                  <h2 className="text-4xl font-serif font-black text-gray-900 mb-2 uppercase tracking-tight">Vitória!</h2>
-                  <div className="mb-6 px-4">
-                    <div className="flex justify-between items-end mb-1"><span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{levelInfo.title}</span><span className="text-xs font-mono text-gray-400">Lvl {levelInfo.level}</span></div>
-                    <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden relative border border-gray-300"><div className="h-full bg-gradient-to-r from-emerald-500 to-green-400" style={{ width: `${levelInfo.progress}%` }}></div></div>
-                    <div className="text-[10px] text-gray-400 mt-1 flex justify-between"><span>+100 XP Ganho</span><span>{levelInfo.currentXP} / {levelInfo.nextLevelXP} XP</span></div>
+                  <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl transform scale-105 border-4 border-yellow-400 relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>
+                      <div className="inline-flex p-4 rounded-full bg-yellow-50 mb-4 ring-4 ring-yellow-100 shadow-lg animate-bounce"><Trophy className="w-16 h-16 text-yellow-600 drop-shadow-sm" /></div>
+                      <h2 className="text-4xl font-serif font-black text-gray-900 mb-2 uppercase tracking-tight">Vitória!</h2>
+                      <div className="mb-6 px-4">
+                           <div className="flex justify-between items-end mb-1"><span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{levelInfo.title}</span><span className="text-xs font-mono text-gray-400">Lvl {levelInfo.level}</span></div>
+                           <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden relative border border-gray-300"><div className="h-full bg-gradient-to-r from-emerald-500 to-green-400" style={{ width: `${levelInfo.progress}%` }}></div></div>
+                           <div className="text-[10px] text-gray-400 mt-1 flex justify-between"><span>+{100} XP Ganho</span><span>{levelInfo.currentXP} / {levelInfo.nextLevelXP} XP</span></div>
+                      </div>
+                      <p className="text-gray-600 mb-6 font-medium">Parabéns! Você completou o jogo em <span className="text-emerald-600 font-bold">{gameState.moves}</span> jogadas.</p>
+                      <div className="w-full h-[200px] bg-gray-100 mb-6 rounded-lg overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center"><AdBanner className="w-full h-full" slotId="1109009056" format="rectangle" /></div>
+                      <button onClick={() => startNewGame()} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3.5 px-6 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg active:scale-95 flex items-center justify-center gap-2"><RotateCcw className="w-5 h-5" /> Jogar Novamente</button>
                   </div>
-                  <p className="text-gray-600 mb-6 font-medium">Parabéns! Você completou o jogo em <span className="text-emerald-600 font-bold">{gameState.moves}</span> jogadas.</p>
-                  <div className="w-full h-[200px] bg-gray-100 mb-6 rounded-lg overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center"><AdBanner className="w-full h-full" slotId="1109009056" format="rectangle" /></div>
-                  <button onClick={() => startNewGame(true)} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3.5 px-6 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg active:scale-95 flex items-center justify-center gap-2"><RotateCcw className="w-5 h-5" /> Jogar Novamente</button>
-                </div>
               </div>
             )}
           </div>
@@ -1550,5 +1501,5 @@
       const root = createRoot(document.getElementById('root'));
       root.render(<App />);
     </script>
-  </body>
+</body>
 </html>
