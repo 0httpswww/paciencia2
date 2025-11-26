@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Paciência Pro - Solitaire</title>
-    <meta name="description" content="Jogue Paciência (Solitaire) Grátis. Leve, rápido e funciona offline.">
+    <meta name="description" content="Jogue Paciência (Solitaire) Grátis. O melhor jogo online de cartas. Leve, rápido e funciona offline.">
+    <meta name="keywords" content="jogo online, jogo paciencia, jogo paciencia dw, jogo paciencia josiane, solitaire, freecell, cartas">
     <meta name="theme-color" content="#0f3526">
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
@@ -154,7 +155,6 @@
       const getCardColor = (suit) => (suit === Suit.Hearts || suit === Suit.Diamonds ? 'red' : 'black');
 
       // --- SOUND MANAGER ---
-      // Web Audio API Procedural Sound Generation (No external files needed)
       const useSound = (enabled) => {
           const audioCtx = useRef(null);
           
@@ -179,77 +179,57 @@
               gain.connect(ctx.destination);
 
               if (type === 'pickup') {
-                  // High frequency noise burst (fricção)
                   const osc = ctx.createOscillator();
                   osc.type = 'triangle';
                   osc.frequency.setValueAtTime(400, t);
                   osc.frequency.exponentialRampToValueAtTime(800, t + 0.05);
-                  
-                  // Filtered Noise simulation using Oscillator jitter could be complex, 
-                  // so we stick to a simple clean "zip" sound.
                   gain.gain.setValueAtTime(0.05, t);
                   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-                  
                   osc.connect(gain);
                   osc.start(t);
                   osc.stop(t + 0.05);
-
               } else if (type === 'drop') {
-                  // Low frequency thud (impacto)
                   const osc = ctx.createOscillator();
                   osc.type = 'sine';
                   osc.frequency.setValueAtTime(120, t);
                   osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
-                  
                   gain.gain.setValueAtTime(0.15, t);
                   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-                  
                   osc.connect(gain);
                   osc.start(t);
                   osc.stop(t + 0.15);
-
               } else if (type === 'win') {
-                  // Ascending arp
-                  const notes = [523.25, 659.25, 783.99, 1046.50]; // C Major
+                  const notes = [523.25, 659.25, 783.99, 1046.50];
                   notes.forEach((freq, i) => {
                       const osc = ctx.createOscillator();
                       const noteGain = ctx.createGain();
                       osc.type = 'sine';
                       osc.frequency.value = freq;
-                      
                       noteGain.connect(ctx.destination);
                       osc.connect(noteGain);
-                      
                       const st = t + (i * 0.1);
                       noteGain.gain.setValueAtTime(0, st);
                       noteGain.gain.linearRampToValueAtTime(0.1, st + 0.05);
                       noteGain.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
-                      
                       osc.start(st);
                       osc.stop(st + 0.4);
                   });
               } else if (type === 'deal') {
-                  // Rapid shuffling sound (white noise burst)
-                  const bufferSize = ctx.sampleRate * 0.1; // 100ms
+                  const bufferSize = ctx.sampleRate * 0.1;
                   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
                   const data = buffer.getChannelData(0);
                   for (let i = 0; i < bufferSize; i++) {
                       data[i] = Math.random() * 2 - 1;
                   }
-                  
                   const noise = ctx.createBufferSource();
                   noise.buffer = buffer;
-                  
                   const noiseFilter = ctx.createBiquadFilter();
                   noiseFilter.type = 'lowpass';
                   noiseFilter.frequency.value = 800;
-                  
                   noise.connect(noiseFilter);
                   noiseFilter.connect(gain);
-                  
                   gain.gain.setValueAtTime(0.05, t);
                   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-                  
                   noise.start(t);
               }
           }, [enabled]);
