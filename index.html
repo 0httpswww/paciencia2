@@ -947,7 +947,7 @@
                 </div>
 
                 {/* Main Game Area */}
-                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-40 overflow-y-auto pb-safe">
+                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-48 overflow-y-auto pb-safe">
                     <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
                         {gameMode === GameMode.FreeCell ? (
                             gameState.freeCells.map((c, i) => (
@@ -1024,7 +1024,7 @@
                     </button>
                 </DraggableMenu>
 
-                <div className="fixed bottom-4 right-4 z-40 hidden md:flex flex-col gap-2 pointer-events-none">
+                <div className="fixed bottom-28 right-4 z-40 hidden md:flex flex-col gap-2 pointer-events-none">
                     <div className="bg-black/80 backdrop-blur-md text-white/90 text-xs font-mono py-1.5 px-3 rounded-full shadow-lg border border-white/10 flex items-center gap-2 pointer-events-auto">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
                         <span className="font-bold text-white">{onlineCount}</span> online
@@ -1038,6 +1038,13 @@
                 {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} hasNativePrompt={!!deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
                 {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={()=>setShowTasksModal(false)} onClaim={(id)=>{setDailyTasks(t=>t.map(i=>i.id===id?{...i,claimed:true}:i))}} />}
                 {showStatsModal && <StatsModal onClose={()=>setShowStatsModal(false)} stats={stats} />}
+
+                {/* Footer Ad Banner */}
+                <div className="fixed bottom-0 left-0 w-full z-[100] bg-[#0f172a]/95 backdrop-blur-md border-t border-white/10 flex justify-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+                    <div className="w-full max-w-[728px] h-[60px] sm:h-[90px] flex items-center justify-center py-1">
+                        <AdBanner className="w-full h-full" slotId="1109009056" format="horizontal" />
+                    </div>
+                </div>
             </div>
         );
       }
