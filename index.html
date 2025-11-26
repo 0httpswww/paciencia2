@@ -61,6 +61,52 @@
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* Install Button Animations */
+        @keyframes gradient-xy {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-xy {
+            background-size: 200% 200%;
+            animation: gradient-xy 3s ease infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-150%) skewX(-15deg); }
+            100% { transform: translateX(150%) skewX(-15deg); }
+        }
+        @keyframes neon-pulse {
+            0%, 100% { box-shadow: 0 0 10px #9333ea, 0 0 20px #9333ea; border-color: #9333ea; }
+            50% { box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e; border-color: #22c55e; }
+        }
+        .animate-neon-pulse {
+            animation: neon-pulse 2s infinite;
+        }
+        
+        /* 3D Victory Text */
+        .victory-text {
+            font-family: 'Crimson Pro', serif;
+            background: linear-gradient(to bottom, #fde047, #ca8a04);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+            filter: drop-shadow(0 0 20px rgba(234, 179, 8, 0.6));
+            animation: zoom-in-bounce 1s ease-out forwards;
+        }
+        @keyframes zoom-in-bounce {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        /* Win Wave */
+        @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+        .animate-win-wave { animation: win-wave 1s ease-in-out infinite; }
+        
+        /* Hint Animations */
+        .hint-source { animation: pulse-yellow 1.5s infinite; filter: brightness(1.2); }
+        .hint-target { animation: pulse-green 1.5s infinite; box-shadow: 0 0 15px #4ade80; z-index: 50; }
+        @keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } }
+        @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } }
     </style>
 <script type="importmap">
 {
@@ -80,19 +126,14 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, GripVertical } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share } from 'lucide-react';
 
-      // --- CONSTANTS & ENUMS ---
+      // --- UTILS & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
       const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike' };
-      const LEVELS = [
-        { xp: 0, title: "Novato" }, { xp: 100, title: "Aprendiz" }, { xp: 300, title: "Amador" },
-        { xp: 600, title: "Entusiasta" }, { xp: 1000, title: "Profissional" }, { xp: 1500, title: "Mestre" },
-        { xp: 2200, title: "Grão-Mestre" }, { xp: 3000, title: "Lenda" }
-      ];
-
-      // --- UTILS ---
+      
+      // Stop Ad Propagation
       const stopAdEvent = (e) => {
           if (!e) return;
           e.stopPropagation();
@@ -123,7 +164,7 @@
         return newDeck;
       };
 
-      // --- RULE VALIDATION ---
+      // Rules
       const isMoveValid = (card, targetCard, targetType, mode, targetSuit) => {
         if (targetType === 'freeCell') return targetCard === null && mode === GameMode.FreeCell;
         
@@ -134,9 +175,7 @@
 
         if (targetType === 'tableau') {
           if (!targetCard) {
-            // Klondike: Only Kings in empty columns
             if (mode === GameMode.Klondike) return card.rank === Rank.King;
-            // FreeCell: Any card in empty columns
             return true;
           }
           const cardColor = getCardColor(card.suit);
@@ -181,6 +220,10 @@
         return <span className="font-serif tracking-tighter font-black drop-shadow-[0_1px_0_rgba(0,0,0,0.1)]">{label}</span>;
       };
 
+      // SVG Textures
+      const PARCHMENT_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
+      const BACK_PATTERN = `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23991b1b' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M10 0L20 10L10 20L0 10z'/%3E%3C/g%3E%3C/svg%3E")`;
+
       const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
         const isFaceCard = card.rank >= 11;
         const isAce = card.rank === 1;
@@ -189,7 +232,7 @@
         
         return (
           <div
-            className={`relative w-full aspect-[2.5/3.5] select-none card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
+            className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
             onPointerDown={(e) => { 
                 if (onPointerDown) {
                     stopAdEvent(e);
@@ -199,24 +242,35 @@
             onClick={stopAdEvent}
             style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex }}
           >
-            <div className={`w-full h-full relative transition-transform duration-150 ease-[cubic-bezier(0.25,0.8,0.25,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
-              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center border border-black/10 ${isSelected ? 'ring-2 ring-yellow-400 -translate-y-1 brightness-105' : 'shadow-sm'}`}>
+            <div className={`w-full h-full relative transition-transform duration-200 ease-[cubic-bezier(0.25,0.8,0.25,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
+              
+              {/* FRONT */}
+              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-300 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] -translate-y-2 brightness-105' : 'shadow-[0_2px_4px_rgba(0,0,0,0.15)]'}`}>
+                 <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50" style={{ backgroundImage: PARCHMENT_TEXTURE }}></div>
+                 <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-transparent pointer-events-none"></div>
+
                  <div className={`absolute top-[4%] left-[6%] flex flex-col items-center leading-none ${textColor} w-[18%]`}>
                     <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif"><RankLabel rank={card.rank} /></span>
                     <SuitIcon suit={card.suit} className="w-[min(14px,3.5vw)] h-[min(14px,3.5vw)] sm:w-4 sm:h-4" />
                  </div>
+                 
                  <div className={`absolute inset-[15%] flex items-center justify-center ${textColor}`}>
                      {isFaceCard || isAce ? <SuitIcon suit={card.suit} className="w-[60%] h-[60%] drop-shadow-md" /> : 
-                     <div className="text-4xl font-black opacity-20"><SuitIcon suit={card.suit} /></div>}
+                     <div className="text-4xl font-black opacity-10"><SuitIcon suit={card.suit} /></div>}
                  </div>
+
                  <div className={`absolute bottom-[4%] right-[6%] flex flex-col items-center leading-none rotate-180 ${textColor} w-[18%]`}>
                     <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif"><RankLabel rank={card.rank} /></span>
                     <SuitIcon suit={card.suit} className="w-[min(14px,3.5vw)] h-[min(14px,3.5vw)] sm:w-4 sm:h-4" />
                  </div>
               </div>
-              <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#7f1d1d] rounded-[6%] border-4 border-white shadow-sm flex items-center justify-center">
-                 <div className="w-[90%] h-[90%] border border-yellow-500/30 rounded-[4%] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjN2YxZDFkIi8+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIHN0cm9rZT0iIzk5MWIxYiIgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==')]"></div>
-                 <Crown className="absolute w-12 h-12 text-yellow-500/80 drop-shadow-lg" />
+
+              {/* BACK */}
+              <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#7f1d1d] rounded-[6%] border-[3px] border-[#fcfaf5] shadow-[inset_0_0_4px_rgba(0,0,0,0.3)] flex items-center justify-center">
+                 <div className="absolute inset-1.5 border border-[#fbbf24]/20 rounded-[4.5%]" style={{ backgroundImage: BACK_PATTERN }}></div>
+                 <div className="relative w-[35%] h-[25%] bg-[#450a0a] rounded-[50%] flex items-center justify-center shadow-inner border-2 border-[#fbbf24]/40 z-10">
+                     <Crown className="w-[60%] h-[60%] text-[#fbbf24] drop-shadow-md" strokeWidth={1.5} />
+                 </div>
               </div>
             </div>
           </div>
@@ -229,12 +283,8 @@
          const offset = useRef({ x: 0, y: 0 });
 
          const handlePointerDown = (e) => {
-             e.stopPropagation();
-             e.preventDefault();
-             if(e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
-             
+             stopAdEvent(e);
              if (e.target.closest('button')) return;
-
              setIsDragging(true);
              offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
              e.target.setPointerCapture(e.pointerId);
@@ -242,8 +292,7 @@
 
          const handlePointerMove = (e) => {
              if (!isDragging) return;
-             e.stopPropagation();
-             e.preventDefault();
+             stopAdEvent(e);
              const newX = Math.min(window.innerWidth - 60, Math.max(60, e.clientX - offset.current.x));
              const newY = Math.min(window.innerHeight - 40, Math.max(40, e.clientY - offset.current.y));
              setPos({ x: newX, y: newY });
@@ -274,7 +323,7 @@
       };
 
       const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => (
-        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={stopAdEvent}>
             <div className="bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-green-500/20 pointer-events-none"></div>
                 <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white"><X /></button>
@@ -430,11 +479,9 @@
                     const col = newState.tableau[source.pileIndex];
                     cards = col.slice(source.cardIndex);
                     
-                    // SUPER MOVE CHECK (FreeCell)
                     if (prev.mode === GameMode.FreeCell && cards.length > 1) {
                          const emptyFC = newState.freeCells.filter(c => c === null).length;
                          let emptyTab = newState.tableau.filter(c => c.length === 0).length;
-                         // If targeting an empty tableau, one slot is the destination, so effectively 1 less helper slot
                          if (targetType === 'tableau' && newState.tableau[targetIndex].length === 0) emptyTab = Math.max(0, emptyTab - 1);
                          if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev;
                     }
@@ -466,11 +513,10 @@
             }
             if (!card || (!card.isFaceUp && pileType === 'tableau')) return;
 
-            // Auto Move Logic (Smart Tap)
+            // Auto Move
             if (pileType !== 'foundation') {
                 const fPile = gameState.foundation[card.suit];
                 const fTarget = fPile.length ? fPile[fPile.length-1] : null;
-                // Try Foundation
                 if (cardIndex === (pileType==='tableau' ? gameState.tableau[pileIndex].length-1 : 0)) {
                     if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)) {
                         handleCardMove({card, pileType, pileIndex, cardIndex}, 'foundation', null, card.suit);
@@ -481,18 +527,15 @@
 
             if (selected && selected.card.id === card.id) { setSelected(null); return; }
             
-            // Selection Logic
             if(selected) {
-                // Try to move selected TO this card
                 if (pileType === 'tableau') {
                      if (isMoveValid(selected.card, card, 'tableau', gameState.mode)) {
                          handleCardMove(selected, 'tableau', pileIndex);
                          return;
                      }
                 }
-                setSelected(null); // Deselect if invalid move
+                setSelected(null);
             } else {
-                // Select this card/stack
                 if (pileType === 'tableau') {
                     if (isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) setSelected({card, pileType, pileIndex, cardIndex});
                 } else if (pileType === 'freeCell' || pileType === 'waste') {
@@ -506,15 +549,13 @@
              if(!card.isFaceUp) return;
              if(pileType === 'tableau' && !isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) return;
              
-             // --- FIX FOR GIANT CARDS ---
+             // CAPTURE EXACT WIDTH TO PREVENT GIANT CARD BUG
              const rect = domEl.getBoundingClientRect();
-             const cardWidth = rect.width; // CAPTURE LOCKED WIDTH
-             // ---------------------------
+             const cardWidth = rect.width;
 
              let elements = [domEl];
              let stackOffset = 0;
              
-             // Capture stack elements for visual drag
              if(pileType === 'tableau') {
                  const siblings = Array.from(domEl.parentElement.children);
                  const idx = siblings.indexOf(domEl);
@@ -522,14 +563,18 @@
                  stackOffset = gameMode === GameMode.Klondike ? 15 : 28;
              }
              
-             elements.forEach(el => el.style.transition = 'none');
+             // Set transition none immediately to follow finger
+             elements.forEach(el => {
+                 el.style.transition = 'none';
+                 el.style.zIndex = '9999'; // CRITICAL FIX: Ensure drag is always on top
+             });
              
              activeDragRef.current = {
                  card, pileType, pileIndex, cardIndex,
                  startX: e.clientX, startY: e.clientY,
                  offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
                  elements, stackOffset,
-                 width: cardWidth // Pass locked width to move handler
+                 width: cardWidth
              };
              
              window.addEventListener('pointermove', handlePointerMove);
@@ -542,14 +587,17 @@
             dragRaf.current = requestAnimationFrame(() => {
                 if(!activeDragRef.current) return;
                 const { elements, offsetX, offsetY, stackOffset, width } = activeDragRef.current;
+                
                 elements.forEach((el, i) => {
+                    // Force Fixed Position to break out of stacking context
                     el.style.position = 'fixed';
-                    el.style.zIndex = 9999 + i;
-                    el.style.pointerEvents = 'none';
-                    el.style.width = width + 'px'; // APPLY LOCKED WIDTH TO PREVENT RESIZING
-                    el.style.left = '0px'; el.style.top = '0px';
-                    el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + (i * stackOffset)}px, 0) scale(1.02)`;
-                    el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+                    el.style.width = width + 'px'; // Lock Width
+                    el.style.left = '0px'; 
+                    el.style.top = '0px';
+                    el.style.zIndex = (9999 + i).toString(); // Super High Z-Index
+                    el.style.pointerEvents = 'none'; // Allow clicking through to drop zone
+                    el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + (i * stackOffset)}px, 0) scale(1.05)`;
+                    el.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)'; // Lift effect
                 });
             });
         };
@@ -560,9 +608,10 @@
             if(!activeDragRef.current) return;
             
             const { card, pileType, pileIndex, cardIndex, elements, startX, startY } = activeDragRef.current;
-            elements.forEach(el => { el.style = ''; }); // Reset styles
+            elements.forEach(el => { el.style = ''; }); // Reset all inline styles
             activeDragRef.current = null;
 
+            // Tap Detection
             if (Math.hypot(e.clientX - startX, e.clientY - startY) < 10) {
                 handleCardClick(card, pileType, pileIndex, cardIndex);
             } else {
@@ -611,7 +660,6 @@
         };
         
         const handleHint = () => {
-              // Priority 1: Move to Foundation
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i];
                   if(col.length){
@@ -626,7 +674,6 @@
         };
 
         const handleAuto = () => {
-             // Simple Auto Move (Magic Wand)
              let moved = false;
              const ns = JSON.parse(JSON.stringify(gameState));
              for(let i=0; i<ns.tableau.length; i++) {
