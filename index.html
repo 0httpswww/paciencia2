@@ -132,7 +132,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal } from 'lucide-react';
 
       // --- UTILS & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
@@ -281,7 +281,6 @@
       });
 
       const DraggableMenu = ({ children }) => {
-         // Start a bit higher to avoid ad banner
          const [pos, setPos] = useState({ x: 0, y: 0 }); 
          const initialized = useRef(false);
          const [isDragging, setIsDragging] = useState(false);
@@ -289,7 +288,7 @@
 
          useEffect(() => {
              if(!initialized.current) {
-                 setPos({ x: window.innerWidth / 2, y: window.innerHeight - 180 });
+                 setPos({ x: window.innerWidth / 2, y: window.innerHeight - 100 });
                  initialized.current = true;
              }
          }, []);
@@ -305,7 +304,6 @@
          const handlePointerMove = (e) => {
              if (!isDragging) return;
              stopAdEvent(e);
-             // Clamp to screen
              const newX = Math.min(window.innerWidth - 60, Math.max(60, e.clientX - offset.current.x));
              const newY = Math.min(window.innerHeight - 60, Math.max(60, e.clientY - offset.current.y));
              setPos({ x: newX, y: newY });
@@ -328,11 +326,10 @@
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
              >
-                <div className="w-16 h-1.5 bg-white/20 rounded-full mb-1 shadow-sm"></div>
-                <div className="bg-[#0a1f16]/90 backdrop-blur-xl p-2 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-4 pointer-events-auto select-none">
+                <div className="bg-[#0a1f16]/95 backdrop-blur-xl p-2.5 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3 pointer-events-auto select-none ring-1 ring-white/10">
+                    <div className="text-white/20 mr-1"><GripHorizontal size={16} /></div>
                     {children}
                 </div>
-                <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Menu</div>
              </div>
          );
       };
@@ -401,6 +398,10 @@
 
         const activeDragRef = useRef(null);
         const dragRaf = useRef(null);
+        
+        // Ensure we always have the latest state for handlers that can't be hooks
+        const gameStateRef = useRef(gameState);
+        useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
         const startNewGame = useCallback(() => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
@@ -470,12 +471,20 @@
             }
         }, [showInterstitial, interstitialTimer]);
 
-        const saveHistory = () => setHistory(prev => [...prev.slice(-49), JSON.parse(JSON.stringify(gameState))]);
+        // Fix Save History - use current ref state
+        const saveHistory = () => {
+            const current = gameStateRef.current;
+            setHistory(prev => [...prev.slice(-49), JSON.parse(JSON.stringify(current))]);
+        };
         
         const handleUndo = () => {
+            stopAdEvent(window.event);
             if(!history.length) return;
-            setGameState(history[history.length-1]);
+            const previous = history[history.length-1];
+            setGameState(previous);
             setHistory(h => h.slice(0, -1));
+            // Sync ref immediately for subsequent moves
+            gameStateRef.current = previous; 
         };
 
         const handleCardMove = (source, targetType, targetIndex, suit) => {
@@ -641,6 +650,7 @@
 
         const handleStock = () => {
              if(gameMode !== GameMode.Klondike) return;
+             saveHistory();
              setGameState(prev => {
                  const ns = {...prev};
                  if(ns.stock.length === 0) {
@@ -658,6 +668,7 @@
         };
         
         const handleHint = () => {
+              stopAdEvent(window.event);
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i];
                   if(col.length){
@@ -672,6 +683,7 @@
         };
 
         const handleAuto = () => {
+             stopAdEvent(window.event);
              let moved = false;
              const ns = JSON.parse(JSON.stringify(gameState));
              for(let i=0; i<ns.tableau.length; i++) {
@@ -701,17 +713,19 @@
                     </div>
                     
                     {/* Scrollable controls area */}
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pl-2">
-                        {showInstallButton && <button onClick={handleInstallClick} className="group relative px-4 py-1.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse flex items-center gap-2 border-2 border-transparent shrink-0">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-800 via-green-600 to-purple-800 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                            <Smartphone className="w-4 h-4 text-white z-10" />
-                            <span className="text-xs font-black uppercase text-white z-10 tracking-wider">Instalar</span>
-                        </button>}
-                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0">
-                            <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
-                            <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
+                    <div className="flex items-center gap-3 flex-1 justify-end">
+                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar">
+                            <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-3 py-1 text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
+                            <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-3 py-1 text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
                         </div>
-                        <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2 shrink-0">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
+                        
+                        <div className="flex items-center gap-2 shrink-0 border-l border-white/10 pl-2">
+                             {showInstallButton && <button onClick={handleInstallClick} className="group relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse flex items-center justify-center border-2 border-transparent shrink-0">
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-800 via-green-600 to-purple-800 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                                <Smartphone className="w-4 h-4 text-white z-10" />
+                            </button>}
+                            <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2 shrink-0 bg-white/5 rounded-full hover:bg-white/10 transition-colors">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
+                        </div>
                     </div>
                 </header>
                 
@@ -772,7 +786,7 @@
                 </main>
 
                 <DraggableMenu>
-                    <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-2 rounded-lg w-14 ${!history.length?'opacity-30':'hover:bg-white/10'} text-white transition`}>
+                    <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-2 rounded-lg w-14 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
                         <Undo2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Undo</span>
                     </button>
                     <div className="w-px h-8 bg-white/10"></div>
