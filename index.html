@@ -39,11 +39,13 @@
     <style>
         body { 
             overscroll-behavior: none; 
-            touch-action: pan-x pan-y; 
+            touch-action: none; 
             -webkit-tap-highlight-color: transparent;
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Prevent pull-to-refresh on mobile */
+            overflow: hidden; 
             background-color: #0f3526;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .card-draggable { 
             touch-action: none; 
@@ -60,78 +62,53 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     </style>
-
-    <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
   }
 }
 </script>
 </head>
 <body>
-    <!-- ROOT ELEMENT IS ESSENTIAL -->
     <div id="root"></div>
 
-    <!-- MAIN APP SCRIPT (Consolidated) -->
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Star, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Circle, Download, Share, PlusSquare, Check, XCircle, Banknote, Coins, Menu } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, GripVertical } from 'lucide-react';
 
-      // --- TYPES ---
-      const Suit = {
-        Hearts: 'hearts',
-        Diamonds: 'diamonds',
-        Clubs: 'clubs',
-        Spades: 'spades',
-      };
+      // --- CONSTANTS & ENUMS ---
+      const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
+      const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
+      const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike' };
+      const LEVELS = [
+        { xp: 0, title: "Novato" }, { xp: 100, title: "Aprendiz" }, { xp: 300, title: "Amador" },
+        { xp: 600, title: "Entusiasta" }, { xp: 1000, title: "Profissional" }, { xp: 1500, title: "Mestre" },
+        { xp: 2200, title: "Grão-Mestre" }, { xp: 3000, title: "Lenda" }
+      ];
 
-      const Rank = {
-        Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6,
-        Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13,
-      };
-
-      const GameMode = {
-        FreeCell: 'freeCell',
-        Klondike: 'klondike',
-      };
-
-      // --- UTILS: HELPER TO STOP ADS ---
+      // --- UTILS ---
       const stopAdEvent = (e) => {
           if (!e) return;
           e.stopPropagation();
-          // We do NOT preventDefault on the main container to allow scrolling/interactions,
-          // but we DO stop propagation to prevent the 'document' level ad scripts from firing.
-          if (e.nativeEvent) {
-              e.nativeEvent.stopImmediatePropagation();
-          }
+          if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
       };
 
-      // --- UTILS: DECK ---
+      const getCardColor = (suit) => (suit === Suit.Hearts || suit === Suit.Diamonds ? 'red' : 'black');
+
       const createDeck = (faceUp = true) => {
         const deck = [];
         const suits = [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades];
-        const ranks = [
-          Rank.Ace, Rank.Two, Rank.Three, Rank.Four, Rank.Five, Rank.Six,
-          Rank.Seven, Rank.Eight, Rank.Nine, Rank.Ten, Rank.Jack, Rank.Queen, Rank.King
-        ];
-
+        const ranks = Object.values(Rank);
         suits.forEach((suit) => {
           ranks.forEach((rank) => {
-            deck.push({
-              id: `${suit}-${rank}`,
-              suit,
-              rank,
-              isFaceUp: faceUp,
-            });
+            deck.push({ id: `${suit}-${rank}`, suit, rank, isFaceUp: faceUp });
           });
         });
-
         return deck;
       };
 
@@ -144,34 +121,26 @@
         return newDeck;
       };
 
-      const getCardColor = (suit) => {
-        return suit === Suit.Hearts || suit === Suit.Diamonds ? 'red' : 'black';
-      };
-
+      // --- RULE VALIDATION ---
       const isMoveValid = (card, targetCard, targetType, mode, targetSuit) => {
-        if (targetType === 'freeCell') {
-          return targetCard === null && mode === GameMode.FreeCell;
-        }
-
+        if (targetType === 'freeCell') return targetCard === null && mode === GameMode.FreeCell;
+        
         if (targetType === 'foundation') {
-          if (!targetCard) {
-            return card.rank === Rank.Ace && card.suit === targetSuit;
-          }
+          if (!targetCard) return card.rank === Rank.Ace && card.suit === targetSuit;
           return card.suit === targetCard.suit && card.rank === targetCard.rank + 1;
         }
 
         if (targetType === 'tableau') {
           if (!targetCard) {
-            if (mode === GameMode.Klondike) {
-              return card.rank === Rank.King;
-            }
+            // Klondike: Only Kings in empty columns
+            if (mode === GameMode.Klondike) return card.rank === Rank.King;
+            // FreeCell: Any card in empty columns
             return true;
           }
           const cardColor = getCardColor(card.suit);
           const targetColor = getCardColor(targetCard.suit);
           return cardColor !== targetColor && card.rank === targetCard.rank - 1;
         }
-
         return false;
       };
 
@@ -181,9 +150,7 @@
           const current = cards[i];
           const next = cards[i + 1];
           if (!current.isFaceUp || !next.isFaceUp) return false;
-          if (getCardColor(current.suit) === getCardColor(next.suit) || current.rank !== next.rank + 1) {
-            return false;
-          }
+          if (getCardColor(current.suit) === getCardColor(next.suit) || current.rank !== next.rank + 1) return false;
         }
         return true;
       };
@@ -192,128 +159,7 @@
         return (1 + emptyFreeCells) * Math.pow(2, emptyTableauCols);
       };
 
-      // --- UTILS: PROGRESSION ---
-      const LEVELS = [
-        { xp: 0, title: "Novato" },
-        { xp: 100, title: "Aprendiz" },
-        { xp: 300, title: "Amador" },
-        { xp: 600, title: "Entusiasta" },
-        { xp: 1000, title: "Profissional" },
-        { xp: 1500, title: "Mestre" },
-        { xp: 2200, title: "Grão-Mestre" },
-        { xp: 3000, title: "Lenda do Paciência" },
-      ];
-
-      const XP_KEY = 'solitaire_pro_xp';
-
-      const getStoredXP = () => {
-        try {
-          const stored = localStorage.getItem(XP_KEY);
-          return stored ? parseInt(stored, 10) : 0;
-        } catch (e) {
-          return 0;
-        }
-      };
-
-      const addXP = (amount) => {
-        try {
-          const current = getStoredXP();
-          const newXP = current + amount;
-          localStorage.setItem(XP_KEY, newXP.toString());
-          return newXP;
-        } catch (e) {
-          return 0;
-        }
-      };
-
-      const getLevelInfo = (xp) => {
-        let currentLevel = 1;
-        let currentTitle = LEVELS[0].title;
-        let nextLevelXP = LEVELS[1].xp;
-        let prevLevelXP = LEVELS[0].xp;
-
-        for (let i = 0; i < LEVELS.length; i++) {
-          if (xp >= LEVELS[i].xp) {
-            currentLevel = i + 1;
-            currentTitle = LEVELS[i].title;
-            prevLevelXP = LEVELS[i].xp;
-            nextLevelXP = LEVELS[i + 1]?.xp || xp * 2;
-          } else {
-            break;
-          }
-        }
-
-        const progress = Math.min(100, Math.max(0, ((xp - prevLevelXP) / (nextLevelXP - prevLevelXP)) * 100));
-
-        return {
-          level: currentLevel,
-          title: currentTitle,
-          nextLevelXP,
-          progress,
-          currentXP: xp
-        };
-      };
-
-      // --- UTILS: DAILY TASKS ---
-      const TASKS_KEY = 'solitaire_pro_daily_tasks';
-      const LAST_LOGIN_KEY = 'solitaire_pro_last_login';
-
-      const TASK_TEMPLATES = [
-        { type: 'win_game', description: 'Vença partidas', targets: [1, 2, 3], xp: [100, 250, 500] },
-        { type: 'play_moves', description: 'Faça movimentos', targets: [50, 100, 200], xp: [50, 100, 200] },
-        { type: 'play_time', description: 'Jogue por minutos', targets: [5, 15, 30], xp: [50, 150, 300] },
-        { type: 'foundation_drops', description: 'Mova cartas para a Fundação', targets: [10, 25, 52], xp: [75, 150, 400] }
-      ];
-
-      const generateDailyTasks = () => {
-        const tasks = [];
-        const shuffledTemplates = [...TASK_TEMPLATES].sort(() => 0.5 - Math.random());
-        const selectedTemplates = shuffledTemplates.slice(0, 3);
-
-        selectedTemplates.forEach((template, index) => {
-          const tier = Math.floor(Math.random() * 3);
-          tasks.push({
-            id: `task-${Date.now()}-${index}`,
-            type: template.type,
-            description: template.description,
-            target: template.targets[tier],
-            current: 0,
-            xpReward: template.xp[tier],
-            completed: false,
-            claimed: false
-          });
-        });
-        return tasks;
-      };
-
-      const getDailyTasks = () => {
-        const today = new Date().toLocaleDateString();
-        const lastLogin = localStorage.getItem(LAST_LOGIN_KEY);
-        const storedTasksStr = localStorage.getItem(TASKS_KEY);
-
-        if (lastLogin !== today) {
-          const newTasks = generateDailyTasks();
-          localStorage.setItem(TASKS_KEY, JSON.stringify(newTasks));
-          localStorage.setItem(LAST_LOGIN_KEY, today);
-          return newTasks;
-        }
-
-        if (storedTasksStr) {
-          return JSON.parse(storedTasksStr);
-        }
-
-        const newTasks = generateDailyTasks();
-        localStorage.setItem(TASKS_KEY, JSON.stringify(newTasks));
-        localStorage.setItem(LAST_LOGIN_KEY, today);
-        return newTasks;
-      };
-
-      const saveDailyTasks = (tasks) => {
-        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-      };
-
       // --- COMPONENTS ---
-
       const SuitIcon = ({ suit, className, fill = true }) => {
         const props = { className, strokeWidth: fill ? 0 : 2 };
         switch (suit) {
@@ -326,1179 +172,556 @@
 
       const RankLabel = ({ rank }) => {
         let label = rank.toString();
-        switch (rank) {
-          case Rank.Ace: label = 'A'; break;
-          case Rank.Jack: label = 'J'; break;
-          case Rank.Queen: label = 'Q'; break;
-          case Rank.King: label = 'K'; break;
-        }
-        return <span className="font-serif tracking-tighter font-black">{label}</span>;
+        if (rank === 1) label = 'A';
+        else if (rank === 11) label = 'J';
+        else if (rank === 12) label = 'Q';
+        else if (rank === 13) label = 'K';
+        return <span className="font-serif tracking-tighter font-black drop-shadow-[0_1px_0_rgba(0,0,0,0.1)]">{label}</span>;
       };
 
-      const PARCHMENT_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
-      const BACK_PATTERN = `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23991b1b' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M10 0L20 10L10 20L0 10z'/%3E%3C/g%3E%3C/svg%3E")`;
-
-      const PipLayer = ({ rank, suit }) => {
-        const pips = [];
-        const L = '20%', C = '50%', R = '80%';
-        const T = '15%', M = '50%', B = '85%'; 
-
-        if(rank===2){pips.push({t:T,l:C},{t:B,l:C,i:1})}
-        else if(rank===3){pips.push({t:T,l:C},{t:M,l:C},{t:B,l:C,i:1})}
-        else if(rank===4){pips.push({t:T,l:L},{t:T,l:R},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===5){pips.push({t:T,l:L},{t:T,l:R},{t:M,l:C},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===6){pips.push({t:T,l:L},{t:T,l:R},{t:M,l:L},{t:M,l:R},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===7){pips.push({t:T,l:L},{t:T,l:R},{t:M,l:L},{t:M,l:R},{t:'32.5%',l:C},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===8){pips.push({t:T,l:L},{t:T,l:R},{t:M,l:L},{t:M,l:R},{t:'32.5%',l:C},{t:'67.5%',l:C,i:1},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===9){pips.push({t:T,l:L},{t:T,l:R},{t:'37.5%',l:L},{t:'37.5%',l:R},{t:M,l:C},{t:'62.5%',l:L,i:1},{t:'62.5%',l:R,i:1},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-        else if(rank===10){pips.push({t:T,l:L},{t:T,l:R},{t:'37.5%',l:L},{t:'37.5%',l:R},{t:'26.25%',l:C},{t:'73.75%',l:C,i:1},{t:'62.5%',l:L,i:1},{t:'62.5%',l:R,i:1},{t:B,l:L,i:1},{t:B,l:R,i:1})}
-
-        return (
-          <div className="absolute inset-x-[15%] inset-y-[12%] pointer-events-none">
-            {pips.map((pip, i) => (
-              <div 
-                key={i} 
-                className={`absolute w-[20%] h-[20%] flex items-center justify-center ${pip.i ? 'rotate-180' : ''}`}
-                style={{ top: pip.t, left: pip.l, transform: `translate(-50%, -50%) ${pip.i ? 'rotate(180deg)' : ''}` }}
-              >
-                <SuitIcon suit={suit} className="w-full h-full" />
-              </div>
-            ))}
-          </div>
-        );
-      };
-
-      // OPTIMIZED CARD COMPONENT
       const SolitaireCard = memo(({ card, onPointerDown, isSelected, className = '', style, draggable }) => {
-        const isFaceCard = card.rank === Rank.Jack || card.rank === Rank.Queen || card.rank === Rank.King;
-        const isNumberCard = card.rank >= 2 && card.rank <= 10;
-        const isAce = card.rank === Rank.Ace;
+        const isFaceCard = card.rank >= 11;
+        const isAce = card.rank === 1;
         const color = getCardColor(card.suit);
         const textColor = color === 'red' ? 'text-[#d40000]' : 'text-[#1a1a1a]';
-        const cardRef = useRef(null);
-
-        const handlePointerDown = (e) => {
-            if (onPointerDown) {
-                // Aggressively stop event propagation to prevent background ad clicks
-                e.stopPropagation();
-                if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
-                onPointerDown(e, cardRef.current); 
-            }
-        };
-
+        
         return (
           <div
-            ref={cardRef}
-            className={`relative w-full aspect-[2.5/3.5] select-none [perspective:1000px] card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
-            onPointerDown={handlePointerDown}
-            onMouseDown={(e) => { e.stopPropagation(); if(e.nativeEvent) e.nativeEvent.stopImmediatePropagation(); }}
+            className={`relative w-full aspect-[2.5/3.5] select-none card-draggable ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
+            onPointerDown={(e) => { 
+                if (onPointerDown) {
+                    e.stopPropagation();
+                    if(e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
+                    onPointerDown(e, e.currentTarget); 
+                }
+            }}
             onClick={(e) => { e.stopPropagation(); if(e.nativeEvent) e.nativeEvent.stopImmediatePropagation(); }}
-            style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex, touchAction: 'none' }}
+            style={{ ...style, zIndex: isSelected ? 100 : style?.zIndex }}
           >
-            {/* Native-like "Snappy" transition curve (150ms) */}
             <div className={`w-full h-full relative transition-transform duration-150 ease-[cubic-bezier(0.25,0.8,0.25,1)] [transform-style:preserve-3d] will-change-transform ${card.isFaceUp ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'}`}>
-              {/* FRONT */}
-              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-150 ${isSelected ? 'ring-[3px] ring-yellow-400 ring-offset-2 ring-offset-[#0f3526] shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`}>
-                <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50" style={{ backgroundImage: PARCHMENT_TEXTURE }}></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-transparent pointer-events-none"></div>
-                <div className={`absolute top-[3%] left-[4%] flex flex-col items-center leading-none ${textColor} w-[18%]`}>
-                    <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif mb-[2%]"><RankLabel rank={card.rank} /></span>
+              <div className={`absolute inset-0 [backface-visibility:hidden] bg-[#fcfaf5] rounded-[6%] overflow-hidden flex items-center justify-center border border-black/10 ${isSelected ? 'ring-2 ring-yellow-400 -translate-y-1 brightness-105' : 'shadow-sm'}`}>
+                 <div className={`absolute top-[4%] left-[6%] flex flex-col items-center leading-none ${textColor} w-[18%]`}>
+                    <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif"><RankLabel rank={card.rank} /></span>
                     <SuitIcon suit={card.suit} className="w-[min(14px,3.5vw)] h-[min(14px,3.5vw)] sm:w-4 sm:h-4" />
-                </div>
-                <div className={`absolute inset-[13%] flex items-center justify-center pointer-events-none ${textColor}`}>
-                    {isFaceCard && (
-                        <div className="w-full h-full border-[1.5px] border-current/20 rounded-sm flex flex-col items-center justify-center relative overflow-hidden bg-current/5 shadow-inner">
-                            <SuitIcon suit={card.suit} className="w-[55%] h-[55%] drop-shadow-md" />
-                            <div className="mt-1 font-serif text-[9px] sm:text-[10px] font-black opacity-70 uppercase tracking-[0.2em] border-t border-current/30 pt-0.5">
-                                {card.rank === Rank.King ? 'King' : card.rank === Rank.Queen ? 'Queen' : 'Jack'}
-                            </div>
-                        </div>
-                    )}
-                    {isAce && <SuitIcon suit={card.suit} className="w-[60%] h-[60%] drop-shadow-lg" />}
-                    {isNumberCard && <PipLayer rank={card.rank} suit={card.suit} />}
-                </div>
-                <div className={`absolute bottom-[3%] right-[4%] flex flex-col items-center leading-none rotate-180 ${textColor} w-[18%]`}>
-                    <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif mb-[2%]"><RankLabel rank={card.rank} /></span>
+                 </div>
+                 <div className={`absolute inset-[15%] flex items-center justify-center ${textColor}`}>
+                     {isFaceCard || isAce ? <SuitIcon suit={card.suit} className="w-[60%] h-[60%] drop-shadow-md" /> : 
+                     <div className="text-4xl font-black opacity-20"><SuitIcon suit={card.suit} /></div>}
+                 </div>
+                 <div className={`absolute bottom-[4%] right-[6%] flex flex-col items-center leading-none rotate-180 ${textColor} w-[18%]`}>
+                    <span className="text-[min(18px,4.5vw)] sm:text-2xl font-bold font-serif"><RankLabel rank={card.rank} /></span>
                     <SuitIcon suit={card.suit} className="w-[min(14px,3.5vw)] h-[min(14px,3.5vw)] sm:w-4 sm:h-4" />
-                </div>
-                <div className="absolute inset-[1px] border border-black/5 rounded-[5.5%] pointer-events-none"></div>
+                 </div>
               </div>
-
-              {/* BACK */}
-              <div className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[6%] overflow-hidden flex items-center justify-center transition-all duration-150 ${isSelected ? 'shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] -translate-y-2' : 'shadow-[0_2px_4px_rgba(0,0,0,0.2)]'}`} style={{ backgroundColor: '#7f1d1d' }}>
-                <div className="absolute inset-1.5 border border-[#fbbf24]/20 rounded-[4.5%]" style={{ backgroundImage: BACK_PATTERN, backgroundColor: '#7f1d1d' }}></div>
-                <div className="relative w-[35%] h-[25%] bg-[#450a0a] rounded-[50%] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] border-2 border-[#fbbf24]/40 z-10">
-                    <Crown className="w-[60%] h-[60%] text-[#fbbf24] drop-shadow-md" strokeWidth={1.5} />
-                </div>
-                <div className="absolute inset-0 border-[4px] border-[#fcfaf5] rounded-[6%] pointer-events-none shadow-[inset_0_0_4px_rgba(0,0,0,0.3)]"></div>
+              <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#7f1d1d] rounded-[6%] border-4 border-white shadow-sm flex items-center justify-center">
+                 <div className="w-[90%] h-[90%] border border-yellow-500/30 rounded-[4%] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjN2YxZDFkIi8+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIHN0cm9rZT0iIzk5MWIxYiIgc3Ryb2tlLXdpZHRoPSIxIi8+Cjwvc3ZnPg==')]"></div>
+                 <Crown className="absolute w-12 h-12 text-yellow-500/80 drop-shadow-lg" />
               </div>
             </div>
           </div>
         );
       });
 
-      const AdBanner = ({ className = '', style, slotId = "1109009056", format = 'auto' }) => {
-        const adRef = useRef(null);
-        const initialized = useRef(false);
+      const DraggableMenu = ({ children }) => {
+         const [pos, setPos] = useState({ x: window.innerWidth / 2, y: window.innerHeight - 120 });
+         const [isDragging, setIsDragging] = useState(false);
+         const offset = useRef({ x: 0, y: 0 });
 
+         const handlePointerDown = (e) => {
+             e.stopPropagation();
+             e.preventDefault();
+             // Stop native ad events
+             if(e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
+             
+             setIsDragging(true);
+             offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+             e.target.setPointerCapture(e.pointerId);
+         };
+
+         const handlePointerMove = (e) => {
+             if (!isDragging) return;
+             e.stopPropagation();
+             e.preventDefault();
+             // Clamp to screen
+             const newX = Math.min(window.innerWidth - 60, Math.max(60, e.clientX - offset.current.x));
+             const newY = Math.min(window.innerHeight - 40, Math.max(40, e.clientY - offset.current.y));
+             setPos({ x: newX, y: newY });
+         };
+
+         const handlePointerUp = (e) => {
+             setIsDragging(false);
+             e.target.releasePointerCapture(e.pointerId);
+         };
+
+         return (
+             <div 
+                className="fixed z-[200] touch-none flex flex-col items-center gap-1 cursor-move"
+                style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+             >
+                <div className="w-12 h-1.5 bg-white/20 rounded-full mb-1"></div>
+                <div className="bg-[#0a1f16]/90 backdrop-blur-xl p-2 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-4 pointer-events-auto">
+                    {children}
+                </div>
+                {/* Drag Handle Icon */}
+                <div className="text-white/30 p-1"><GripHorizontal size={16} /></div>
+             </div>
+         );
+      };
+
+      const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => (
+        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-green-500/20 pointer-events-none"></div>
+                <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white"><X /></button>
+                <div className="relative z-10">
+                    <div className="mb-6 inline-block relative">
+                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                         <div className="relative bg-white/10 p-4 rounded-full border border-white/20"><Smartphone className="w-12 h-12 text-white" /></div>
+                    </div>
+                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Criar Atalho?</h2>
+                    <p className="text-gray-300 mb-6 text-sm">Adicione à tela inicial para jogar sem travar.</p>
+                    {isIOS ? (
+                        <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6 text-xs text-gray-300 space-y-2">
+                             <p>1. Toque em <Share className="w-3 h-3 inline" /> <strong>Compartilhar</strong></p>
+                             <p>2. Selecione <strong>Adicionar à Tela de Início</strong></p>
+                        </div>
+                    ) : (
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-3 rounded-xl font-bold uppercase text-white/70 bg-red-500/10 border border-red-500/20">NÃO</button>
+                            <button onClick={onInstall} className="flex-[1.5] py-3 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse">SIM</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+      );
+
+      const AdBanner = ({ className = '', slotId = "1109009056", format = 'auto' }) => {
+        const initialized = useRef(false);
         useEffect(() => {
           if (initialized.current) return;
-          try {
-            // @ts-ignore
-            const adsbygoogle = window.adsbygoogle || [];
-            adsbygoogle.push({});
-            initialized.current = true;
-          } catch (e) {}
+          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); initialized.current = true; } catch (e) {}
         }, []);
-
         return (
-          <div className={`ad-container bg-gray-800/20 overflow-hidden flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-widest text-center border border-white/5 ${className}`} style={style}>
-            <div className="w-full h-full relative">
-              <ins className="adsbygoogle block" style={{ display: 'block', width: '100%', height: '100%' }} data-ad-client="ca-pub-3768566268455535" data-ad-slot={slotId} data-ad-format={format} data-full-width-responsive="true"></ins>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10"><span>Publicidade</span></div>
-            </div>
+          <div className={`bg-gray-800/20 flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-widest border border-white/5 overflow-hidden ${className}`}>
+            <ins className="adsbygoogle block w-full h-full" data-ad-client="ca-pub-3768566268455535" data-ad-slot={slotId} data-ad-format={format} data-full-width-responsive="true"></ins>
+            <span className="absolute -z-10">Publicidade</span>
           </div>
         );
       };
 
-      const DailyTasksModal = ({ tasks, onClose, onClaim }) => {
-        return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e293b] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-              <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-yellow-400" />
-                  <h2 className="text-lg font-bold text-white">Tarefas Diárias</h2>
-                </div>
-                <button onClick={onClose} className="text-white/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
-              </div>
-              <div className="p-4 flex flex-col gap-3 overflow-y-auto">
-                {tasks.map((task) => (
-                  <div key={task.id} className={`relative p-4 rounded-xl border transition-all ${task.completed ? task.claimed ? 'bg-emerald-900/10 border-emerald-500/20 opacity-70' : 'bg-emerald-900/30 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/5'}`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-200 text-sm">{task.description}</h3>
-                        <div className="text-xs text-gray-400 mt-1">{task.type === 'play_time' ? `${Math.floor(task.current / 60)} / ${task.target} min` : `${task.current} / ${task.target}`}</div>
-                      </div>
-                      {task.claimed ? (
-                        <div className="flex items-center gap-1 text-emerald-500 text-xs font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-1 rounded"><CheckCircle2 className="w-4 h-4" /> Coletado</div>
-                      ) : (
-                        <button onClick={() => task.completed && onClaim(task.id)} disabled={!task.completed} className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-all ${task.completed ? 'bg-yellow-500 text-black hover:bg-yellow-400 hover:scale-105 shadow-lg shadow-yellow-500/20' : 'bg-white/5 text-white/30 cursor-not-allowed'}`}>
-                           <Gift className="w-3 h-3" /> {task.completed ? 'Coletar' : `${task.xpReward} XP`}
-                        </button>
-                      )}
-                    </div>
-                    <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
-                      <div className={`h-full transition-all duration-500 ${task.completed ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min(100, (task.current / (task.type === 'play_time' ? task.target * 60 : task.target)) * 100)}%` }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-4 bg-black/20 text-center text-xs text-white/40 border-t border-white/10">As tarefas resetam à meia-noite.</div>
-            </div>
-          </div>
-        );
-      };
-
-      const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => {
-          return (
-            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500" style={{ touchAction: 'none' }} onClick={(e) => e.stopPropagation()}>
-                <div className="relative bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-[0_0_50px_rgba(147,51,234,0.5)] overflow-hidden hardware-accelerated">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-tr from-purple-600/20 to-green-500/20 blur-3xl pointer-events-none"></div>
-                    
-                    <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20"><X className="w-6 h-6" /></button>
-
-                    <div className="relative z-10">
-                        {/* ICON PULSANTE */}
-                        <div className="mb-6 relative inline-block">
-                             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                             <div className="relative bg-white/10 p-4 rounded-full border border-white/20 backdrop-blur-sm">
-                                 <Smartphone className="w-12 h-12 text-white drop-shadow-lg" />
-                             </div>
-                        </div>
-                        
-                        <h2 className="text-2xl font-black text-white mb-2 font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-sm">
-                           Criar Atalho?
-                        </h2>
-                        
-                        <p className="text-gray-300 mb-6 text-sm font-medium leading-relaxed">
-                            Adicione o jogo à sua tela inicial para jogar em tela cheia e sem travar.
-                        </p>
-                        
-                        {(isIOS || (!hasNativePrompt && !isIOS)) && (
-                             <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
-                                <p className="text-xs text-yellow-200 font-bold mb-2 uppercase tracking-wide">Como instalar:</p>
-                                <ol className="text-xs text-gray-300 space-y-2 list-decimal list-inside">
-                                    {isIOS ? (
-                                        <>
-                                            <li>Toque em <span className="inline-block"><Share className="w-3 h-3 inline" /></span> <strong>Compartilhar</strong>.</li>
-                                            <li>Selecione <strong className="text-white">Adicionar à Tela de Início</strong>.</li>
-                                        </>
-                                    ) : (
-                                        <>
-                                             <li>Toque no menu <span className="inline-block"><Menu className="w-3 h-3 inline" /></span> (Três pontos).</li>
-                                            <li>Selecione <strong className="text-white">Instalar App</strong> ou <strong>Adicionar à Tela Inicial</strong>.</li>
-                                        </>
-                                    )}
-                                </ol>
-                            </div>
-                        )}
-
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={onClose}
-                                className="flex-1 py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white/70 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors active:scale-95"
-                            >
-                                NÃO
-                            </button>
-                            
-                            {hasNativePrompt ? (
-                                <button 
-                                    onClick={onInstall}
-                                    className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 animate-pulse-fast"
-                                >
-                                    SIM
-                                </button>
-                            ) : (
-                                <button 
-                                    onClick={onClose}
-                                     className="flex-[1.5] py-3 rounded-xl font-bold text-lg uppercase tracking-widest text-white relative overflow-hidden group shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform active:scale-95 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
-                                >
-                                    OK
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-          );
-      };
-
-      const Confetti = () => {
-        const canvasRef = useRef(null);
-        useEffect(() => {
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return;
-          let width = window.innerWidth;
-          let height = window.innerHeight;
-          canvas.width = width;
-          canvas.height = height;
-          const particles = [];
-          const colors = ['#FFD700', '#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', '#FFFFFF'];
-          class Particle {
-            constructor() {
-              this.x = Math.random() * width;
-              this.y = Math.random() * height - height;
-              this.vx = Math.random() * 4 - 2;
-              this.vy = Math.random() * 5 + 2;
-              this.color = colors[Math.floor(Math.random() * colors.length)];
-              this.size = Math.random() * 10 + 5;
-              this.rotation = Math.random() * 360;
-              this.rotationSpeed = Math.random() * 10 - 5;
-            }
-            update() {
-              this.x += this.vx;
-              this.y += this.vy;
-              this.rotation += this.rotationSpeed;
-              if (this.y > height) { this.y = -this.size; this.x = Math.random() * width; }
-            }
-            draw(ctx) {
-              ctx.save();
-              ctx.translate(this.x, this.y);
-              ctx.rotate((this.rotation * Math.PI) / 180);
-              ctx.fillStyle = this.color;
-              ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-              ctx.restore();
-            }
-          }
-          for (let i = 0; i < 150; i++) particles.push(new Particle());
-          let animationId;
-          const animate = () => {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => { p.update(); p.draw(ctx); });
-            animationId = requestAnimationFrame(animate);
-          };
-          animate();
-          const handleResize = () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; };
-          window.addEventListener('resize', handleResize);
-          return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
-        }, []);
-        return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[150]" />;
-      };
-
-      const WinningBounce = ({ foundation }) => {
-        const canvasRef = useRef(null);
-        useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let width = window.innerWidth;
-            let height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-            
-            class BouncingCard {
-                constructor(x, y, suit, rank, canvasWidth) {
-                    this.x = x; this.y = y; this.vx = (Math.random() * 8 - 4); this.vy = 0;
-                    this.width = canvasWidth * 0.12; this.height = this.width * 1.4;
-                    this.suit = suit; this.rank = rank;
-                    this.color = getCardColor(suit) === 'red' ? '#d40000' : '#1a1a1a';
-                    this.bounce = 0.75 + Math.random() * 0.10;
-                }
-                update(gravity) {
-                    this.vy += gravity; this.x += this.vx; this.y += this.vy;
-                    if (this.y + this.height > height) { this.y = height - this.height; this.vy *= -this.bounce; if (Math.abs(this.vy) < gravity * 2) this.vy = 0; }
-                }
-                draw(ctx) {
-                    ctx.save(); ctx.fillStyle = '#fcfaf5'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
-                    const r = this.width * 0.06; ctx.beginPath(); ctx.roundRect(this.x, this.y, this.width, this.height, r); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = this.color; ctx.font = `bold ${this.width * 0.25}px "Crimson Pro", serif`; ctx.textAlign = 'center';
-                    const rankStr = this.rank === 1 ? 'A' : this.rank === 11 ? 'J' : this.rank === 12 ? 'Q' : this.rank === 13 ? 'K' : this.rank.toString();
-                    const padding = this.width * 0.15; ctx.fillText(rankStr, this.x + padding, this.y + padding + (this.width * 0.1));
-                    let suitChar = '';
-                    switch(this.suit) { case Suit.Hearts: suitChar = '♥'; break; case Suit.Diamonds: suitChar = '♦'; break; case Suit.Clubs: suitChar = '♣'; break; case Suit.Spades: suitChar = '♠'; break; }
-                    ctx.font = `${this.width * 0.25}px sans-serif`; ctx.fillText(suitChar, this.x + padding, this.y + padding + (this.width * 0.35));
-                    ctx.font = `${this.width * 0.6}px sans-serif`; ctx.fillText(suitChar, this.x + (this.width / 2), this.y + (this.height / 2) + (this.width * 0.2));
-                    ctx.restore();
-                }
-            }
-
-            const cards = [];
-            const gravity = 0.8;
-            const cardQueue = [];
-            const slotWidth = Math.min(width / 8, 140);
-            const startXBase = width > 1024 ? (width - 1000) / 2 + (4 * (1000/8)) : width * 0.5;
-
-            [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].forEach((suit, idx) => {
-                const pile = foundation[suit];
-                [...pile].reverse().forEach(card => {
-                    const pileX = startXBase + (idx * slotWidth * 1.1) + 20;
-                    cardQueue.push({ suit: card.suit, rank: card.rank, startX: pileX });
-                });
-            });
-
-            let animationId;
-            let frameCount = 0;
-            const animate = () => {
-                if (frameCount % 8 === 0 && cardQueue.length > 0) {
-                    const nextCard = cardQueue.shift();
-                    if (nextCard) cards.push(new BouncingCard(nextCard.startX, 100, nextCard.suit, nextCard.rank, width));
-                }
-                cards.forEach(card => { card.update(gravity); card.draw(ctx); });
-                frameCount++;
-                animationId = requestAnimationFrame(animate);
-            };
-            animate();
-            
-            const handleResize = () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; };
-            window.addEventListener('resize', handleResize);
-            return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
-        }, [foundation]);
-        return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[160]" />;
-      };
-
-      // --- APP COMPONENT ---
-      const INITIAL_GAME_STATE = {
-        mode: GameMode.FreeCell,
-        freeCells: [null, null, null, null],
-        stock: [], waste: [],
-        foundation: { [Suit.Hearts]: [], [Suit.Diamonds]: [], [Suit.Clubs]: [], [Suit.Spades]: [] },
-        tableau: [], score: 0, moves: 0, time: 0, gameWon: false,
-      };
-
+      // --- MAIN APP ---
       function App() {
         const [gameMode, setGameMode] = useState(GameMode.FreeCell);
-        const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
+        const [gameState, setGameState] = useState({
+            mode: GameMode.FreeCell,
+            freeCells: [null, null, null, null],
+            stock: [], waste: [],
+            foundation: { [Suit.Hearts]: [], [Suit.Diamonds]: [], [Suit.Clubs]: [], [Suit.Spades]: [] },
+            tableau: [], score: 0, moves: 0, time: 0, gameWon: false
+        });
         const [history, setHistory] = useState([]);
         const [selected, setSelected] = useState(null);
         const [hint, setHint] = useState(null);
-        const [isPlaying, setIsPlaying] = useState(false);
-        const [isAutoCollecting, setIsAutoCollecting] = useState(false);
         const [isNightMode, setIsNightMode] = useState(false);
-        const [playerXP, setPlayerXP] = useState(0);
-        const [levelInfo, setLevelInfo] = useState(getLevelInfo(0));
-        const [dailyTasks, setDailyTasks] = useState([]);
-        const [showTasksModal, setShowTasksModal] = useState(false);
-        const [hasPendingRewards, setHasPendingRewards] = useState(false);
-        const [showWinningBounce, setShowWinningBounce] = useState(false);
+        const [showInstallButton, setShowInstallButton] = useState(true);
+        const [showInstallModal, setShowInstallModal] = useState(false);
+        const [deferredPrompt, setDeferredPrompt] = useState(null);
         const [showInterstitial, setShowInterstitial] = useState(false);
         const [interstitialTimer, setInterstitialTimer] = useState(0);
-        const [isAdPaused, setIsAdPaused] = useState(false);
-        const [isAdMuted, setIsAdMuted] = useState(false);
-        const [onlineCount, setOnlineCount] = useState(150);
-        const [visitCount, setVisitCount] = useState(843210);
-        
-        // PWA State
-        const [deferredPrompt, setDeferredPrompt] = useState(null);
-        const [showInstallButton, setShowInstallButton] = useState(true); 
-        const [showInstallModal, setShowInstallModal] = useState(false); 
-        const [isInstalled, setIsInstalled] = useState(false);
-        const [isIOS, setIsIOS] = useState(false);
-        
-        // DRAG AND DROP STATE
-        const activeDragRef = useRef(null); 
-        const dragRaf = useRef(null); 
 
-        // AD SCHEDULING (1 Minute Initial, then every 5 Minutes)
-        useEffect(() => {
-            // First ad triggers after 60 seconds (1 minute)
-            const initialAdTimer = setTimeout(() => {
-                setShowInterstitial(true);
-                setInterstitialTimer(5);
-                setIsAdPaused(false);
-                
-                // After the first ad, set up recurring interval every 5 minutes (300000ms)
-                const recurringAdInterval = setInterval(() => {
-                     // Check if tab is active to avoid stacking ads in background
-                     if (!document.hidden) {
-                        setShowInterstitial(true);
-                        setInterstitialTimer(5);
-                        setIsAdPaused(false);
-                     }
-                }, 5 * 60 * 1000); // 5 minutes
+        const activeDragRef = useRef(null);
+        const dragRaf = useRef(null);
 
-                // Cleanup recursive interval if component unmounts
-                return () => clearInterval(recurringAdInterval);
-
-            }, 60 * 1000); // 1 minute
-            
-            return () => clearTimeout(initialAdTimer);
-        }, []);
-
-        useEffect(() => {
-            const xp = getStoredXP();
-            setPlayerXP(xp);
-            setLevelInfo(getLevelInfo(xp));
-            setDailyTasks(getDailyTasks());
-            
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            setIsInstalled(isStandalone);
-            
-            const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            setIsIOS(ios);
-
-            // Install Logic - Capture prompt
-            const handleBeforeInstallPrompt = (e) => {
-                e.preventDefault();
-                setDeferredPrompt(e);
-                setShowInstallButton(true);
-                // Auto show modal if not installed and prompt captured
-                if (!isStandalone) {
-                     setTimeout(() => setShowInstallModal(true), 1500);
-                }
-            };
-            window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-            // For iOS which doesn't fire beforeinstallprompt, we show modal on load if not standalone
-            if (ios && !isStandalone) {
-                 setTimeout(() => setShowInstallModal(true), 2000);
-            }
-
-            return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        }, []);
-
-        useEffect(() => { document.body.style.backgroundColor = isNightMode ? '#0f172a' : '#0f3526'; }, [isNightMode]);
-
-        // DRAG EVENT HANDLERS (Native Pointer Events for High Performance)
-        const handleGlobalPointerMove = useCallback((e) => {
-            if (!activeDragRef.current) return;
-            
-            if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
-
-            dragRaf.current = requestAnimationFrame(() => {
-                if (!activeDragRef.current) return;
-                const { elements, offsetX, offsetY } = activeDragRef.current;
-                
-                elements.forEach((el, index) => {
-                    el.style.position = 'fixed';
-                    el.style.pointerEvents = 'none'; 
-                    el.style.zIndex = (9999 + index).toString(); 
-                    el.style.width = activeDragRef.current.rect.width + 'px';
-                    el.style.left = '0px';
-                    el.style.top = '0px';
-                    
-                    const verticalOffset = index * (activeDragRef.current.stackOffset || 0); 
-
-                    el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + verticalOffset}px, 0) scale(1.05)`;
-                    el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4)';
-                });
-            });
-        }, []);
-
-        const handleGlobalPointerUp = useCallback((e) => {
-            if (!activeDragRef.current) return;
-            if (dragRaf.current) cancelAnimationFrame(dragRaf.current);
-            
-            const { card, pileType, pileIndex, cardIndex, elements, startX, startY } = activeDragRef.current;
-            
-            window.removeEventListener('pointermove', handleGlobalPointerMove);
-            window.removeEventListener('pointerup', handleGlobalPointerUp);
-            window.removeEventListener('pointercancel', handleGlobalPointerUp);
-
-            const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
-            
-            elements.forEach(el => {
-                el.style.position = '';
-                el.style.width = '';
-                el.style.left = '';
-                el.style.top = '';
-                el.style.transform = '';
-                el.style.zIndex = '';
-                el.style.pointerEvents = '';
-                el.style.boxShadow = '';
-                el.style.transition = ''; 
-            });
-            
-            activeDragRef.current = null;
-
-            if (dist < 10) {
-                handleCardClick(card, pileType, pileIndex, cardIndex);
-            } else {
-                const elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
-                let dropTarget = null;
-                
-                for (let el of elementsBelow) {
-                    const zone = el.closest('[data-drop-zone]');
-                    if (zone) {
-                        dropTarget = {
-                            type: zone.dataset.dropType,
-                            index: parseInt(zone.dataset.dropIndex),
-                            suit: zone.dataset.dropSuit 
-                        };
-                        break;
-                    }
-                }
-
-                if (dropTarget) {
-                   handleDropAttempt(card, pileType, pileIndex, cardIndex, dropTarget);
-                }
-            }
-        }, []);
-
-        const startDrag = (e, card, pileType, pileIndex, cardIndex, domElement) => {
-            stopAdEvent(e); 
-            if (!card.isFaceUp) return;
-            if (pileType === 'tableau') {
-                const col = gameState.tableau[pileIndex];
-                const stack = col.slice(cardIndex);
-                if (!isStackValid(stack)) return;
-            }
-
-            const rect = domElement.getBoundingClientRect();
-            
-            let elementsToDrag = [domElement];
-            let stackOffset = 0;
-
-            if (pileType === 'tableau') {
-                const wrapper = domElement.parentElement;
-                if (wrapper && wrapper.parentElement) {
-                    const allWrappers = Array.from(wrapper.parentElement.children);
-                    const startIndex = allWrappers.indexOf(wrapper);
-                    if (startIndex > -1) {
-                         const stackWrappers = allWrappers.slice(startIndex);
-                         elementsToDrag = stackWrappers.map(w => w.firstElementChild);
-                         stackOffset = gameMode === GameMode.Klondike ? 12 : 28;
-                    }
-                }
-            }
-            
-            elementsToDrag.forEach(el => el.style.transition = 'none');
-
-            activeDragRef.current = {
-                card,
-                pileType,
-                pileIndex,
-                cardIndex,
-                startX: e.clientX,
-                startY: e.clientY,
-                offsetX: e.clientX - rect.left,
-                offsetY: e.clientY - rect.top,
-                elements: elementsToDrag,
-                rect: rect,
-                stackOffset: stackOffset
-            };
-
-            window.addEventListener('pointermove', handleGlobalPointerMove);
-            window.addEventListener('pointerup', handleGlobalPointerUp);
-            window.addEventListener('pointercancel', handleGlobalPointerUp);
-        };
-
-        const handleDropAttempt = (card, sourcePile, sourceIndex, sourceCardIndex, target) => {
-            let targetCard = null;
-            if (target.type === 'tableau') {
-                const col = gameState.tableau[target.index];
-                if (col.length > 0) targetCard = col[col.length - 1];
-            } else if (target.type === 'foundation') {
-                const pile = gameState.foundation[target.suit];
-                if (pile.length > 0) targetCard = pile[pile.length - 1];
-            } else if (target.type === 'freeCell') {
-                targetCard = gameState.freeCells[target.index];
-            }
-
-            if (isMoveValid(card, targetCard, target.type, gameState.mode, target.suit)) {
-                handleCardMove({ card, pileType: sourcePile, pileIndex: sourceIndex, cardIndex: sourceCardIndex }, target.type, target.index, target.suit);
-            }
-        };
-
-        const handleInstallClick = async () => {
-            if (isInstalled) return;
-
-            if (deferredPrompt) {
-                setShowInstallModal(false); 
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') { 
-                    setDeferredPrompt(null); 
-                    setIsInstalled(true); 
-                }
-            } else {
-                // If no prompt available (iOS or desktop manually), show instructions
-                setShowInstallModal(true);
-            }
-        };
-
-        useEffect(() => {
-            const pending = dailyTasks.some(t => t.completed && !t.claimed);
-            setHasPendingRewards(pending);
-            saveDailyTasks(dailyTasks);
-        }, [dailyTasks]);
-
-        const updateTaskProgress = (type, amount = 1) => {
-            setDailyTasks(prevTasks => {
-                return prevTasks.map(task => {
-                    if (task.type === type && !task.completed) {
-                        const newCurrent = task.type === 'play_time' ? task.current + amount : task.current + amount;
-                        const targetVal = task.type === 'play_time' ? task.target * 60 : task.target;
-                        if (newCurrent >= targetVal) return { ...task, current: targetVal, completed: true };
-                        return { ...task, current: newCurrent };
-                    }
-                    return task;
-                });
-            });
-        };
-
-        const claimTaskReward = (taskId) => {
-            const task = dailyTasks.find(t => t.id === taskId);
-            if (task && task.completed && !task.claimed) {
-                const newXP = addXP(task.xpReward);
-                setPlayerXP(newXP);
-                setLevelInfo(getLevelInfo(newXP));
-                setDailyTasks(prev => prev.map(t => t.id === taskId ? { ...t, claimed: true } : t));
-            }
-        };
-
-        useEffect(() => {
-            const handleKeyDown = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); } };
-            window.addEventListener('keydown', handleKeyDown);
-            return () => window.removeEventListener('keydown', handleKeyDown);
-        }, [history, isPlaying]);
-
+        // INITIALIZATION
         const startNewGame = useCallback(() => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
+            
             if (gameMode === GameMode.FreeCell) {
-                newTableau = [[], [], [], [], [], [], [], []];
-                let cardIdx = 0;
-                for (let col = 0; col < 8; col++) {
-                    const numCards = col < 4 ? 7 : 6;
-                    for (let i = 0; i < numCards; i++) { newTableau[col].push(deck[cardIdx]); cardIdx++; }
+                newTableau = Array(8).fill().map(() => []);
+                let idx = 0;
+                for(let col=0; col<8; col++) {
+                    const count = col < 4 ? 7 : 6;
+                    for(let i=0; i<count; i++) newTableau[col].push(deck[idx++]);
                 }
             } else {
-                newTableau = [[], [], [], [], [], [], []];
-                let cardIdx = 0;
-                for (let col = 0; col < 7; col++) {
-                    for (let i = 0; i <= col; i++) {
-                        const card = deck[cardIdx];
+                newTableau = Array(7).fill().map(() => []);
+                let idx = 0;
+                for(let col=0; col<7; col++) {
+                    for(let i=0; i<=col; i++) {
+                        const card = deck[idx++];
                         card.isFaceUp = (i === col);
                         newTableau[col].push(card);
-                        cardIdx++;
                     }
                 }
-                stock = deck.slice(cardIdx).map(c => ({ ...c, isFaceUp: false }));
+                stock = deck.slice(idx).map(c => ({...c, isFaceUp: false}));
             }
-
-            setGameState({ ...INITIAL_GAME_STATE, mode: gameMode, tableau: newTableau, stock, waste });
-            setHistory([]); setSelected(null); setHint(null); setIsPlaying(true); setShowWinningBounce(false); setIsAutoCollecting(false);
             
-            // NO ADS ON RESTART - ONLY TIME BASED
+            setGameState({
+                mode: gameMode,
+                freeCells: [null,null,null,null],
+                stock, waste,
+                foundation: { [Suit.Hearts]: [], [Suit.Diamonds]: [], [Suit.Clubs]: [], [Suit.Spades]: [] },
+                tableau: newTableau, score: 0, moves: 0, time: 0, gameWon: false
+            });
+            setHistory([]); setSelected(null); setHint(null);
         }, [gameMode]);
 
         useEffect(() => { startNewGame(); }, [startNewGame]);
 
+        // INSTALLATION LOGIC
         useEffect(() => {
-            const onlineInterval = setInterval(() => { setOnlineCount(prev => Math.max(100, prev + (Math.floor(Math.random() * 5) - 2))); }, 3000);
-            const visitInterval = setInterval(() => { setVisitCount(prev => prev + 1); }, 8000);
-            return () => { clearInterval(onlineInterval); clearInterval(visitInterval); }
+            const handlePrompt = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallButton(true); setTimeout(() => setShowInstallModal(true), 2000); };
+            window.addEventListener('beforeinstallprompt', handlePrompt);
+            return () => window.removeEventListener('beforeinstallprompt', handlePrompt);
         }, []);
 
-        useEffect(() => {
-            let interval;
-            if (isPlaying && !gameState.gameWon) {
-                interval = window.setInterval(() => {
-                    setGameState(prev => ({ ...prev, time: prev.time + 1 }));
-                    updateTaskProgress('play_time', 1);
-                }, 1000);
+        const handleInstallClick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') setDeferredPrompt(null);
+            } else {
+                setShowInstallModal(true);
             }
-            return () => clearInterval(interval);
-        }, [isPlaying, gameState.gameWon]);
+        };
 
+        // ADS LOGIC (1 Min Start, 5 Min Loop)
         useEffect(() => {
-            if (gameMode === GameMode.Klondike && isPlaying && !isAutoCollecting && !gameState.gameWon) {
-                if (gameState.stock.length === 0 && gameState.waste.length === 0 && gameState.tableau.every(col => col.every(c => c.isFaceUp))) {
-                    setIsAutoCollecting(true);
-                }
+            const startTimer = setTimeout(() => { setShowInterstitial(true); setInterstitialTimer(5);
+                const loop = setInterval(() => { if(!document.hidden) { setShowInterstitial(true); setInterstitialTimer(5); } }, 300000);
+                return () => clearInterval(loop);
+            }, 60000);
+            return () => clearTimeout(startTimer);
+        }, []);
+        
+        useEffect(() => {
+            if(showInterstitial && interstitialTimer > 0) {
+                const i = setInterval(() => setInterstitialTimer(p => p-1), 1000);
+                return () => clearInterval(i);
             }
-        }, [gameState, gameMode, isPlaying, isAutoCollecting]);
+        }, [showInterstitial, interstitialTimer]);
 
-        useEffect(() => {
-            let interval;
-            if (isAutoCollecting && !gameState.gameWon) {
-                interval = window.setInterval(() => {
-                    let moved = false;
-                    let newState = JSON.parse(JSON.stringify(gameState));
-                    const tryMoveToFoundation = (card) => {
-                        const pile = newState.foundation[card.suit];
-                        const target = pile.length > 0 ? pile[pile.length - 1] : null;
-                        return isMoveValid(card, target, 'foundation', newState.mode, card.suit);
-                    };
-
-                    for (let i = 0; i < newState.tableau.length; i++) {
-                        const col = newState.tableau[i];
-                        if (col.length > 0) {
-                            const card = col[col.length - 1];
-                            if (tryMoveToFoundation(card)) { col.pop(); newState.foundation[card.suit].push(card); newState.score += 10; moved = true; break; }
-                        }
-                    }
-                    if (!moved && newState.freeCells) {
-                        for (let i = 0; i < newState.freeCells.length; i++) {
-                            const card = newState.freeCells[i];
-                            if (card && tryMoveToFoundation(card)) { newState.freeCells[i] = null; newState.foundation[card.suit].push(card); newState.score += 10; moved = true; break; }
-                        }
-                    }
-                    if (moved) { setGameState(prev => ({ ...prev, tableau: newState.tableau, foundation: newState.foundation, freeCells: newState.freeCells, score: newState.score, moves: prev.moves + 1 })); }
-                }, 100);
-            }
-            return () => clearInterval(interval);
-        }, [isAutoCollecting, gameState]);
-
-        useEffect(() => {
-            const totalFoundation = Object.values(gameState.foundation).reduce((acc, pile) => acc + pile.length, 0);
-            if (totalFoundation === 52 && !gameState.gameWon) {
-                setGameState(prev => ({ ...prev, gameWon: true }));
-                setIsPlaying(false); setIsAutoCollecting(false);
-                const newTotalXP = addXP(100); setPlayerXP(newTotalXP); setLevelInfo(getLevelInfo(newTotalXP));
-                updateTaskProgress('win_game');
-                setShowWinningBounce(true);
-                setTimeout(() => { 
-                    setShowWinningBounce(false); 
-                    // NO ADS ON WIN - ONLY TIME BASED
-                }, 6000);
-            }
-        }, [gameState.foundation, gameState.gameWon]);
-
-        useEffect(() => {
-            let interval;
-            if (showInterstitial && interstitialTimer > 0 && !isAdPaused) { interval = window.setInterval(() => { setInterstitialTimer(prev => prev - 1); }, 1000); }
-            return () => clearInterval(interval);
-        }, [showInterstitial, interstitialTimer, isAdPaused]);
-
-        const saveHistory = () => { setHistory(prev => { const h = [...prev, JSON.parse(JSON.stringify(gameState))]; return h.length > 50 ? h.slice(h.length - 50) : h; }); };
-
+        // GAMEPLAY HELPERS
+        const saveHistory = () => setHistory(prev => [...prev.slice(-49), JSON.parse(JSON.stringify(gameState))]);
+        
         const handleUndo = () => {
-            if (history.length === 0 || !isPlaying) return;
-            const prev = history[history.length - 1]; setGameState(prev); setHistory(h => h.slice(0, -1)); setHint(null); setSelected(null);
+            if(!history.length) return;
+            setGameState(history[history.length-1]);
+            setHistory(h => h.slice(0, -1));
         };
 
-        const handleHint = () => {
-            for (let i = 0; i < gameState.freeCells.length; i++) {
-                const card = gameState.freeCells[i];
-                if (card) {
-                    const target = gameState.foundation[card.suit].length > 0 ? gameState.foundation[card.suit][gameState.foundation[card.suit].length - 1] : null;
-                    if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) { setHint({ sourceId: card.id, targetId: `foundation-${card.suit}` }); setTimeout(() => setHint(null), 2000); return; }
-                }
-            }
-            for (let i = 0; i < gameState.tableau.length; i++) {
-                const col = gameState.tableau[i];
-                if (col.length > 0) {
-                    const card = col[col.length - 1];
-                    const target = gameState.foundation[card.suit].length > 0 ? gameState.foundation[card.suit][gameState.foundation[card.suit].length - 1] : null;
-                    if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) { setHint({ sourceId: card.id, targetId: `foundation-${card.suit}` }); setTimeout(() => setHint(null), 2000); return; }
-                    
-                    for (let j = 0; j < gameState.tableau.length; j++) {
-                        if (i === j) continue;
-                        const tCol = gameState.tableau[j];
-                        const tCard = tCol.length > 0 ? tCol[tCol.length - 1] : null;
-                        if (isMoveValid(card, tCard, 'tableau', gameState.mode)) { setHint({ sourceId: card.id, targetId: `tableau-${j}` }); setTimeout(() => setHint(null), 2000); return; }
-                    }
-                }
-            }
-        };
-
-        const handleMagicWand = () => {
-            if (!isPlaying) return;
-            let moved = false;
-            const newState = JSON.parse(JSON.stringify(gameState));
-            for (let i = 0; i < newState.tableau.length; i++) {
-                const col = newState.tableau[i];
-                if (col.length > 0) {
-                    const card = col[col.length - 1];
-                    const pile = newState.foundation[card.suit];
-                    const target = pile.length > 0 ? pile[pile.length - 1] : null;
-                    if (isMoveValid(card, target, 'foundation', newState.mode, card.suit)) {
-                        saveHistory(); col.pop(); if (newState.mode === GameMode.Klondike && col.length > 0) col[col.length - 1].isFaceUp = true;
-                        pile.push(card); newState.score += 10; moved = true; updateTaskProgress('foundation_drops', 1); break;
-                    }
-                }
-            }
-            if (moved) setGameState(prev => ({ ...newState, moves: prev.moves + 1 }));
-        };
-
-        const handleCardMove = (source, targetPile, targetIndex, foundationSuit) => {
+        const handleCardMove = (source, targetType, targetIndex, suit) => {
             saveHistory();
             setGameState(prev => {
-                const newState = { ...prev };
-                let cardsToMove = [];
-                if (source.pileType === 'freeCell') { cardsToMove = [newState.freeCells[source.pileIndex]]; newState.freeCells[source.pileIndex] = null; }
-                else if (source.pileType === 'waste') { cardsToMove = [newState.waste.pop()]; }
+                const newState = {...prev};
+                let cards = [];
+                
+                // EXTRACT
+                if (source.pileType === 'freeCell') { cards = [newState.freeCells[source.pileIndex]]; newState.freeCells[source.pileIndex] = null; }
+                else if (source.pileType === 'waste') { cards = [newState.waste.pop()]; }
                 else if (source.pileType === 'tableau') {
                     const col = newState.tableau[source.pileIndex];
-                    cardsToMove = col.slice(source.cardIndex);
-                    if (prev.mode === GameMode.FreeCell && cardsToMove.length > 1) {
-                        const emptyFC = newState.freeCells.filter(c => c === null).length;
-                        let emptyTab = newState.tableau.filter(c => c.length === 0).length;
-                        if (targetPile === 'tableau' && newState.tableau[targetIndex].length === 0) emptyTab = Math.max(0, emptyTab - 1);
-                        if (cardsToMove.length > getMaxMovableStack(emptyFC, emptyTab)) return prev;
+                    cards = col.slice(source.cardIndex);
+                    
+                    // SUPER MOVE CHECK (FreeCell)
+                    if (prev.mode === GameMode.FreeCell && cards.length > 1) {
+                         const emptyFC = newState.freeCells.filter(c => c === null).length;
+                         let emptyTab = newState.tableau.filter(c => c.length === 0).length;
+                         // If targeting an empty tableau, one slot is the destination, so effectively 1 less helper slot
+                         if (targetType === 'tableau' && newState.tableau[targetIndex].length === 0) emptyTab = Math.max(0, emptyTab - 1);
+                         if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev;
                     }
+
                     newState.tableau[source.pileIndex] = col.slice(0, source.cardIndex);
+                    // Flip Klondike card underneath
                     if (prev.mode === GameMode.Klondike && newState.tableau[source.pileIndex].length > 0) {
-                        const newTop = newState.tableau[source.pileIndex][newState.tableau[source.pileIndex].length - 1];
-                        if (!newTop.isFaceUp) { newTop.isFaceUp = true; newState.score += 5; }
+                        const top = newState.tableau[source.pileIndex][newState.tableau[source.pileIndex].length - 1];
+                        if (!top.isFaceUp) { top.isFaceUp = true; newState.score += 5; }
                     }
                 }
-                if (cardsToMove.length === 0) return prev;
 
-                if (targetPile === 'freeCell') newState.freeCells[targetIndex] = cardsToMove[0];
-                else if (targetPile === 'tableau') { newState.tableau[targetIndex].push(...cardsToMove); newState.score += 5; }
-                else if (targetPile === 'foundation') { newState.foundation[foundationSuit].push(cardsToMove[0]); newState.score += 10; }
+                // INSERT
+                if (targetType === 'freeCell') newState.freeCells[targetIndex] = cards[0];
+                else if (targetType === 'tableau') newState.tableau[targetIndex].push(...cards);
+                else if (targetType === 'foundation') newState.foundation[suit].push(cards[0]);
                 
-                newState.moves += 1; setHint(null);
+                newState.moves++;
+                newState.score += 10;
                 return newState;
             });
-            updateTaskProgress('play_moves', 1);
-            if (targetPile === 'foundation') updateTaskProgress('foundation_drops', 1);
             setSelected(null);
         };
 
-        const handleStockClick = () => {
-            if (gameState.mode !== GameMode.Klondike) return;
-            saveHistory();
-            setGameState(prev => {
-                const newState = { ...prev };
-                if (newState.stock.length === 0) {
-                    if (newState.waste.length > 0) { newState.stock = newState.waste.reverse().map(c => ({ ...c, isFaceUp: false })); newState.waste = []; newState.moves += 1; }
-                } else {
-                    const card = newState.stock.pop(); if (card) { card.isFaceUp = true; newState.waste.push(card); newState.moves += 1; }
-                }
-                return newState;
-            });
-            updateTaskProgress('play_moves', 1); setSelected(null);
-        };
-
         const handleCardClick = (card, pileType, pileIndex, cardIndex) => {
-            if (!card) return;
-            
-            // Smart Move: Try Foundation then Tableau (including Stacks)
-            if (pileType === 'tableau' && !card.isFaceUp) return;
+            if (!card && pileType === 'tableau') {
+                if(selected && isMoveValid(selected.card, null, 'tableau', gameState.mode)) handleCardMove(selected, 'tableau', pileIndex);
+                return;
+            }
+            if (!card || (!card.isFaceUp && pileType === 'tableau')) return;
 
-            // 1. Try Foundation (Only for top card)
-            let isTop = true;
-            if(pileType === 'tableau' && cardIndex !== gameState.tableau[pileIndex].length - 1) isTop = false;
-
-            if (isTop) {
-                 const pile = gameState.foundation[card.suit];
-                 const target = pile.length > 0 ? pile[pile.length - 1] : null;
-                 if (isMoveValid(card, target, 'foundation', gameState.mode, card.suit)) {
-                     handleCardMove({ card, pileType, pileIndex, cardIndex }, 'foundation', undefined, card.suit);
-                     return;
-                 }
+            // Auto Move Logic (Smart Tap)
+            if (pileType !== 'foundation') {
+                const fPile = gameState.foundation[card.suit];
+                const fTarget = fPile.length ? fPile[fPile.length-1] : null;
+                // Try Foundation
+                if (cardIndex === (pileType==='tableau' ? gameState.tableau[pileIndex].length-1 : 0)) {
+                    if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)) {
+                        handleCardMove({card, pileType, pileIndex, cardIndex}, 'foundation', null, card.suit);
+                        return;
+                    }
+                }
             }
 
-            // 2. Try Tableau (Smart Stack Move)
-            for(let i=0; i<gameState.tableau.length; i++) {
-                if(i === pileIndex && pileType === 'tableau') continue;
-                const col = gameState.tableau[i];
-                const top = col.length > 0 ? col[col.length - 1] : null;
-                
-                // Check if move valid (handles rank/color rules)
-                if(isMoveValid(card, top, 'tableau', gameState.mode)) {
-                    // If moving a stack in FreeCell, check capacity
-                    if (gameState.mode === GameMode.FreeCell && pileType === 'tableau' && !isTop) {
-                         const stackSize = gameState.tableau[pileIndex].length - cardIndex;
-                         const emptyFC = gameState.freeCells.filter(c => c === null).length;
-                         let emptyTab = gameState.tableau.filter(c => c.length === 0).length;
-                         if (col.length === 0) emptyTab = Math.max(0, emptyTab - 1);
-                         
-                         if (stackSize > getMaxMovableStack(emptyFC, emptyTab)) continue;
+            if (selected && selected.card.id === card.id) { setSelected(null); return; }
+            
+            // Selection Logic
+            if(selected) {
+                // Try to move selected TO this card
+                if (pileType === 'tableau') {
+                     if (isMoveValid(selected.card, card, 'tableau', gameState.mode)) {
+                         handleCardMove(selected, 'tableau', pileIndex);
+                         return;
+                     }
+                }
+                setSelected(null); // Deselect if invalid move
+            } else {
+                // Select this card/stack
+                if (pileType === 'tableau') {
+                    if (isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) setSelected({card, pileType, pileIndex, cardIndex});
+                } else if (pileType === 'freeCell' || pileType === 'waste') {
+                    setSelected({card, pileType, pileIndex, cardIndex: 0});
+                }
+            }
+        };
+
+        const handleDragStart = (e, card, pileType, pileIndex, cardIndex, domEl) => {
+             stopAdEvent(e);
+             if(!card.isFaceUp) return;
+             if(pileType === 'tableau' && !isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) return;
+             
+             // Setup Drag
+             const rect = domEl.getBoundingClientRect();
+             let elements = [domEl];
+             let stackOffset = 0;
+             
+             // Capture stack elements for visual drag
+             if(pileType === 'tableau') {
+                 const siblings = Array.from(domEl.parentElement.children);
+                 const idx = siblings.indexOf(domEl);
+                 elements = siblings.slice(idx);
+                 stackOffset = gameMode === GameMode.Klondike ? 15 : 28;
+             }
+             
+             elements.forEach(el => el.style.transition = 'none');
+             
+             activeDragRef.current = {
+                 card, pileType, pileIndex, cardIndex,
+                 startX: e.clientX, startY: e.clientY,
+                 offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+                 elements, stackOffset
+             };
+             
+             window.addEventListener('pointermove', handlePointerMove);
+             window.addEventListener('pointerup', handlePointerUp);
+        };
+
+        const handlePointerMove = (e) => {
+            if(!activeDragRef.current) return;
+            if(dragRaf.current) cancelAnimationFrame(dragRaf.current);
+            dragRaf.current = requestAnimationFrame(() => {
+                if(!activeDragRef.current) return;
+                const { elements, offsetX, offsetY, stackOffset } = activeDragRef.current;
+                elements.forEach((el, i) => {
+                    el.style.position = 'fixed';
+                    el.style.zIndex = 9999 + i;
+                    el.style.pointerEvents = 'none';
+                    el.style.width = activeDragRef.current.elements[0].offsetWidth + 'px';
+                    el.style.left = '0px'; el.style.top = '0px';
+                    el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + (i * stackOffset)}px, 0) scale(1.05)`;
+                });
+            });
+        };
+
+        const handlePointerUp = (e) => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            if(!activeDragRef.current) return;
+            
+            const { card, pileType, pileIndex, cardIndex, elements, startX, startY } = activeDragRef.current;
+            elements.forEach(el => { el.style = ''; }); // Reset styles
+            activeDragRef.current = null;
+
+            if (Math.hypot(e.clientX - startX, e.clientY - startY) < 10) {
+                handleCardClick(card, pileType, pileIndex, cardIndex);
+            } else {
+                // Hit Test
+                const hits = document.elementsFromPoint(e.clientX, e.clientY);
+                const dropZone = hits.find(el => el.dataset.dropZone === 'true');
+                if (dropZone) {
+                    const type = dropZone.dataset.dropType;
+                    const idx = parseInt(dropZone.dataset.dropIndex);
+                    const suit = dropZone.dataset.dropSuit;
+                    
+                    let targetCard = null;
+                    if(type === 'tableau') {
+                        const col = gameState.tableau[idx];
+                        if(col.length) targetCard = col[col.length-1];
+                    } else if (type === 'foundation') {
+                        const pile = gameState.foundation[suit];
+                        if(pile.length) targetCard = pile[pile.length-1];
+                    } else if (type === 'freeCell') {
+                        targetCard = gameState.freeCells[idx];
                     }
                     
-                    handleCardMove({ card, pileType, pileIndex, cardIndex }, 'tableau', i);
-                    return;
-                }
-            }
-
-             // 3. Try FreeCell
-             if (gameMode === GameMode.FreeCell && pileType !== 'freeCell' && isTop) {
-                for(let i=0; i<4; i++) {
-                    if(gameState.freeCells[i] === null) {
-                         handleCardMove({ card, pileType, pileIndex, cardIndex }, 'freeCell', i);
-                         return;
+                    if (isMoveValid(card, targetCard, type, gameState.mode, suit)) {
+                        handleCardMove({card, pileType, pileIndex, cardIndex}, type, idx, suit);
                     }
                 }
+            }
+        };
+
+        const handleStock = () => {
+             if(gameMode !== GameMode.Klondike) return;
+             setGameState(prev => {
+                 const ns = {...prev};
+                 if(ns.stock.length === 0) {
+                     ns.stock = ns.waste.reverse().map(c => ({...c, isFaceUp: false}));
+                     ns.waste = [];
+                 } else {
+                     const c = ns.stock.pop();
+                     c.isFaceUp = true;
+                     ns.waste.push(c);
+                 }
+                 ns.moves++;
+                 return ns;
+             });
+             setSelected(null);
+        };
+        
+        const handleAuto = () => {
+             // Simple Auto Move (Magic Wand)
+             let moved = false;
+             const ns = JSON.parse(JSON.stringify(gameState));
+             for(let i=0; i<ns.tableau.length; i++) {
+                 const col = ns.tableau[i];
+                 if(col.length) {
+                     const card = col[col.length-1];
+                     const fPile = ns.foundation[card.suit];
+                     const fTarget = fPile.length ? fPile[fPile.length-1] : null;
+                     if(isMoveValid(card, fTarget, 'foundation', ns.mode, card.suit)) {
+                         saveHistory();
+                         col.pop(); fPile.push(card);
+                         if(ns.mode === GameMode.Klondike && col.length && !col[col.length-1].isFaceUp) col[col.length-1].isFaceUp=true;
+                         moved=true; break;
+                     }
+                 }
              }
-
-            if (selected && selected.card.id === card.id) {
-                setSelected(null);
-            } else {
-                if (pileType === 'freeCell' || pileType === 'waste') setSelected({ card, pileType, pileIndex, cardIndex: 0 });
-                else if (pileType === 'tableau') {
-                    const stack = gameState.tableau[pileIndex].slice(cardIndex);
-                    if (isStackValid(stack)) setSelected({ card, pileType, pileIndex, cardIndex });
-                }
-            }
-        };
-
-        const handleFoundationClick = (suit) => {
-            if (selected) {
-                const target = gameState.foundation[suit].length > 0 ? gameState.foundation[suit][gameState.foundation[suit].length - 1] : null;
-                if (isMoveValid(selected.card, target, 'foundation', gameState.mode, suit)) handleCardMove(selected, 'foundation', undefined, suit);
-            }
-        };
-
-        const formatTime = (seconds) => {
-            const m = Math.floor(seconds / 60); const s = seconds % 60;
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+             if(moved) setGameState(ns);
         };
 
         return (
-          <div 
-             className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden selection:bg-yellow-500/30 transition-colors duration-700 ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'}`}
-             onClick={(e) => {
-                 // CRITICAL: Block all clicks from bubbling to document level to prevent "onclick" ads
-                 if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
-             }}
-          >
-            {gameState.gameWon && <Confetti />}
-            {showWinningBounce && <WinningBounce foundation={gameState.foundation} />}
-            {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={() => setShowTasksModal(false)} onClaim={claimTaskReward} />}
-            {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={() => setShowInstallModal(false)} isIOS={isIOS} hasNativePrompt={!!deferredPrompt} />}
-
-            <style dangerouslySetInnerHTML={{__html: `
-                @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
-                .animate-win-wave { animation: win-wave 1s ease-in-out infinite; }
-                .hint-source { animation: pulse-yellow 1.5s infinite; filter: brightness(1.2); }
-                .hint-target { animation: pulse-green 1.5s infinite; box-shadow: 0 0 15px #4ade80; z-index: 50; }
-                @keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } }
-                @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } }
-                @keyframes gradient-xy { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-                .animate-gradient-xy { background-size: 200% 200%; animation: gradient-xy 3s ease infinite; }
-                @keyframes shimmer { 0% { transform: translateX(-150%) skewX(-15deg); } 100% { transform: translateX(150%) skewX(-15deg); } }
-                @keyframes neon-pulse { 0%, 100% { box-shadow: 0 0 10px #9333ea, 0 0 20px #9333ea; border-color: #9333ea; } 50% { box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e; border-color: #22c55e; } }
-                .animate-neon-pulse { animation: neon-pulse 2s infinite; }
-                .victory-text { font-family: 'Crimson Pro', serif; background: linear-gradient(to bottom, #fde047, #ca8a04); -webkit-background-clip: text; color: transparent; text-shadow: 0px 4px 10px rgba(0,0,0,0.5); filter: drop-shadow(0 0 20px rgba(234, 179, 8, 0.6)); animation: zoom-in-bounce 1s ease-out forwards; }
-                @keyframes zoom-in-bounce { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
-            `}} />
-            
-            <div className={`absolute inset-0 transition-colors duration-700 pointer-events-none ${isNightMode ? 'bg-[radial-gradient(circle_at_center,_#1e293b_0%,_#020617_100%)]' : 'bg-[radial-gradient(circle_at_center,_#1e5940_0%,_#051c14_100%)]'}`}></div>
-            <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}></div>
-
-            <header className="bg-black/40 shadow-xl z-20 sticky top-0 backdrop-blur-md border-b border-yellow-600/20">
-              <div className="max-w-[1600px] mx-auto px-4 py-2 flex flex-col items-center gap-2">
-                <div className="w-full flex flex-col md:flex-row justify-between items-center text-white mb-1 gap-2 md:gap-0">
-                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+            <div className={`min-h-screen flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={stopAdEvent}>
+                {/* Header */}
+                <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5">
                     <div className="flex items-center gap-3">
-                      <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-2 rounded-lg shadow-lg hidden sm:block border border-yellow-400/30"><Trophy className="w-5 h-5 text-white" /></div>
-                      <div>
-                        <h1 className="text-xl md:text-2xl font-serif font-bold bg-clip-text text-transparent bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-md leading-none">Solitaire Pro</h1>
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-yellow-500/80 font-mono mt-0.5"><Crown className="w-3 h-3" /><span className="uppercase font-bold tracking-wider">{levelInfo.title}</span><span className="text-white/40">•</span><span>Lvl {levelInfo.level}</span></div>
-                      </div>
-                    </div>
-                    {/* Mobile Night Mode + Install Button Area */}
-                    <div className="flex items-center gap-2 md:hidden">
-                        {showInstallButton && (
-                            <button 
-                                onClick={handleInstallClick}
-                                disabled={isInstalled}
-                                className={`group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 ${isInstalled ? 'opacity-50 cursor-default' : 'hover:scale-110 active:scale-95 animate-neon-pulse'} mr-2 border-2`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                                <div className="relative flex items-center gap-2 z-20">
-                                    <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
-                                        <Smartphone className="w-4 h-4 stroke-[2.5]" />
-                                    </div>
-                                    <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                                        {isInstalled ? 'Instalado' : 'Instalar'}
-                                    </span>
-                                </div>
-                            </button>
-                        )}
-                        <button onClick={() => setIsNightMode(!isNightMode)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 justify-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                    <div className="flex bg-black/40 rounded-lg p-1 border border-white/10 whitespace-nowrap">
-                      <button onClick={() => setGameMode(GameMode.FreeCell)} className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.FreeCell ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>FreeCell</button>
-                      <button onClick={() => setGameMode(GameMode.Klondike)} className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all ${gameMode === GameMode.Klondike ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>Clássica</button>
+                        <Trophy className="text-yellow-500 w-5 h-5" />
+                        <h1 className="text-white font-serif font-bold text-lg">Solitaire Pro</h1>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Desktop Install Button Next to Night Mode */}
-                      {showInstallButton && (
-                          <button 
-                              onClick={handleInstallClick}
-                              disabled={isInstalled}
-                              className={`hidden md:flex group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 ${isInstalled ? 'opacity-50 cursor-default' : 'hover:scale-105 active:scale-95 animate-neon-pulse'} border-2`}
-                          >
-                               <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                               <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                               <div className="relative flex items-center gap-2 z-20">
-                                   <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg">
-                                       <Smartphone className="w-3 h-3 stroke-[2.5]" />
-                                   </div>
-                                   <span className="text-[10px] font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                                       {isInstalled ? 'Instalado' : 'Instalar App'}
-                                   </span>
-                               </div>
-                          </button>
-                      )}
-                      <button onClick={() => setIsNightMode(!isNightMode)} className="hidden md:flex bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all text-yellow-300">{isNightMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
-                      <button onClick={() => setShowTasksModal(true)} className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><CalendarCheck className="w-5 h-5" />{hasPendingRewards && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1e293b] animate-pulse"></span>}</button>
-                      <button onClick={() => startNewGame()} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all"><RotateCcw className="w-5 h-5" /></button>
+                        {showInstallButton && <button onClick={handleInstallClick} className="bg-gradient-to-r from-purple-600 to-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">INSTALAR</button>}
+                        <div className="flex bg-black/40 rounded-lg p-1">
+                            <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
+                            <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
+                        </div>
+                        <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
                     </div>
-                  </div>
+                </header>
+                
+                {/* Stats */}
+                <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5">
+                    <span>SCORE: {gameState.score}</span>
+                    <span>MOVES: {gameState.moves}</span>
                 </div>
-                <div className="flex gap-2 sm:gap-6 text-xs sm:text-sm font-mono bg-[#0a1f16]/80 px-4 sm:px-8 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
-                    <div className="flex items-center gap-2"><span className="text-yellow-500 font-bold uppercase tracking-wider text-[10px] sm:text-xs">Pontos</span><span className="text-white text-lg">{gameState.score}</span></div><div className="w-px bg-white/10 h-6"></div>
-                    <div className="flex items-center gap-2"><span className="text-emerald-400 font-bold uppercase tracking-wider text-[10px] sm:text-xs">Moves</span><span className="text-white text-lg">{gameState.moves}</span></div><div className="w-px bg-white/10 h-6"></div>
-                    <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-blue-400" /><span className="text-white text-lg">{formatTime(gameState.time)}</span></div>
-                </div>
-                <div className="w-full max-w-[728px] h-[90px] mx-auto hidden md:block mt-1 bg-black/20 rounded"><AdBanner className="w-full h-full rounded shadow-inner" slotId="1109009056" /></div>
-              </div>
-            </header>
 
-            <main className="flex-grow flex flex-col justify-between items-center p-2 sm:p-4 relative pb-40" style={{ zIndex: 50, isolation: 'isolate' }}>
-              <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6">
-                <div className="hidden lg:flex flex-col gap-4"><AdBanner className="w-[160px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5" slotId="1109009056" format="auto" /></div>
-                <div className="flex flex-col gap-4 sm:gap-8 w-full max-w-[1000px] mx-auto select-none">
-                    <div className={`grid ${gameMode === GameMode.FreeCell ? 'grid-cols-8' : 'grid-cols-7'} gap-1 sm:gap-4 px-1 sm:px-2`}>
+                {/* Main Game Area */}
+                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-32">
+                    <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
+                        {/* Top Row: FreeCells/Stock + Foundations */}
                         {gameMode === GameMode.FreeCell ? (
-                            gameState.freeCells.map((card, i) => (
-                                <div 
-                                    key={`freecell-${i}`} 
-                                    data-drop-zone="true" 
-                                    data-drop-type="freeCell" 
-                                    data-drop-index={i} 
-                                    className={`col-span-1 relative group aspect-[2.5/3.5] ${hint?.targetId === `freecell-${i}` ? 'hint-target rounded-lg' : ''}`}
-                                    onClick={(e) => { stopAdEvent(e); handleCardClick(card, 'freeCell', i); }}
-                                >
-                                    {card ? <SolitaireCard card={card} onPointerDown={(e, el) => startDrag(e, card, 'freeCell', i, 0, el)} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center hover:bg-white/5 transition-colors shadow-inner"><LayoutGrid className="w-6 h-6 text-white/5" /></div>}
+                            gameState.freeCells.map((c, i) => (
+                                <div key={i} data-drop-zone="true" data-drop-type="freeCell" data-drop-index={i} onClick={()=>handleCardClick(c, 'freeCell', i)} className={`aspect-[2.5/3.5] rounded bg-black/20 border-2 ${selected?.pileType==='freeCell' && selected.pileIndex===i ? 'border-yellow-400':'border-white/10'}`}>
+                                    {c && <SolitaireCard card={c} draggable onPointerDown={(e,el)=>handleDragStart(e,c,'freeCell',i,0,el)} isSelected={selected?.card.id===c.id} />}
                                 </div>
                             ))
                         ) : (
                             <>
-                                <div className="col-span-1 relative group aspect-[2.5/3.5]" onClick={(e) => { stopAdEvent(e); handleStockClick(); }}>
-                                    {gameState.stock.length > 0 ? <div className="relative w-full h-full"><SolitaireCard card={gameState.stock[gameState.stock.length - 1]} className="shadow-md relative" /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><RefreshCw className="w-8 h-8 text-white/50 opacity-0 group-hover:opacity-100 transition-opacity" /></div></div> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-white/5 transition-colors shadow-inner"><RefreshCw className="w-8 h-8 text-white/20" /></div>}
+                                <div className="col-span-1 aspect-[2.5/3.5] bg-black/20 rounded border-2 border-white/10 flex items-center justify-center" onClick={handleStock}>
+                                    {gameState.stock.length > 0 ? (
+                                        <div className="relative w-full h-full"><div className="absolute inset-0.5 bg-[#5c0b0b] rounded-[4%] border border-white/20"></div><RefreshCw className="absolute inset-0 m-auto text-white/20" /></div>
+                                    ) : <RefreshCw className="text-white/20" />}
                                 </div>
-                                <div className="col-span-1 relative aspect-[2.5/3.5]" onClick={stopAdEvent}>{gameState.waste.length > 0 ? <SolitaireCard card={gameState.waste[gameState.waste.length - 1]} onPointerDown={(e, el) => startDrag(e, gameState.waste[gameState.waste.length - 1], 'waste', 0, 0, el)} isSelected={selected?.card.id === gameState.waste[gameState.waste.length - 1].id} className={hint?.sourceId === gameState.waste[gameState.waste.length - 1].id ? 'hint-source' : ''} /> : <div className="w-full h-full rounded-[5%] border border-white/5 bg-transparent"></div>}</div>
-                                <div className="col-span-1"></div>
+                                <div className="col-span-1 aspect-[2.5/3.5]">
+                                    {gameState.waste.length>0 && <SolitaireCard card={gameState.waste[gameState.waste.length-1]} draggable onPointerDown={(e,el)=>handleDragStart(e,gameState.waste[gameState.waste.length-1],'waste',0,0,el)} isSelected={selected?.card.id===gameState.waste[gameState.waste.length-1].id} />}
+                                </div>
+                                <div className="col-span-2"></div>
                             </>
                         )}
-                        {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((suit, i) => (
-                            <div key={suit} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={suit} className={`col-span-1 relative group aspect-[2.5/3.5] ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `foundation-${suit}` ? 'hint-target rounded-lg' : ''}`} style={{ animationDelay: `${i * 0.1}s` }} onClick={(e) => { stopAdEvent(e); handleFoundationClick(suit); }}>
-                                {gameState.foundation[suit].length > 0 ? <SolitaireCard card={gameState.foundation[suit][gameState.foundation[suit].length - 1]} /> : <div className="w-full h-full rounded-[5%] border-2 border-white/10 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition-colors shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">{suit === Suit.Hearts ? <Heart className="w-8 h-8 text-white/10" /> : suit === Suit.Diamonds ? <Diamond className="w-8 h-8 text-white/10" /> : suit === Suit.Clubs ? <Club className="w-8 h-8 text-white/10" /> : <Spade className="w-8 h-8 text-white/10" />}</div>}
-                            </div>
-                        ))}
+                        
+                        {/* Foundations */}
+                        {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((s, i) => {
+                             const fPile = gameState.foundation[s];
+                             const top = fPile.length ? fPile[fPile.length-1] : null;
+                             return (
+                                 <div key={s} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={s} className="col-span-1 aspect-[2.5/3.5] rounded bg-black/20 border-2 border-white/10 flex items-center justify-center">
+                                     {top ? <SolitaireCard card={top} /> : <SuitIcon suit={s} className="text-white/10 w-8 h-8" />}
+                                 </div>
+                             );
+                        })}
                     </div>
-                    <div className={`grid ${gameMode === GameMode.FreeCell ? 'grid-cols-8' : 'grid-cols-7'} gap-1 sm:gap-4 min-h-[60vh] px-1 sm:px-2 pb-4`}>
-                        {gameState.tableau.map((col, colIdx) => (
-                            <div key={colIdx} data-drop-zone="true" data-drop-type="tableau" data-drop-index={colIdx} className={`relative w-full h-full ${gameState.gameWon ? 'animate-win-wave' : ''} ${hint?.targetId === `tableau-${colIdx}` ? 'hint-target rounded-t-lg' : ''}`} style={{ animationDelay: `${(colIdx + 4) * 0.1}s` }} onClick={(e) => { stopAdEvent(e); col.length === 0 && handleCardClick(null, 'tableau', colIdx); }}>
-                                {col.length === 0 ? <div className="w-full aspect-[2.5/3.5] rounded-[5%] border border-white/5 bg-black/5 mx-auto"></div> : col.map((card, cardIdx) => (
-                                    <div key={card.id} className="absolute w-full" style={{ top: `${cardIdx * (gameMode === GameMode.Klondike && !card.isFaceUp ? 12 : 28)}px`, zIndex: cardIdx }}>
-                                        <SolitaireCard card={card} onPointerDown={(e, el) => startDrag(e, card, 'tableau', colIdx, cardIdx, el)} isSelected={selected?.card.id === card.id} className={hint?.sourceId === card.id ? 'hint-source' : ''} />
-                                    </div>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="hidden lg:flex flex-col gap-4"><AdBanner className="w-[160px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5" slotId="1109009056" format="auto" /></div>
-              </div>
-              <div className="w-full max-w-[1000px] mt-8 mb-8 min-h-[100px] bg-black/10 rounded-lg flex items-center justify-center text-white/10 uppercase font-bold text-xs tracking-widest border-t border-white/5">Publicidade</div>
-            </main>
 
-            <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none">
-              <div className="flex items-center gap-4 bg-[#0a1f16]/90 backdrop-blur-xl p-2 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-auto transform transition-all hover:scale-105">
-                <button onClick={handleUndo} disabled={history.length === 0} className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl border transition-all active:scale-95 ${history.length === 0 ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed' : 'bg-gradient-to-br from-red-900 to-[#450a0a] border-red-500/50 text-red-100 shadow-lg shadow-red-900/40 hover:from-red-800 hover:to-red-900 ring-1 ring-white/10'}`}><Undo2 className={`w-6 h-6 mb-0.5 ${history.length > 0 ? 'drop-shadow-md' : ''}`} /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Undo</span></button>
-                <div className="w-px h-8 bg-white/10"></div>
-                <button onClick={handleHint} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-white transition-all active:scale-95 hover:bg-white/20 hover:border-yellow-400/50 hover:text-yellow-200 shadow-lg ring-1 ring-white/5"><Lightbulb className="w-6 h-6 mb-0.5 group-hover:fill-yellow-400/20 drop-shadow-md transition-all" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Dica</span></button>
-                <div className="w-px h-8 bg-white/10"></div>
-                <button onClick={handleMagicWand} className="group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-500/50 text-emerald-100 transition-all active:scale-95 hover:from-emerald-700 hover:to-emerald-900 shadow-lg shadow-emerald-900/40 ring-1 ring-white/10"><div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div><Wand2 className="w-6 h-6 mb-0.5 drop-shadow-md" /><span className="text-[9px] font-bold uppercase tracking-wider opacity-80 font-serif">Auto</span></button>
-              </div>
+                    {/* Tableau */}
+                    <div className="grid grid-cols-8 gap-1 sm:gap-3 h-full">
+                         {gameState.tableau.map((col, i) => (
+                             <div key={i} data-drop-zone="true" data-drop-type="tableau" data-drop-index={i} onClick={()=>col.length===0 && handleCardClick(null, 'tableau', i)} className="relative h-[60vh]">
+                                 {col.map((card, idx) => (
+                                     <div key={card.id} className="absolute w-full" style={{top: `${idx * (gameMode===GameMode.Klondike && !card.isFaceUp ? 10 : 25)}px`, zIndex: idx}}>
+                                         <SolitaireCard card={card} draggable={card.isFaceUp} onPointerDown={(e,el)=>handleDragStart(e,card,'tableau',i,idx,el)} isSelected={selected?.card.id===card.id} />
+                                     </div>
+                                 ))}
+                             </div>
+                         ))}
+                    </div>
+                </main>
+
+                {/* Draggable Floating Menu */}
+                <DraggableMenu>
+                    <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-2 rounded-lg w-14 ${!history.length?'opacity-30':'hover:bg-white/10'} text-white transition`}>
+                        <Undo2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Undo</span>
+                    </button>
+                    <div className="w-px h-8 bg-white/10"></div>
+                    <button onClick={()=>{/*Hint Logic Placeholder*/}} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-yellow-300 transition">
+                        <Lightbulb size={20} /><span className="text-[9px] uppercase font-bold mt-1">Dica</span>
+                    </button>
+                    <div className="w-px h-8 bg-white/10"></div>
+                    <button onClick={handleAuto} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-emerald-400 transition">
+                        <Wand2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Auto</span>
+                    </button>
+                </DraggableMenu>
+                
+                {/* Modals & Overlays */}
+                {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} hasNativePrompt={!!deferredPrompt} />}
+                {showInterstitial && (
+                    <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center p-4">
+                        <div className="bg-[#202020] p-1 rounded-lg w-full max-w-sm aspect-square"><AdBanner className="w-full h-full" /></div>
+                        <div className="mt-4 text-white text-sm">{interstitialTimer>0 ? `Anúncio em ${interstitialTimer}s` : <button onClick={()=>setShowInterstitial(false)} className="bg-white text-black px-6 py-2 rounded-full font-bold">Fechar</button>}</div>
+                    </div>
+                )}
             </div>
-
-            {showWinningBounce && <div className="fixed inset-0 z-[155] flex items-center justify-center pointer-events-none"><h1 className="text-[12vw] font-black uppercase tracking-tighter victory-text">Vitória!</h1></div>}
-            
-            <div className="fixed bottom-4 right-4 z-40 hidden md:flex flex-col gap-2 pointer-events-none">
-                <div className="bg-black/80 backdrop-blur-md text-white/90 text-xs font-mono py-1.5 px-3 rounded-full shadow-lg border border-white/10 flex items-center gap-2 pointer-events-auto"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div><span className="font-bold text-white">{onlineCount}</span> online</div>
-                <div className="bg-black/80 backdrop-blur-md text-white/90 text-xs font-mono py-1.5 px-3 rounded-full shadow-lg border border-white/10 flex items-center gap-2 pointer-events-auto"><Eye className="w-3 h-3 text-blue-400" /><span>{visitCount.toLocaleString()}</span> visitas</div>
-            </div>
-
-            {showInterstitial && (
-              <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-4">
-                <div className="w-full max-w-[400px] flex flex-col gap-4 items-center animate-in fade-in zoom-in duration-300">
-                  <div className="text-white/70 uppercase tracking-widest text-xs font-bold mb-2">Publicidade</div>
-                  <div className="relative w-full bg-black rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10">
-                    <div className="w-full aspect-[4/3] bg-[#202020] relative"><AdBanner className="w-full h-full" slotId="1109009056" format="rectangle" /></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-black/80 backdrop-blur-sm flex items-center px-3 gap-3 border-t border-white/10 z-10">
-                      <button onClick={() => setIsAdPaused(prev => !prev)} className="text-white hover:text-yellow-400 transition-colors focus:outline-none">{isAdPaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}</button>
-                      <div className="flex-grow h-1 bg-gray-600 rounded-full overflow-hidden"><div className="h-full bg-yellow-500 transition-all duration-1000 ease-linear" style={{ width: `${((5 - interstitialTimer) / 5) * 100}%` }} /></div>
-                      <div className="text-[10px] text-gray-300 font-mono w-6 text-right">{interstitialTimer}s</div>
-                      <button onClick={() => setIsAdMuted(prev => !prev)} className="text-white hover:text-yellow-400 transition-colors focus:outline-none">{isAdMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-                      <button className="text-white hover:text-yellow-400 transition-colors focus:outline-none"><Maximize size={16} /></button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center gap-2 mt-4">
-                    {interstitialTimer > 0 ? (
-                        <div className="flex items-center gap-2 text-white font-mono text-lg">
-                             {isAdPaused ? <span className="text-yellow-400 font-bold uppercase text-sm tracking-wider">Pausado</span> : <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div><span className="text-sm">O anúncio termina em {interstitialTimer}s...</span></>}
-                        </div>
-                    ) : (
-                        <button onClick={() => setShowInterstitial(false)} className="bg-white text-black font-bold py-3 px-8 rounded-full hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2 animate-in fade-in zoom-in"><X className="w-5 h-5" /> Fechar Anúncio</button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {gameState.gameWon && !showInterstitial && !showWinningBounce && (
-              <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-md p-4 animate-in fade-in duration-300">
-                  <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl transform scale-105 border-4 border-yellow-400 relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300"></div>
-                      <div className="inline-flex p-4 rounded-full bg-yellow-50 mb-4 ring-4 ring-yellow-100 shadow-lg animate-bounce"><Trophy className="w-16 h-16 text-yellow-600 drop-shadow-sm" /></div>
-                      <h2 className="text-4xl font-serif font-black text-gray-900 mb-2 uppercase tracking-tight">Vitória!</h2>
-                      <div className="mb-6 px-4">
-                           <div className="flex justify-between items-end mb-1"><span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{levelInfo.title}</span><span className="text-xs font-mono text-gray-400">Lvl {levelInfo.level}</span></div>
-                           <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden relative border border-gray-300"><div className="h-full bg-gradient-to-r from-emerald-500 to-green-400" style={{ width: `${levelInfo.progress}%` }}></div></div>
-                           <div className="text-[10px] text-gray-400 mt-1 flex justify-between"><span>+{100} XP Ganho</span><span>{levelInfo.currentXP} / {levelInfo.nextLevelXP} XP</span></div>
-                      </div>
-                      <p className="text-gray-600 mb-6 font-medium">Parabéns! Você completou o jogo em <span className="text-emerald-600 font-bold">{gameState.moves}</span> jogadas.</p>
-                      <div className="w-full h-[200px] bg-gray-100 mb-6 rounded-lg overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center"><AdBanner className="w-full h-full" slotId="1109009056" format="rectangle" /></div>
-                      <button onClick={() => startNewGame()} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3.5 px-6 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg active:scale-95 flex items-center justify-center gap-2"><RotateCcw className="w-5 h-5" /> Jogar Novamente</button>
-                  </div>
-              </div>
-            )}
-          </div>
         );
       }
 
