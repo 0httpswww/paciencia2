@@ -2,21 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Paciência Pro - Solitaire</title>
     <meta name="description" content="Jogue Paciência (Solitaire) Grátis. Leve, rápido e funciona offline.">
     <meta name="theme-color" content="#0f3526">
+    <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
-    <!-- Preload Assets -->
-    <link rel="preload" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" as="image">
-    
-    <!-- Monetag Verification -->
-    <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
-
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +19,31 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        'xs': '370px',
+                    },
+                    keyframes: {
+                        'gradient-xy': {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' }
+                        },
+                        'neon-pulse': {
+                            '0%, 100%': { boxShadow: '0 0 5px #9333ea, 0 0 10px #9333ea', borderColor: '#9333ea' },
+                            '50%': { boxShadow: '0 0 5px #22c55e, 0 0 10px #22c55e', borderColor: '#22c55e' }
+                        }
+                    },
+                    animation: {
+                        'gradient-xy': 'gradient-xy 3s ease infinite',
+                        'neon-pulse': 'neon-pulse 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
     
     <!-- Babel for React -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -37,53 +57,45 @@
     <script>(function(s){s.dataset.zone='10236160',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
     <style>
+        /* Base Reset & Mobile Fixes */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Prevent pull-to-refresh on mobile */
+        }
         body { 
             overscroll-behavior: none; 
             touch-action: none; 
             -webkit-tap-highlight-color: transparent;
             font-family: 'Inter', sans-serif;
-            overflow: hidden; 
             background-color: #0f3526;
             user-select: none;
             -webkit-user-select: none;
         }
-        .card-draggable { 
-            touch-action: none; 
+        #root {
+            height: 100%;
         }
-        /* Hardware Acceleration Class */
-        .hardware-accelerated {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000px;
-        }
-        /* Custom Scrollbar */
+
+        /* Safe Areas for iPhone X+ */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+
+        /* Scrollbar Hiding for Horizontal Menus */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom Scrollbar for other areas */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-
-        /* Install Button Animations */
-        @keyframes gradient-xy {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .animate-gradient-xy {
-            background-size: 200% 200%;
-            animation: gradient-xy 3s ease infinite;
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-150%) skewX(-15deg); }
-            100% { transform: translateX(150%) skewX(-15deg); }
-        }
-        @keyframes neon-pulse {
-            0%, 100% { box-shadow: 0 0 10px #9333ea, 0 0 20px #9333ea; border-color: #9333ea; }
-            50% { box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e; border-color: #22c55e; }
-        }
-        .animate-neon-pulse {
-            animation: neon-pulse 2s infinite;
-        }
         
-        /* 3D Victory Text */
+        /* Hint Animations */
+        .hint-source { animation: pulse-yellow 1.5s infinite; filter: brightness(1.2); }
+        .hint-target { animation: pulse-green 1.5s infinite; box-shadow: 0 0 15px #4ade80; z-index: 50; }
+        @keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } }
+        @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } }
+        
+        /* Victory Text */
         .victory-text {
             font-family: 'Crimson Pro', serif;
             background: linear-gradient(to bottom, #fde047, #ca8a04);
@@ -98,27 +110,21 @@
             60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        /* Win Wave */
         @keyframes win-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
         .animate-win-wave { animation: win-wave 1s ease-in-out infinite; }
-        
-        /* Hint Animations */
-        .hint-source { animation: pulse-yellow 1.5s infinite; filter: brightness(1.2); }
-        .hint-target { animation: pulse-green 1.5s infinite; box-shadow: 0 0 15px #4ade80; z-index: 50; }
-        @keyframes pulse-yellow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); } }
-        @keyframes pulse-green { 0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
@@ -133,7 +139,6 @@
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
       const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike' };
       
-      // Stop Ad Propagation
       const stopAdEvent = (e) => {
           if (!e) return;
           e.stopPropagation();
@@ -164,7 +169,6 @@
         return newDeck;
       };
 
-      // Rules
       const isMoveValid = (card, targetCard, targetType, mode, targetSuit) => {
         if (targetType === 'freeCell') return targetCard === null && mode === GameMode.FreeCell;
         
@@ -220,7 +224,6 @@
         return <span className="font-serif tracking-tighter font-black drop-shadow-[0_1px_0_rgba(0,0,0,0.1)]">{label}</span>;
       };
 
-      // SVG Textures
       const PARCHMENT_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
       const BACK_PATTERN = `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23991b1b' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M10 0L20 10L10 20L0 10z'/%3E%3C/g%3E%3C/svg%3E")`;
 
@@ -278,9 +281,18 @@
       });
 
       const DraggableMenu = ({ children }) => {
-         const [pos, setPos] = useState({ x: window.innerWidth / 2, y: window.innerHeight - 150 });
+         // Start a bit higher to avoid ad banner
+         const [pos, setPos] = useState({ x: 0, y: 0 }); 
+         const initialized = useRef(false);
          const [isDragging, setIsDragging] = useState(false);
          const offset = useRef({ x: 0, y: 0 });
+
+         useEffect(() => {
+             if(!initialized.current) {
+                 setPos({ x: window.innerWidth / 2, y: window.innerHeight - 180 });
+                 initialized.current = true;
+             }
+         }, []);
 
          const handlePointerDown = (e) => {
              stopAdEvent(e);
@@ -293,8 +305,9 @@
          const handlePointerMove = (e) => {
              if (!isDragging) return;
              stopAdEvent(e);
+             // Clamp to screen
              const newX = Math.min(window.innerWidth - 60, Math.max(60, e.clientX - offset.current.x));
-             const newY = Math.min(window.innerHeight - 40, Math.max(40, e.clientY - offset.current.y));
+             const newY = Math.min(window.innerHeight - 60, Math.max(60, e.clientY - offset.current.y));
              setPos({ x: newX, y: newY });
          };
 
@@ -304,6 +317,8 @@
                 e.target.releasePointerCapture(e.pointerId);
              }
          };
+
+         if (!initialized.current) return null;
 
          return (
              <div 
@@ -387,7 +402,6 @@
         const activeDragRef = useRef(null);
         const dragRaf = useRef(null);
 
-        // INITIALIZATION
         const startNewGame = useCallback(() => {
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
@@ -424,7 +438,6 @@
 
         useEffect(() => { startNewGame(); }, [startNewGame]);
 
-        // INSTALLATION LOGIC
         useEffect(() => {
             const handlePrompt = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallButton(true); setTimeout(() => setShowInstallModal(true), 2000); };
             window.addEventListener('beforeinstallprompt', handlePrompt);
@@ -441,7 +454,7 @@
             }
         };
 
-        // ADS LOGIC (1 Min Start, 5 Min Loop)
+        // ADS: 1 Min Start, 5 Min Loop
         useEffect(() => {
             const startTimer = setTimeout(() => { setShowInterstitial(true); setInterstitialTimer(5);
                 const loop = setInterval(() => { if(!document.hidden) { setShowInterstitial(true); setInterstitialTimer(5); } }, 300000);
@@ -457,7 +470,6 @@
             }
         }, [showInterstitial, interstitialTimer]);
 
-        // GAMEPLAY HELPERS
         const saveHistory = () => setHistory(prev => [...prev.slice(-49), JSON.parse(JSON.stringify(gameState))]);
         
         const handleUndo = () => {
@@ -472,7 +484,6 @@
                 const newState = {...prev};
                 let cards = [];
                 
-                // EXTRACT
                 if (source.pileType === 'freeCell') { cards = [newState.freeCells[source.pileIndex]]; newState.freeCells[source.pileIndex] = null; }
                 else if (source.pileType === 'waste') { cards = [newState.waste.pop()]; }
                 else if (source.pileType === 'tableau') {
@@ -487,14 +498,12 @@
                     }
 
                     newState.tableau[source.pileIndex] = col.slice(0, source.cardIndex);
-                    // Flip Klondike card underneath
                     if (prev.mode === GameMode.Klondike && newState.tableau[source.pileIndex].length > 0) {
                         const top = newState.tableau[source.pileIndex][newState.tableau[source.pileIndex].length - 1];
                         if (!top.isFaceUp) { top.isFaceUp = true; newState.score += 5; }
                     }
                 }
 
-                // INSERT
                 if (targetType === 'freeCell') newState.freeCells[targetIndex] = cards[0];
                 else if (targetType === 'tableau') newState.tableau[targetIndex].push(...cards);
                 else if (targetType === 'foundation') newState.foundation[suit].push(cards[0]);
@@ -513,7 +522,6 @@
             }
             if (!card || (!card.isFaceUp && pileType === 'tableau')) return;
 
-            // Auto Move
             if (pileType !== 'foundation') {
                 const fPile = gameState.foundation[card.suit];
                 const fTarget = fPile.length ? fPile[fPile.length-1] : null;
@@ -549,7 +557,6 @@
              if(!card.isFaceUp) return;
              if(pileType === 'tableau' && !isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) return;
              
-             // CAPTURE EXACT WIDTH TO PREVENT GIANT CARD BUG
              const rect = domEl.getBoundingClientRect();
              const cardWidth = rect.width;
 
@@ -563,18 +570,13 @@
                  stackOffset = gameMode === GameMode.Klondike ? 15 : 28;
              }
              
-             // Set transition none immediately to follow finger
-             elements.forEach(el => {
-                 el.style.transition = 'none';
-                 el.style.zIndex = '9999'; // CRITICAL FIX: Ensure drag is always on top
-             });
+             elements.forEach(el => { el.style.transition = 'none'; el.style.zIndex = '9999'; });
              
              activeDragRef.current = {
                  card, pileType, pileIndex, cardIndex,
                  startX: e.clientX, startY: e.clientY,
                  offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
-                 elements, stackOffset,
-                 width: cardWidth
+                 elements, stackOffset, width: cardWidth
              };
              
              window.addEventListener('pointermove', handlePointerMove);
@@ -589,15 +591,13 @@
                 const { elements, offsetX, offsetY, stackOffset, width } = activeDragRef.current;
                 
                 elements.forEach((el, i) => {
-                    // Force Fixed Position to break out of stacking context
                     el.style.position = 'fixed';
-                    el.style.width = width + 'px'; // Lock Width
-                    el.style.left = '0px'; 
-                    el.style.top = '0px';
-                    el.style.zIndex = (9999 + i).toString(); // Super High Z-Index
-                    el.style.pointerEvents = 'none'; // Allow clicking through to drop zone
+                    el.style.width = width + 'px';
+                    el.style.left = '0px'; el.style.top = '0px';
+                    el.style.zIndex = (9999 + i).toString();
+                    el.style.pointerEvents = 'none';
                     el.style.transform = `translate3d(${e.clientX - offsetX}px, ${e.clientY - offsetY + (i * stackOffset)}px, 0) scale(1.05)`;
-                    el.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)'; // Lift effect
+                    el.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)';
                 });
             });
         };
@@ -608,14 +608,12 @@
             if(!activeDragRef.current) return;
             
             const { card, pileType, pileIndex, cardIndex, elements, startX, startY } = activeDragRef.current;
-            elements.forEach(el => { el.style = ''; }); // Reset all inline styles
+            elements.forEach(el => { el.style = ''; });
             activeDragRef.current = null;
 
-            // Tap Detection
             if (Math.hypot(e.clientX - startX, e.clientY - startY) < 10) {
                 handleCardClick(card, pileType, pileIndex, cardIndex);
             } else {
-                // Hit Test
                 const hits = document.elementsFromPoint(e.clientX, e.clientY);
                 const dropZone = hits.find(el => el.dataset.dropZone === 'true');
                 if (dropZone) {
@@ -694,37 +692,39 @@
         };
 
         return (
-            <div className={`min-h-screen flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={(e) => { stopAdEvent(e); }}>
-                {/* Header */}
-                <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5">
-                    <div className="flex items-center gap-3">
+            <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={(e) => { stopAdEvent(e); }}>
+                {/* Header with Horizontal Scroll for small devices */}
+                <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5 pt-safe">
+                    <div className="flex items-center gap-3 shrink-0">
                         <Trophy className="text-yellow-500 w-5 h-5" />
-                        <h1 className="text-white font-serif font-bold text-lg">Solitaire Pro</h1>
+                        <h1 className="text-white font-serif font-bold text-lg hidden xs:block">Solitaire Pro</h1>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {showInstallButton && <button onClick={handleInstallClick} className="group relative px-4 py-1.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse flex items-center gap-2 border-2 border-transparent">
+                    
+                    {/* Scrollable controls area */}
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pl-2">
+                        {showInstallButton && <button onClick={handleInstallClick} className="group relative px-4 py-1.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse flex items-center gap-2 border-2 border-transparent shrink-0">
                             <div className="absolute inset-0 bg-gradient-to-r from-purple-800 via-green-600 to-purple-800 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
                             <Smartphone className="w-4 h-4 text-white z-10" />
                             <span className="text-xs font-black uppercase text-white z-10 tracking-wider">Instalar</span>
                         </button>}
-                        <div className="flex bg-black/40 rounded-lg p-1">
+                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0">
                             <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
                             <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-3 py-1 text-xs rounded ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
                         </div>
-                        <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
+                        <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2 shrink-0">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
                     </div>
                 </header>
                 
                 {/* Stats */}
-                <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5">
+                <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5 shrink-0">
                     <span>SCORE: {gameState.score}</span>
                     <span>MOVES: {gameState.moves}</span>
                 </div>
 
                 {/* Main Game Area */}
-                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-32">
+                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-40 overflow-y-auto pb-safe">
                     <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
-                        {/* Top Row: FreeCells/Stock + Foundations */}
+                        {/* Top Row */}
                         {gameMode === GameMode.FreeCell ? (
                             gameState.freeCells.map((c, i) => (
                                 <div key={i} data-drop-zone="true" data-drop-type="freeCell" data-drop-index={i} onClick={()=>handleCardClick(c, 'freeCell', i)} className={`aspect-[2.5/3.5] rounded bg-black/20 border-2 ${selected?.pileType==='freeCell' && selected.pileIndex===i ? 'border-yellow-400':'border-white/10'}`}>
@@ -771,7 +771,6 @@
                     </div>
                 </main>
 
-                {/* Draggable Floating Menu (Moved out of fixed bottom bar) */}
                 <DraggableMenu>
                     <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-2 rounded-lg w-14 ${!history.length?'opacity-30':'hover:bg-white/10'} text-white transition`}>
                         <Undo2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Undo</span>
@@ -786,7 +785,6 @@
                     </button>
                 </DraggableMenu>
                 
-                {/* Modals & Overlays */}
                 {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} hasNativePrompt={!!deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
                 {showInterstitial && (
                     <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center p-4">
