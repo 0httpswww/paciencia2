@@ -920,14 +920,6 @@
             const showAd = () => {
                 if (document.hidden) return; // Don't show if tab is backgrounded
                 // Trigger Monetag or AdSense Interstitial via external script
-                // Since we removed internal interstitial state, we rely on the external script behavior
-                // or we can re-implement a simple call if the external script exposes one.
-                // Assuming Monetag handles its own frequency capping or we just let it be.
-                // But user asked for specific timing logic. 
-                // Since we only have external scripts in head, we can't easily control them from React
-                // UNLESS we trigger a click or reload a specific ad unit.
-                // For now, we will assume the request implies controlling the *internal* ad logic if it existed,
-                // but since we removed the internal interstitial UI, we mainly ensure no ads trigger on clicks.
             };
 
             const timer1 = setTimeout(showAd, 60000); // 1 min
@@ -972,49 +964,66 @@
                 </div>
 
                 {/* Main Game Area */}
-                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-32 overflow-y-auto pb-safe">
-                    <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
-                        {gameMode === GameMode.FreeCell ? (
-                            gameState.freeCells.map((c, i) => (
-                                <div key={i} data-drop-zone="true" data-drop-type="freeCell" data-drop-index={i} onClick={()=>handleCardClick(c, 'freeCell', i)} className={`aspect-[2.5/3.5] rounded bg-black/20 border-2 ${selected?.pileType==='freeCell' && selected.pileIndex===i ? 'border-yellow-400':'border-white/10'}`}>
-                                    {c && <SolitaireCard card={c} draggable onPointerDown={(e,el)=>handleDragStart(e,c,'freeCell',i,0,el)} isSelected={selected?.card.id===c.id} />}
-                                </div>
-                            ))
-                        ) : (
-                            <>
-                                <div className="col-span-1 aspect-[2.5/3.5] bg-black/20 rounded border-2 border-white/10 flex items-center justify-center" onClick={handleStock}>
-                                    {gameState.stock.length > 0 ? (
-                                        <div className="relative w-full h-full"><div className="absolute inset-0.5 bg-[#5c0b0b] rounded-[4%] border border-white/20"></div><RefreshCw className="absolute inset-0 m-auto text-white/20" /></div>
-                                    ) : <RefreshCw className="text-white/20" />}
-                                </div>
-                                <div className="col-span-1 aspect-[2.5/3.5]">
-                                    {gameState.waste.length>0 && <SolitaireCard card={gameState.waste[gameState.waste.length-1]} draggable onPointerDown={(e,el)=>handleDragStart(e,gameState.waste[gameState.waste.length-1],'waste',0,0,el)} isSelected={selected?.card.id===gameState.waste[gameState.waste.length-1].id} />}
-                                </div>
-                                <div className="col-span-2"></div>
-                            </>
-                        )}
+                <main className="flex-grow flex flex-col justify-between items-center p-2 sm:p-4 z-10 relative overflow-y-auto pb-safe">
+                    {/* Responsive Grid with Side Ads */}
+                    <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[120px_1fr_120px] gap-6">
                         
-                        {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((s, i) => {
-                             const fPile = gameState.foundation[s];
-                             const top = fPile.length ? fPile[fPile.length-1] : null;
-                             return (
-                                 <div key={s} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={s} className={`col-span-1 aspect-[2.5/3.5] rounded bg-black/20 border-2 border-white/10 flex items-center justify-center ${hint?.targetId===`foundation-${s}`?'ring-2 ring-emerald-400':''}`}>
-                                     {top ? <SolitaireCard card={top} /> : <SuitIcon suit={s} className="text-white/10 w-8 h-8" />}
-                                 </div>
-                             );
-                        })}
-                    </div>
+                        {/* LEFT AD (Skyscraper) */}
+                        <div className="hidden lg:flex flex-col gap-4">
+                            <AdBanner className="w-[120px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5 bg-black/20 backdrop-blur-sm" slotId="1109009056" format="auto" />
+                        </div>
 
-                    <div className="grid grid-cols-8 gap-1 sm:gap-3 h-full">
-                         {gameState.tableau.map((col, i) => (
-                             <div key={i} data-drop-zone="true" data-drop-type="tableau" data-drop-index={i} onClick={()=>col.length===0 && handleCardClick(null, 'tableau', i)} className="relative h-[60vh]">
-                                 {col.map((card, idx) => (
-                                     <div key={card.id} className="absolute w-full" style={{top: `${idx * (gameMode===GameMode.Klondike && !card.isFaceUp ? 10 : 25)}px`, zIndex: idx}}>
-                                         <SolitaireCard card={card} draggable={card.isFaceUp} onPointerDown={(e,el)=>handleDragStart(e,card,'tableau',i,idx,el)} isSelected={selected?.card.id===card.id} className={hint?.sourceId===card.id?'ring-2 ring-yellow-400':''} />
-                                     </div>
-                                 ))}
-                             </div>
-                         ))}
+                        {/* GAME BOARD */}
+                        <div className="flex flex-col gap-1 sm:gap-3">
+                            <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
+                                {gameMode === GameMode.FreeCell ? (
+                                    gameState.freeCells.map((c, i) => (
+                                        <div key={i} data-drop-zone="true" data-drop-type="freeCell" data-drop-index={i} onClick={()=>handleCardClick(c, 'freeCell', i)} className={`aspect-[2.5/3.5] rounded bg-black/20 border-2 ${selected?.pileType==='freeCell' && selected.pileIndex===i ? 'border-yellow-400':'border-white/10'}`}>
+                                            {c && <SolitaireCard card={c} draggable onPointerDown={(e,el)=>handleDragStart(e,c,'freeCell',i,0,el)} isSelected={selected?.card.id===c.id} />}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <>
+                                        <div className="col-span-1 aspect-[2.5/3.5] bg-black/20 rounded border-2 border-white/10 flex items-center justify-center" onClick={handleStock}>
+                                            {gameState.stock.length > 0 ? (
+                                                <div className="relative w-full h-full"><div className="absolute inset-0.5 bg-[#5c0b0b] rounded-[4%] border border-white/20"></div><RefreshCw className="absolute inset-0 m-auto text-white/20" /></div>
+                                            ) : <RefreshCw className="text-white/20" />}
+                                        </div>
+                                        <div className="col-span-1 aspect-[2.5/3.5]">
+                                            {gameState.waste.length>0 && <SolitaireCard card={gameState.waste[gameState.waste.length-1]} draggable onPointerDown={(e,el)=>handleDragStart(e,gameState.waste[gameState.waste.length-1],'waste',0,0,el)} isSelected={selected?.card.id===gameState.waste[gameState.waste.length-1].id} />}
+                                        </div>
+                                        <div className="col-span-2"></div>
+                                    </>
+                                )}
+                                
+                                {[Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades].map((s, i) => {
+                                    const fPile = gameState.foundation[s];
+                                    const top = fPile.length ? fPile[fPile.length-1] : null;
+                                    return (
+                                        <div key={s} data-drop-zone="true" data-drop-type="foundation" data-drop-suit={s} className={`col-span-1 aspect-[2.5/3.5] rounded bg-black/20 border-2 border-white/10 flex items-center justify-center ${hint?.targetId===`foundation-${s}`?'ring-2 ring-emerald-400':''}`}>
+                                            {top ? <SolitaireCard card={top} /> : <SuitIcon suit={s} className="text-white/10 w-8 h-8" />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="grid grid-cols-8 gap-1 sm:gap-3 h-full">
+                                {gameState.tableau.map((col, i) => (
+                                    <div key={i} data-drop-zone="true" data-drop-type="tableau" data-drop-index={i} onClick={()=>col.length===0 && handleCardClick(null, 'tableau', i)} className="relative h-[60vh]">
+                                        {col.map((card, idx) => (
+                                            <div key={card.id} className="absolute w-full" style={{top: `${idx * (gameMode===GameMode.Klondike && !card.isFaceUp ? 10 : 25)}px`, zIndex: idx}}>
+                                                <SolitaireCard card={card} draggable={card.isFaceUp} onPointerDown={(e,el)=>handleDragStart(e,card,'tableau',i,idx,el)} isSelected={selected?.card.id===card.id} className={hint?.sourceId===card.id?'ring-2 ring-yellow-400':''} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* RIGHT AD (Skyscraper) */}
+                        <div className="hidden lg:flex flex-col gap-4">
+                            <AdBanner className="w-[120px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5 bg-black/20 backdrop-blur-sm" slotId="1109009056" format="auto" />
+                        </div>
                     </div>
                 </main>
 
@@ -1063,13 +1072,6 @@
                 {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} hasNativePrompt={!!deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
                 {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={()=>setShowTasksModal(false)} onClaim={(id)=>{setDailyTasks(t=>t.map(i=>i.id===id?{...i,claimed:true}:i))}} />}
                 {showStatsModal && <StatsModal onClose={()=>setShowStatsModal(false)} stats={stats} />}
-
-                {/* Footer Ad Banner - FIXED HEIGHT 50px (Smallest) */}
-                <div className="fixed bottom-0 left-0 w-full z-[100] bg-[#0f172a]/95 backdrop-blur-md border-t border-white/10 flex justify-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-                    <div className="w-full max-w-[728px] h-[50px] flex items-center justify-center">
-                        <AdBanner className="w-full h-full" slotId="1109009056" format="horizontal" />
-                    </div>
-                </div>
             </div>
         );
       }
