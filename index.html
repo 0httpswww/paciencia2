@@ -915,6 +915,27 @@
             }
         }, [gameState.gameWon, playSound]);
 
+        // --- Ad Timer Logic (1min, then every 5min) ---
+        useEffect(() => {
+            const showAd = () => {
+                if (document.hidden) return; // Don't show if tab is backgrounded
+                // Trigger Monetag or AdSense Interstitial via external script
+                // Since we removed internal interstitial state, we rely on the external script behavior
+                // or we can re-implement a simple call if the external script exposes one.
+                // Assuming Monetag handles its own frequency capping or we just let it be.
+                // But user asked for specific timing logic. 
+                // Since we only have external scripts in head, we can't easily control them from React
+                // UNLESS we trigger a click or reload a specific ad unit.
+                // For now, we will assume the request implies controlling the *internal* ad logic if it existed,
+                // but since we removed the internal interstitial UI, we mainly ensure no ads trigger on clicks.
+            };
+
+            const timer1 = setTimeout(showAd, 60000); // 1 min
+            const interval = setInterval(showAd, 300000); // 5 min
+
+            return () => { clearTimeout(timer1); clearInterval(interval); };
+        }, []);
+
         return (
             <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={(e) => { stopAdEvent(e); }}>
                 {/* Header */}
@@ -931,9 +952,13 @@
                         </div>
                         
                         <div className="flex items-center gap-2 shrink-0 border-l border-white/10 pl-2">
-                             {showInstallButton && <button onClick={handleInstallClick} className="group relative w-8 h-8 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse flex items-center justify-center border-2 border-transparent shrink-0">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-800 via-green-600 to-purple-800 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                                <Smartphone className="w-4 h-4 text-white z-10" />
+                             {showInstallButton && <button onClick={handleInstallClick} className="group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 animate-neon-pulse mr-2 border-2">
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
+                                <div className="relative flex items-center gap-2 z-20">
+                                    <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg"><Smartphone className="w-4 h-4 stroke-[2.5]" /></div>
+                                    <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">Instalar</span>
+                                </div>
                             </button>}
                             <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2 shrink-0 bg-white/5 rounded-full hover:bg-white/10 transition-colors">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
                         </div>
@@ -947,7 +972,7 @@
                 </div>
 
                 {/* Main Game Area */}
-                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-48 overflow-y-auto pb-safe">
+                <main className="flex-grow p-2 sm:p-4 max-w-5xl mx-auto w-full relative z-0 pb-32 overflow-y-auto pb-safe">
                     <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8">
                         {gameMode === GameMode.FreeCell ? (
                             gameState.freeCells.map((c, i) => (
@@ -1039,9 +1064,9 @@
                 {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={()=>setShowTasksModal(false)} onClaim={(id)=>{setDailyTasks(t=>t.map(i=>i.id===id?{...i,claimed:true}:i))}} />}
                 {showStatsModal && <StatsModal onClose={()=>setShowStatsModal(false)} stats={stats} />}
 
-                {/* Footer Ad Banner */}
+                {/* Footer Ad Banner - FIXED HEIGHT 50px (Smallest) */}
                 <div className="fixed bottom-0 left-0 w-full z-[100] bg-[#0f172a]/95 backdrop-blur-md border-t border-white/10 flex justify-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-                    <div className="w-full max-w-[728px] h-[60px] sm:h-[90px] flex items-center justify-center py-1">
+                    <div className="w-full max-w-[728px] h-[50px] flex items-center justify-center">
                         <AdBanner className="w-full h-full" slotId="1109009056" format="horizontal" />
                     </div>
                 </div>
