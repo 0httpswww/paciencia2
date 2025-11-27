@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Paciência Pro - Solitaire</title>
-    <meta name="description" content="Jogue Paciência (Solitaire) Grátis. O melhor jogo online de cartas. Leve, rápido e funciona offline.">
-    <meta name="keywords" content="jogo online, jogo paciencia, jogo paciencia dw, jogo paciencia josiane, solitaire, freecell, cartas">
+    <title>JosiPuff - Solitaire</title>
+    <meta name="description" content="Jogue JosiPuff Solitaire Grátis. O melhor jogo online de cartas. Leve, rápido e funciona offline.">
+    <meta name="keywords" content="jogo online, jogo paciencia, jogo paciencia dw, jogo paciencia josiane, solitaire, freecell, cartas, josipuff">
     <meta name="theme-color" content="#0f3526">
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
@@ -268,6 +268,7 @@
 
         if (targetType === 'tableau') {
           if (!targetCard) {
+            // Empty Tableau: Klondike needs King, FreeCell allows any
             if (mode === GameMode.Klondike) return card.rank === Rank.King;
             return true;
           }
@@ -291,18 +292,6 @@
 
       const getMaxMovableStack = (emptyFreeCells, emptyTableauCols) => {
         return (1 + emptyFreeCells) * Math.pow(2, emptyTableauCols);
-      };
-
-      // --- PROGRESSION ---
-      const LEVELS = [
-          { xp: 0, title: "Novato" }, { xp: 100, title: "Aprendiz" }, { xp: 300, title: "Amador" },
-          { xp: 600, title: "Entusiasta" }, { xp: 1000, title: "Profissional" }, { xp: 1500, title: "Mestre" },
-          { xp: 2200, title: "Grão-Mestre" }, { xp: 3000, title: "Lenda" }
-      ];
-      const getLevelInfo = (xp) => {
-          let lvl = 1, title = LEVELS[0].title;
-          for(let i=0; i<LEVELS.length; i++) { if(xp >= LEVELS[i].xp) { lvl=i+1; title=LEVELS[i].title; } else break; }
-          return { level: lvl, title };
       };
 
       // --- COMPONENTS ---
@@ -492,36 +481,6 @@
           </div>
       );
 
-      const DailyTasksModal = ({ tasks, onClose, onClaim }) => (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={stopAdEvent}>
-          <div className="bg-[#1e293b] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
-              <div className="flex items-center gap-2"><Gift className="w-5 h-5 text-yellow-400" /><h2 className="text-lg font-bold text-white">Tarefas Diárias</h2></div>
-              <button onClick={onClose} className="text-white/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="p-4 flex flex-col gap-3 overflow-y-auto">
-              {tasks.map((task) => (
-                <div key={task.id} className={`relative p-4 rounded-xl border transition-all ${task.completed ? task.claimed ? 'bg-emerald-900/10 border-emerald-500/20 opacity-70' : 'bg-emerald-900/30 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/5'}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-200 text-sm">{task.description}</h3>
-                      <div className="text-xs text-gray-400 mt-1">{task.type === 'play_time' ? `${Math.floor(task.current / 60)} / ${task.target} min` : `${task.current} / ${task.target}`}</div>
-                    </div>
-                    {task.claimed ? (
-                      <div className="flex items-center gap-1 text-emerald-500 text-xs font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-1 rounded"><CheckCircle2 className="w-4 h-4" /> Coletado</div>
-                    ) : (
-                      <button onClick={() => task.completed && onClaim(task.id)} disabled={!task.completed} className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-all ${task.completed ? 'bg-yellow-500 text-black hover:bg-yellow-400 hover:scale-105 shadow-lg shadow-yellow-500/20' : 'bg-white/5 text-white/30 cursor-not-allowed'}`}><Gift className="w-3 h-3" />{task.completed ? 'Coletar' : `${task.xpReward} XP`}</button>
-                    )}
-                  </div>
-                  <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden"><div className={`h-full transition-all duration-500 ${task.completed ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${Math.min(100, (task.current / (task.type === 'play_time' ? task.target * 60 : task.target)) * 100)}%` }}></div></div>
-                </div>
-              ))}
-            </div>
-            <div className="p-4 bg-black/20 text-center text-xs text-white/40 border-t border-white/10">As tarefas resetam à meia-noite.</div>
-          </div>
-        </div>
-      );
-
       const AdBanner = ({ className = '', slotId = "1109009056", format = 'auto' }) => {
         const initialized = useRef(false);
         useEffect(() => {
@@ -554,22 +513,14 @@
         const [showInstallModal, setShowInstallModal] = useState(false);
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         
-        // New Features State
-        const [playerXP, setPlayerXP] = useState(0);
-        const [dailyTasks, setDailyTasks] = useState([]);
-        const [showTasksModal, setShowTasksModal] = useState(false);
         const [showStatsModal, setShowStatsModal] = useState(false);
         const [isSoundEnabled, setIsSoundEnabled] = useState(true);
         const [stats, setStats] = useState({ wins: 0, gamesPlayed: 0, bestScore: 0, bestMoves: 0 });
 
-        // Ad & Animation State
         const [showWinningBounce, setShowWinningBounce] = useState(false);
-
-        // Simulated Stats
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
 
-        // Initialize Sound Hook
         const playSound = useSound(isSoundEnabled);
 
         const activeDragRef = useRef(null);
@@ -616,15 +567,6 @@
 
         useEffect(() => { startNewGame(); }, [startNewGame]);
 
-        // Daily Tasks Generator
-        useEffect(() => {
-             const generateTasks = () => [
-                 { id: '1', type: 'win_game', description: 'Vença 1 Partida', target: 1, current: 0, xpReward: 100, completed: false, claimed: false },
-                 { id: '2', type: 'play_moves', description: 'Faça 50 Movimentos', target: 50, current: 0, xpReward: 50, completed: false, claimed: false }
-             ];
-             setDailyTasks(generateTasks());
-        }, []);
-
         useEffect(() => {
             const handlePrompt = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallButton(true); setTimeout(() => setShowInstallModal(true), 2000); };
             window.addEventListener('beforeinstallprompt', handlePrompt);
@@ -653,45 +595,52 @@
             setGameState(previous);
             setHistory(h => h.slice(0, -1));
             gameStateRef.current = previous; 
-            playSound('pickup'); // Sound for undo
+            playSound('pickup');
         };
 
         const handleCardMove = (source, targetType, targetIndex, suit) => {
-            saveHistory();
+            saveHistory(); // CRITICAL: Save BEFORE mutation
             setGameState(prev => {
-                const newState = {...prev};
+                const newState = JSON.parse(JSON.stringify(prev)); // Deep copy
                 let cards = [];
                 
-                if (source.pileType === 'freeCell') { cards = [newState.freeCells[source.pileIndex]]; newState.freeCells[source.pileIndex] = null; }
-                else if (source.pileType === 'waste') { cards = [newState.waste.pop()]; }
+                // --- EXTRACT FROM SOURCE ---
+                if (source.pileType === 'freeCell') { 
+                    cards = [newState.freeCells[source.pileIndex]]; 
+                    newState.freeCells[source.pileIndex] = null; 
+                }
+                else if (source.pileType === 'waste') { 
+                    cards = [newState.waste.pop()]; 
+                }
                 else if (source.pileType === 'tableau') {
                     const col = newState.tableau[source.pileIndex];
                     cards = col.slice(source.cardIndex);
                     
+                    // FreeCell Super Move Check
                     if (prev.mode === GameMode.FreeCell && cards.length > 1) {
                          const emptyFC = newState.freeCells.filter(c => c === null).length;
                          let emptyTab = newState.tableau.filter(c => c.length === 0).length;
+                         // If target is an empty tableau col, don't count it as "helper"
                          if (targetType === 'tableau' && newState.tableau[targetIndex].length === 0) emptyTab = Math.max(0, emptyTab - 1);
-                         if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev;
+                         if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev; // Invalid move
                     }
 
                     newState.tableau[source.pileIndex] = col.slice(0, source.cardIndex);
+                    
+                    // Klondike Auto Flip
                     if (prev.mode === GameMode.Klondike && newState.tableau[source.pileIndex].length > 0) {
                         const top = newState.tableau[source.pileIndex][newState.tableau[source.pileIndex].length - 1];
                         if (!top.isFaceUp) { top.isFaceUp = true; newState.score += 5; }
                     }
                 }
 
+                // --- ADD TO TARGET ---
                 if (targetType === 'freeCell') newState.freeCells[targetIndex] = cards[0];
                 else if (targetType === 'tableau') newState.tableau[targetIndex].push(...cards);
                 else if (targetType === 'foundation') newState.foundation[suit].push(cards[0]);
                 
                 newState.moves++;
                 newState.score += 10;
-                
-                // Task Update (Simplified)
-                setDailyTasks(tasks => tasks.map(t => t.type === 'play_moves' && !t.completed ? { ...t, current: t.current + 1, completed: t.current + 1 >= t.target } : t));
-
                 return newState;
             });
             setSelected(null);
@@ -705,10 +654,16 @@
             }
             if (!card || (!card.isFaceUp && pileType === 'tableau')) return;
 
+            // Smart Move: Tap to Foundation
             if (pileType !== 'foundation') {
                 const fPile = gameState.foundation[card.suit];
                 const fTarget = fPile.length ? fPile[fPile.length-1] : null;
-                if (cardIndex === (pileType==='tableau' ? gameState.tableau[pileIndex].length-1 : 0)) {
+                // Only if it's the top card of the pile
+                let isTop = false;
+                if(pileType==='tableau' && cardIndex === gameState.tableau[pileIndex].length-1) isTop = true;
+                if(pileType==='freeCell' || pileType==='waste') isTop = true;
+
+                if (isTop) {
                     if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)) {
                         handleCardMove({card, pileType, pileIndex, cardIndex}, 'foundation', null, card.suit);
                         return;
@@ -738,7 +693,18 @@
         const handleDragStart = (e, card, pileType, pileIndex, cardIndex, domEl) => {
              stopAdEvent(e);
              if(!card.isFaceUp) return;
-             if(pileType === 'tableau' && !isStackValid(gameState.tableau[pileIndex].slice(cardIndex))) return;
+             
+             // Check if stack drag is valid
+             if(pileType === 'tableau') {
+                 const stack = gameState.tableau[pileIndex].slice(cardIndex);
+                 if(!isStackValid(stack)) return;
+                 // FreeCell Drag Limit Check
+                 if(gameState.mode === GameMode.FreeCell && stack.length > 1) {
+                     const emptyFC = gameState.freeCells.filter(c => c === null).length;
+                     const emptyTab = gameState.tableau.filter(c => c.length === 0).length;
+                     if(stack.length > getMaxMovableStack(emptyFC, emptyTab)) return;
+                 }
+             }
              
              playSound('pickup');
 
@@ -752,7 +718,7 @@
                  const siblings = Array.from(domEl.parentElement.children);
                  const idx = siblings.indexOf(domEl);
                  elements = siblings.slice(idx);
-                 stackOffset = gameMode === GameMode.Klondike ? 15 : 28;
+                 stackOffset = gameState.mode === GameMode.Klondike ? 15 : 28;
              }
              
              elements.forEach(el => { el.style.transition = 'none'; el.style.zIndex = '9999'; });
@@ -825,11 +791,12 @@
         };
 
         const handleStock = () => {
-             if(gameMode !== GameMode.Klondike) return;
+             if(gameState.mode !== GameMode.Klondike) return;
              saveHistory();
              setGameState(prev => {
-                 const ns = {...prev};
+                 const ns = JSON.parse(JSON.stringify(prev));
                  if(ns.stock.length === 0) {
+                     // Recycle waste to stock
                      ns.stock = ns.waste.reverse().map(c => ({...c, isFaceUp: false}));
                      ns.waste = [];
                  } else {
@@ -846,6 +813,7 @@
         
         const handleHint = () => {
               stopAdEvent(window.event);
+              // 1. Check moves to Foundation
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i];
                   if(col.length){
@@ -857,27 +825,70 @@
                       }
                   }
               }
+              // 2. Check Tableau Moves
+              for(let i=0; i<gameState.tableau.length; i++) {
+                  const col = gameState.tableau[i];
+                  if(col.length) {
+                      const card = col[col.length-1];
+                      for(let j=0; j<gameState.tableau.length; j++) {
+                          if(i===j) continue;
+                          const tCol = gameState.tableau[j];
+                          const tCard = tCol.length ? tCol[tCol.length-1] : null;
+                          if(isMoveValid(card, tCard, 'tableau', gameState.mode)) {
+                               setHint({sourceId: card.id, targetId: `tableau-${j}`});
+                               setTimeout(()=>setHint(null), 2000); return;
+                          }
+                      }
+                  }
+              }
         };
 
         const handleAuto = () => {
              stopAdEvent(window.event);
              let moved = false;
-             const ns = JSON.parse(JSON.stringify(gameState));
+             let ns = JSON.parse(JSON.stringify(gameState));
+             
+             // Try to move anything to foundation
+             const tryMove = (card, fromColIdx) => {
+                 const fTarget = ns.foundation[card.suit].length ? ns.foundation[card.suit][ns.foundation[card.suit].length-1] : null;
+                 if(isMoveValid(card, fTarget, 'foundation', ns.mode, card.suit)) {
+                     ns.foundation[card.suit].push(card);
+                     return true;
+                 }
+                 return false;
+             };
+
+             // Scan Tableau
              for(let i=0; i<ns.tableau.length; i++) {
                  const col = ns.tableau[i];
                  if(col.length) {
                      const card = col[col.length-1];
-                     const fPile = ns.foundation[card.suit];
-                     const fTarget = fPile.length ? fPile[fPile.length-1] : null;
-                     if(isMoveValid(card, fTarget, 'foundation', ns.mode, card.suit)) {
-                         saveHistory();
-                         col.pop(); fPile.push(card);
+                     if(tryMove(card)) {
+                         col.pop();
                          if(ns.mode === GameMode.Klondike && col.length && !col[col.length-1].isFaceUp) col[col.length-1].isFaceUp=true;
                          moved=true; break;
                      }
                  }
              }
+
+             // Scan FreeCells/Waste
+             if(!moved) {
+                 if(ns.mode === GameMode.FreeCell) {
+                     for(let i=0; i<ns.freeCells.length; i++) {
+                         const card = ns.freeCells[i];
+                         if(card && tryMove(card)) { ns.freeCells[i] = null; moved=true; break; }
+                     }
+                 } else {
+                     if(ns.waste.length) {
+                         const card = ns.waste[ns.waste.length-1];
+                         if(tryMove(card)) { ns.waste.pop(); moved=true; }
+                     }
+                 }
+             }
+
              if(moved) {
+                 saveHistory();
+                 ns.moves++; ns.score+=10;
                  setGameState(ns);
                  playSound('drop');
              }
@@ -885,46 +896,28 @@
 
         // --- Simulated Stats ---
         useEffect(() => {
-            // Initial random values
             setOnlineCount(Math.floor(Math.random() * (350 - 150) + 150));
             setVisitCount(1250000 + Math.floor(Math.random() * 50000));
-
-            // Fluctuating online users
-            const onlineInterval = setInterval(() => {
-                setOnlineCount(prev => {
-                    const change = Math.floor(Math.random() * 5) - 2; // -2, -1, 0, 1, 2
-                    return Math.max(100, prev + change);
-                });
-            }, 3000);
-
-            // Slowly incrementing visits
-            const visitInterval = setInterval(() => {
-                setVisitCount(prev => prev + 1);
-            }, 8000);
-
-            return () => {
-                clearInterval(onlineInterval);
-                clearInterval(visitInterval);
-            }
+            const onlineInterval = setInterval(() => { setOnlineCount(prev => Math.max(100, prev + Math.floor(Math.random() * 5) - 2)); }, 3000);
+            const visitInterval = setInterval(() => { setVisitCount(prev => prev + 1); }, 8000);
+            return () => { clearInterval(onlineInterval); clearInterval(visitInterval); }
         }, []);
 
         useEffect(() => {
-            if (gameState.gameWon) {
+            const total = Object.values(gameState.foundation).reduce((acc, pile) => acc + pile.length, 0);
+            if (total === 52 && !gameState.gameWon) {
+                setGameState(p => ({...p, gameWon: true}));
                 playSound('win');
                 setShowWinningBounce(true);
+                setStats(p => ({ ...p, wins: p.wins + 1 }));
             }
-        }, [gameState.gameWon, playSound]);
+        }, [gameState.foundation, playSound]);
 
-        // --- Ad Timer Logic (1min, then every 5min) ---
+        // --- Ad Timer Logic ---
         useEffect(() => {
-            const showAd = () => {
-                if (document.hidden) return; // Don't show if tab is backgrounded
-                // Trigger Monetag or AdSense Interstitial via external script
-            };
-
-            const timer1 = setTimeout(showAd, 60000); // 1 min
-            const interval = setInterval(showAd, 300000); // 5 min
-
+            const showAd = () => { /* Ad logic triggers externally via Monetag/AdSense */ };
+            const timer1 = setTimeout(showAd, 60000); 
+            const interval = setInterval(showAd, 300000); 
             return () => { clearTimeout(timer1); clearInterval(interval); };
         }, []);
 
@@ -933,8 +926,8 @@
                 {/* Header */}
                 <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5 pt-safe">
                     <div className="flex items-center gap-3 shrink-0">
-                        <Trophy className="text-yellow-500 w-5 h-5" />
-                        <h1 className="text-white font-serif font-bold text-lg hidden xs:block">Solitaire Pro</h1>
+                        <div className="bg-yellow-500/20 p-1.5 rounded-lg"><Crown className="text-yellow-500 w-5 h-5" /></div>
+                        <h1 className="text-white font-serif font-bold text-lg hidden xs:block">JosiPuff</h1>
                     </div>
                     
                     <div className="flex items-center gap-3 flex-1 justify-end">
@@ -965,10 +958,9 @@
 
                 {/* Main Game Area */}
                 <main className="flex-grow flex flex-col justify-between items-center p-2 sm:p-4 z-10 relative overflow-y-auto pb-safe">
-                    {/* Responsive Grid with Side Ads */}
                     <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[120px_1fr_120px] gap-6">
                         
-                        {/* LEFT AD (Skyscraper) */}
+                        {/* LEFT AD */}
                         <div className="hidden lg:flex flex-col gap-4">
                             <AdBanner className="w-[120px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5 bg-black/20 backdrop-blur-sm" slotId="1109009056" format="auto" />
                         </div>
@@ -984,7 +976,7 @@
                                     ))
                                 ) : (
                                     <>
-                                        <div className="col-span-1 aspect-[2.5/3.5] bg-black/20 rounded border-2 border-white/10 flex items-center justify-center" onClick={handleStock}>
+                                        <div className="col-span-1 aspect-[2.5/3.5] bg-black/20 rounded border-2 border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/5 active:scale-95 transition" onClick={handleStock}>
                                             {gameState.stock.length > 0 ? (
                                                 <div className="relative w-full h-full"><div className="absolute inset-0.5 bg-[#5c0b0b] rounded-[4%] border border-white/20"></div><RefreshCw className="absolute inset-0 m-auto text-white/20" /></div>
                                             ) : <RefreshCw className="text-white/20" />}
@@ -1009,7 +1001,7 @@
 
                             <div className="grid grid-cols-8 gap-1 sm:gap-3 h-full">
                                 {gameState.tableau.map((col, i) => (
-                                    <div key={i} data-drop-zone="true" data-drop-type="tableau" data-drop-index={i} onClick={()=>col.length===0 && handleCardClick(null, 'tableau', i)} className="relative h-[60vh]">
+                                    <div key={i} data-drop-zone="true" data-drop-type="tableau" data-drop-index={i} onClick={()=>col.length===0 && handleCardClick(null, 'tableau', i)} className={`relative h-[60vh] ${hint?.targetId===`tableau-${i}`?'ring-2 ring-yellow-400/50 rounded':''}`}>
                                         {col.map((card, idx) => (
                                             <div key={card.id} className="absolute w-full" style={{top: `${idx * (gameMode===GameMode.Klondike && !card.isFaceUp ? 10 : 25)}px`, zIndex: idx}}>
                                                 <SolitaireCard card={card} draggable={card.isFaceUp} onPointerDown={(e,el)=>handleDragStart(e,card,'tableau',i,idx,el)} isSelected={selected?.card.id===card.id} className={hint?.sourceId===card.id?'ring-2 ring-yellow-400':''} />
@@ -1020,7 +1012,7 @@
                             </div>
                         </div>
 
-                        {/* RIGHT AD (Skyscraper) */}
+                        {/* RIGHT AD */}
                         <div className="hidden lg:flex flex-col gap-4">
                             <AdBanner className="w-[120px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5 bg-black/20 backdrop-blur-sm" slotId="1109009056" format="auto" />
                         </div>
@@ -1044,17 +1036,13 @@
                         <Wand2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Auto</span>
                     </button>
                     <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={()=>setShowTasksModal(true)} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-purple-400 transition">
-                        <CalendarCheck size={20} /><span className="text-[9px] uppercase font-bold mt-1">Metas</span>
-                    </button>
-                    <div className="w-px h-8 bg-white/10"></div>
                     <button onClick={()=>setIsSoundEnabled(!isSoundEnabled)} className={`flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 transition ${isSoundEnabled?'text-white':'text-white/30'}`}>
                         {isSoundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                         <span className="text-[9px] uppercase font-bold mt-1">Som</span>
                     </button>
                     <div className="w-px h-8 bg-white/10"></div>
                     <button onClick={()=>setShowStatsModal(true)} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-orange-400 transition">
-                        <BarChart3 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Placar</span>
+                        <BarChart3 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Stats</span>
                     </button>
                 </DraggableMenu>
 
@@ -1070,11 +1058,87 @@
                 </div>
                 
                 {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} hasNativePrompt={!!deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
-                {showTasksModal && <DailyTasksModal tasks={dailyTasks} onClose={()=>setShowTasksModal(false)} onClaim={(id)=>{setDailyTasks(t=>t.map(i=>i.id===id?{...i,claimed:true}:i))}} />}
                 {showStatsModal && <StatsModal onClose={()=>setShowStatsModal(false)} stats={stats} />}
+                
+                {(gameState.gameWon || showWinningBounce) && (
+                    <>
+                        <div className="fixed inset-0 z-[155] flex items-center justify-center pointer-events-none"><h1 className="text-[12vw] font-black uppercase tracking-tighter victory-text">Vitória!</h1></div>
+                        <Confetti />
+                        <WinningBounce foundation={gameState.foundation} />
+                    </>
+                )}
             </div>
         );
       }
+      
+      // --- Winning Bounce & Confetti Components ---
+      const Confetti = () => {
+         const canvasRef = useRef(null);
+         useEffect(() => {
+            const canvas = canvasRef.current; if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w = canvas.width = window.innerWidth; let h = canvas.height = window.innerHeight;
+            const particles = Array.from({length: 150}, () => ({
+                x: Math.random()*w, y: Math.random()*h - h,
+                vx: Math.random()*4-2, vy: Math.random()*5+2,
+                color: ['#FFD700','#FF0000','#00FF00','#0000FF','#FF00FF'][Math.floor(Math.random()*5)],
+                size: Math.random()*10+5, rot: Math.random()*360, rotS: Math.random()*10-5
+            }));
+            let anim;
+            const loop = () => {
+                ctx.clearRect(0,0,w,h);
+                particles.forEach(p => {
+                    p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotS;
+                    if(p.y>h) { p.y=-p.size; p.x=Math.random()*w; }
+                    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+                    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); ctx.restore();
+                });
+                anim = requestAnimationFrame(loop);
+            };
+            loop();
+            return () => cancelAnimationFrame(anim);
+         }, []);
+         return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[150]" />;
+      };
+
+      const WinningBounce = ({ foundation }) => {
+          const canvasRef = useRef(null);
+          useEffect(() => {
+              const canvas = canvasRef.current; if(!canvas) return;
+              const ctx = canvas.getContext('2d');
+              let w = canvas.width = window.innerWidth; let h = canvas.height = window.innerHeight;
+              const cards = [];
+              const gravity = 0.8;
+              let frame = 0, anim;
+              
+              // Spawn cards logic (simplified cascade)
+              const spawn = () => {
+                  if(frame % 5 === 0 && cards.length < 200) {
+                      cards.push({
+                          x: Math.random() * w, y: -100,
+                          vx: Math.random()*10-5, vy: 0,
+                          w: 40, h: 56, color: Math.random()>0.5?'#d40000':'#1a1a1a', bounce: 0.7+Math.random()*0.2
+                      });
+                  }
+              };
+              
+              const loop = () => {
+                  ctx.clearRect(0,0,w,h);
+                  spawn();
+                  cards.forEach(c => {
+                      c.vy += gravity; c.x += c.vx; c.y += c.vy;
+                      if(c.y + c.h > h) { c.y = h - c.h; c.vy *= -c.bounce; if(Math.abs(c.vy)<gravity*2) c.vy=0; }
+                      ctx.fillStyle = '#fff'; ctx.fillRect(c.x,c.y,c.w,c.h);
+                      ctx.fillStyle = c.color; ctx.fillRect(c.x+5,c.y+5,c.w-10,c.h-10);
+                  });
+                  frame++;
+                  anim = requestAnimationFrame(loop);
+              };
+              loop();
+              return () => cancelAnimationFrame(anim);
+          }, []);
+          return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[160]" />;
+      };
 
       const root = createRoot(document.getElementById('root'));
       root.render(<App />);
