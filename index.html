@@ -429,7 +429,8 @@
              
              // Resize logic
              const resize = () => {
-                 canvas.width = Math.min(window.innerWidth - 20, 600);
+                 const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+                 canvas.width = Math.min(parentWidth, 600);
                  canvas.height = Math.min(window.innerHeight - 200, 800);
                  state.current.player.x = canvas.width / 2;
                  state.current.player.y = canvas.height - 100;
@@ -1120,7 +1121,7 @@
                 <main className="flex-grow flex flex-col justify-between items-center p-2 sm:p-4 z-10 relative overflow-y-auto pb-safe" onClick={stopAdEvent}>
                     <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6">
                         <div className="hidden lg:flex flex-col gap-4">
-                            <AdsterraBanner width={160} height={600} dataKey="COLOQUE_SUA_KEY_AQUI" />
+                            <AdsterraBanner width={160} height={600} dataKey="3c0cd82368fb680b5d61812c81df31f2" />
                         </div>
 
                         {/* GAME BOARD AREA */}
@@ -1176,7 +1177,7 @@
                         </div>
 
                         <div className="hidden lg:flex flex-col gap-4">
-                            <AdsterraBanner width={160} height={600} dataKey="COLOQUE_SUA_KEY_AQUI" />
+                            <AdsterraBanner width={160} height={600} dataKey="3c0cd82368fb680b5d61812c81df31f2" />
                         </div>
                     </div>
                     
