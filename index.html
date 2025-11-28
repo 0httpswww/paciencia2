@@ -457,7 +457,8 @@
              score: 0,
              powerLevel: 1,
              nextBossThreshold: 5000,
-             boss: null
+             boss: null,
+             bossLevel: 0
          });
          const animationRef = useRef(null);
 
@@ -469,7 +470,7 @@
              state.current = {
                  player: { x: 300, y: 700, w: 30, h: 40, speed: 5, maxHp: 100 },
                  bullets: [], enemyBullets: [], items: [], enemies: [], particles: [], keys: {}, lastShot: 0, enemyTimer: 0, frameCount: 0, stars: state.current.stars, difficulty: 1,
-                 score: 0, powerLevel: 1, nextBossThreshold: 5000, boss: null
+                 score: 0, powerLevel: 1, nextBossThreshold: 5000, boss: null, bossLevel: 0
              };
              setScore(0);
              setPlayerHp(100);
@@ -569,10 +570,18 @@
                  // BOSS TRIGGER
                  if (st.score >= st.nextBossThreshold && !st.boss) {
                      // SPAWN BOSS
+                     st.bossLevel++; // Increment Boss Level
+                     
+                     // Increase size by 20% each level
+                     const sizeMult = 1 + (st.bossLevel * 0.2);
+                     
                      st.boss = {
-                         x: canvas.width / 2, y: -100,
-                         w: 120, h: 80,
-                         hp: 500 * st.difficulty, maxHp: 500 * st.difficulty,
+                         x: canvas.width / 2, y: -150,
+                         w: Math.min(canvas.width - 40, 120 * sizeMult), // Cap width slightly
+                         h: 80 * sizeMult,
+                         // Exponential HP Growth: Base * 1.5 ^ Level
+                         hp: 1000 * Math.pow(1.5, st.bossLevel), 
+                         maxHp: 1000 * Math.pow(1.5, st.bossLevel),
                          vx: 2, state: 'entering',
                          timer: 0
                      };
@@ -694,41 +703,50 @@
                          if (b.y >= 100) b.state = 'fighting';
                      } else {
                          b.x += b.vx;
-                         if (b.x < 60 || b.x > canvas.width - 60) b.vx *= -1;
+                         if (b.x < (b.w/2) || b.x > canvas.width - (b.w/2)) b.vx *= -1;
                          
                          // Boss Shoot
                          if (st.frameCount % 40 === 0) {
                              const angle = Math.atan2(st.player.y - b.y, st.player.x - b.x);
-                             st.enemyBullets.push({ x: b.x, y: b.y + 40, vx: Math.cos(angle)*4, vy: Math.sin(angle)*4 });
-                             st.enemyBullets.push({ x: b.x - 40, y: b.y + 20, vx: 0, vy: 5 });
-                             st.enemyBullets.push({ x: b.x + 40, y: b.y + 20, vx: 0, vy: 5 });
+                             st.enemyBullets.push({ x: b.x, y: b.y + b.h/2, vx: Math.cos(angle)*4, vy: Math.sin(angle)*4 });
+                             st.enemyBullets.push({ x: b.x - b.w/3, y: b.y + b.h/4, vx: 0, vy: 5 });
+                             st.enemyBullets.push({ x: b.x + b.w/3, y: b.y + b.h/4, vx: 0, vy: 5 });
                          }
                      }
                      
-                     // Draw Boss
+                     // Draw Boss (Dynamic Size)
                      ctx.fillStyle = '#ef4444';
                      ctx.beginPath();
-                     ctx.moveTo(b.x, b.y + 40);
-                     ctx.lineTo(b.x - 60, b.y - 20);
-                     ctx.lineTo(b.x + 60, b.y - 20);
+                     ctx.moveTo(b.x, b.y + b.h/2);
+                     ctx.lineTo(b.x - b.w/2, b.y - b.h/4);
+                     ctx.lineTo(b.x + b.w/2, b.y - b.h/4);
                      ctx.fill();
                      
                      // Boss HP Bar (on Boss)
                      ctx.fillStyle = 'red';
-                     ctx.fillRect(b.x - 50, b.y - 40, 100, 10);
+                     ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, 10);
                      ctx.fillStyle = 'green';
-                     ctx.fillRect(b.x - 50, b.y - 40, 100 * (b.hp / b.maxHp), 10);
+                     ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w * (b.hp / b.maxHp), 10);
 
                      // Collision Boss vs Player Bullets
                      for(let i = st.bullets.length - 1; i >= 0; i--) {
                          const bul = st.bullets[i];
-                         if (Math.abs(bul.x - b.x) < 60 && Math.abs(bul.y - b.y) < 40) {
+                         // Simple AABB approximation for hit
+                         if (Math.abs(bul.x - b.x) < b.w/2 && Math.abs(bul.y - b.y) < b.h/2) {
                              b.hp -= 2; // Damage
                              st.bullets.splice(i, 1);
                              if (b.hp <= 0) {
                                  st.boss = null;
-                                 st.score += 2000;
-                                 st.nextBossThreshold += 5000;
+                                 st.score += 5000 * st.bossLevel; // Bonus increases with level
+                                 
+                                 // EXPONENTIAL THRESHOLD LOGIC
+                                 // 1st: 5000 (Defeated) -> Next is 10000
+                                 // 2nd: 10000 (Defeated) -> Next is 30000
+                                 // 3rd: 30000 (Defeated) -> Next is previous * 2.5
+                                 if (st.bossLevel === 1) st.nextBossThreshold = 10000;
+                                 else if (st.bossLevel === 2) st.nextBossThreshold = 30000;
+                                 else st.nextBossThreshold = Math.floor(st.nextBossThreshold * 2.5);
+
                                  setBossActive(false);
                                  setScore(st.score);
                                  playSound('explosion');
