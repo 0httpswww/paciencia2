@@ -102,6 +102,9 @@
         /* Tetris Grid */
         .tetris-grid { display: grid; grid-template-rows: repeat(20, 1fr); grid-template-columns: repeat(10, 1fr); gap: 1px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1); }
         .tetris-cell { width: 100%; height: 100%; border-radius: 2px; }
+        
+        /* Space Shooter Canvas */
+        .shooter-canvas { border: 2px solid rgba(255,255,255,0.1); background: black; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; }
     </style>
     
     <script type="importmap">
@@ -122,12 +125,12 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket } from 'lucide-react';
 
       // --- TYPES & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
-      const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris' };
+      const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris', Shooter: 'shooter' };
       
       const TETROMINOS = {
           0: { shape: [[0]], color: '0, 0, 0' },
@@ -197,7 +200,7 @@
                   osc.start(t);
                   osc.stop(t + 0.1);
               } else if (type === 'win' || type === 'line') {
-                  const notes = type === 'win' ? [523, 659, 783, 1046] : [440, 554, 659]; // C major vs A major
+                  const notes = type === 'win' ? [523, 659, 783, 1046] : [440, 554, 659];
                   notes.forEach((freq, i) => {
                       const osc = ctx.createOscillator();
                       const g = ctx.createGain();
@@ -225,6 +228,32 @@
                   filter.connect(gain);
                   gain.gain.setValueAtTime(0.05, t);
                   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                  noise.start(t);
+              } else if (type === 'shoot') {
+                  const osc = ctx.createOscillator();
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(800, t);
+                  osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+                  gain.gain.setValueAtTime(0.05, t);
+                  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                  osc.connect(gain);
+                  osc.start(t);
+                  osc.stop(t + 0.15);
+              } else if (type === 'explosion') {
+                  const bufferSize = ctx.sampleRate * 0.3;
+                  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                  const data = buffer.getChannelData(0);
+                  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                  const noise = ctx.createBufferSource();
+                  noise.buffer = buffer;
+                  const filter = ctx.createBiquadFilter();
+                  filter.type = 'lowpass';
+                  filter.frequency.value = 1000;
+                  filter.frequency.exponentialRampToValueAtTime(100, t + 0.2);
+                  noise.connect(filter);
+                  filter.connect(gain);
+                  gain.gain.setValueAtTime(0.1, t);
+                  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
                   noise.start(t);
               }
           }, [enabled]);
@@ -375,6 +404,249 @@
         );
       };
 
+      // --- SPACE SHOOTER GAME ---
+      const SpaceShooterGame = ({ playSound, onGameOver }) => {
+         const canvasRef = useRef(null);
+         const [score, setScore] = useState(0);
+         const [gameOver, setGameOver] = useState(false);
+         const state = useRef({
+             player: { x: 0, y: 0, w: 30, h: 40, speed: 5 },
+             bullets: [],
+             enemies: [],
+             particles: [],
+             keys: {},
+             lastShot: 0,
+             enemyTimer: 0,
+             frameCount: 0,
+             stars: []
+         });
+         const animationRef = useRef(null);
+
+         useEffect(() => {
+             const canvas = canvasRef.current;
+             if(!canvas) return;
+             const ctx = canvas.getContext('2d');
+             
+             // Resize logic
+             const resize = () => {
+                 canvas.width = Math.min(window.innerWidth - 20, 600);
+                 canvas.height = Math.min(window.innerHeight - 200, 800);
+                 state.current.player.x = canvas.width / 2;
+                 state.current.player.y = canvas.height - 100;
+                 
+                 // Init Stars
+                 state.current.stars = Array.from({length: 50}, () => ({
+                     x: Math.random() * canvas.width,
+                     y: Math.random() * canvas.height,
+                     s: Math.random() * 2 + 1,
+                     v: Math.random() * 3 + 1
+                 }));
+             };
+             resize();
+             window.addEventListener('resize', resize);
+             
+             // Controls
+             const handleDown = (e) => state.current.keys[e.code] = true;
+             const handleUp = (e) => state.current.keys[e.code] = false;
+             window.addEventListener('keydown', handleDown);
+             window.addEventListener('keyup', handleUp);
+             
+             // Touch Controls
+             let touchStart = { x: 0, y: 0 };
+             const handleTouchStart = (e) => {
+                 const t = e.touches[0];
+                 touchStart = { x: t.clientX, y: t.clientY };
+                 state.current.keys['Space'] = true; // Auto shoot on touch
+             };
+             const handleTouchMove = (e) => {
+                 e.preventDefault();
+                 const t = e.touches[0];
+                 const dx = t.clientX - touchStart.x;
+                 const dy = t.clientY - touchStart.y;
+                 state.current.player.x += dx * 1.5;
+                 state.current.player.y += dy * 1.5;
+                 
+                 // Clamp
+                 state.current.player.x = Math.max(15, Math.min(canvas.width - 15, state.current.player.x));
+                 state.current.player.y = Math.max(20, Math.min(canvas.height - 20, state.current.player.y));
+                 
+                 touchStart = { x: t.clientX, y: t.clientY };
+             };
+             const handleTouchEnd = () => state.current.keys['Space'] = false;
+             
+             canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+             canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+             canvas.addEventListener('touchend', handleTouchEnd);
+
+             // Game Loop
+             const loop = () => {
+                 if(gameOver) return;
+                 
+                 const st = state.current;
+                 st.frameCount++;
+                 
+                 // Update Background
+                 ctx.fillStyle = '#000';
+                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                 
+                 ctx.fillStyle = '#fff';
+                 st.stars.forEach(s => {
+                     s.y += s.v;
+                     if(s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+                     ctx.fillRect(s.x, s.y, s.s, s.s);
+                 });
+                 
+                 // Update Player
+                 if(st.keys['ArrowLeft']) st.player.x -= st.player.speed;
+                 if(st.keys['ArrowRight']) st.player.x += st.player.speed;
+                 if(st.keys['ArrowUp']) st.player.y -= st.player.speed;
+                 if(st.keys['ArrowDown']) st.player.y += st.player.speed;
+                 
+                 // Clamp
+                 st.player.x = Math.max(15, Math.min(canvas.width - 15, st.player.x));
+                 st.player.y = Math.max(20, Math.min(canvas.height - 20, st.player.y));
+                 
+                 // Shoot
+                 if(st.keys['Space'] || st.frameCount % 10 === 0) { // Auto shoot
+                    if(st.frameCount - st.lastShot > 15) {
+                        st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8 });
+                        st.lastShot = st.frameCount;
+                        playSound('shoot');
+                    }
+                 }
+                 
+                 // Spawn Enemies
+                 if(st.enemyTimer++ > 60 - Math.min(50, Math.floor(score/500))) {
+                     st.enemyTimer = 0;
+                     st.enemies.push({
+                         x: Math.random() * (canvas.width - 30) + 15,
+                         y: -20,
+                         w: 30, h: 30,
+                         v: 2 + Math.random() * 2 + (score/2000),
+                         hp: 1 + Math.floor(score/1000)
+                     });
+                 }
+                 
+                 // Update Bullets
+                 ctx.fillStyle = '#fbbf24';
+                 for(let i = st.bullets.length - 1; i >= 0; i--) {
+                     const b = st.bullets[i];
+                     b.y -= b.v;
+                     ctx.fillRect(b.x - 2, b.y, 4, 10);
+                     if(b.y < 0) st.bullets.splice(i, 1);
+                 }
+                 
+                 // Update Enemies & Collision
+                 for(let i = st.enemies.length - 1; i >= 0; i--) {
+                     const e = st.enemies[i];
+                     e.y += e.v;
+                     
+                     // Draw Enemy
+                     ctx.fillStyle = '#ef4444';
+                     ctx.beginPath();
+                     ctx.moveTo(e.x, e.y + e.h/2);
+                     ctx.lineTo(e.x - e.w/2, e.y - e.h/2);
+                     ctx.lineTo(e.x + e.w/2, e.y - e.h/2);
+                     ctx.fill();
+                     
+                     // Check Player Collision
+                     const dx = e.x - st.player.x;
+                     const dy = e.y - st.player.y;
+                     const dist = Math.hypot(dx, dy);
+                     if(dist < 30) {
+                         setGameOver(true);
+                         playSound('explosion');
+                         cancelAnimationFrame(animationRef.current);
+                         return;
+                     }
+                     
+                     // Check Bullet Collision
+                     for(let j = st.bullets.length - 1; j >= 0; j--) {
+                         const b = st.bullets[j];
+                         if(Math.abs(b.x - e.x) < e.w/2 && Math.abs(b.y - e.y) < e.h/2) {
+                             st.bullets.splice(j, 1);
+                             e.hp--;
+                             if(e.hp <= 0) {
+                                 // Explosion particles
+                                 for(let k=0; k<8; k++) {
+                                     st.particles.push({
+                                         x: e.x, y: e.y,
+                                         vx: Math.random()*6-3, vy: Math.random()*6-3,
+                                         life: 30, color: '#ef4444'
+                                     });
+                                 }
+                                 st.enemies.splice(i, 1);
+                                 setScore(s => s + 100);
+                                 playSound('explosion');
+                                 break; // Break bullet loop since enemy is gone
+                             }
+                         }
+                     }
+                     
+                     if(e.y > canvas.height) st.enemies.splice(i, 1);
+                 }
+                 
+                 // Draw Player
+                 ctx.fillStyle = '#3b82f6';
+                 ctx.beginPath();
+                 ctx.moveTo(st.player.x, st.player.y - 20);
+                 ctx.lineTo(st.player.x - 15, st.player.y + 15);
+                 ctx.lineTo(st.player.x, st.player.y + 10);
+                 ctx.lineTo(st.player.x + 15, st.player.y + 15);
+                 ctx.fill();
+                 
+                 // Particles
+                 for(let i=st.particles.length-1; i>=0; i--) {
+                     const p = st.particles[i];
+                     p.x += p.vx; p.y += p.vy; p.life--;
+                     ctx.fillStyle = p.color;
+                     ctx.globalAlpha = p.life / 30;
+                     ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+                     ctx.globalAlpha = 1;
+                     if(p.life <= 0) st.particles.splice(i, 1);
+                 }
+                 
+                 animationRef.current = requestAnimationFrame(loop);
+             };
+             
+             loop();
+             return () => {
+                 window.removeEventListener('keydown', handleDown);
+                 window.removeEventListener('keyup', handleUp);
+                 window.removeEventListener('resize', resize);
+                 canvas.removeEventListener('touchstart', handleTouchStart);
+                 canvas.removeEventListener('touchmove', handleTouchMove);
+                 canvas.removeEventListener('touchend', handleTouchEnd);
+                 cancelAnimationFrame(animationRef.current);
+             };
+         }, [gameOver, playSound]);
+
+         const restart = () => {
+             state.current = {
+                 player: { x: 300, y: 700, w: 30, h: 40, speed: 5 },
+                 bullets: [], enemies: [], particles: [], keys: {}, lastShot: 0, enemyTimer: 0, frameCount: 0, stars: state.current.stars
+             };
+             setScore(0);
+             setGameOver(false);
+         };
+
+         return (
+             <div className="flex flex-col items-center justify-center w-full h-full relative" onClick={stopAdEvent}>
+                <div className="absolute top-4 left-4 text-white font-mono text-xl z-10 drop-shadow-md">SCORE: <span className="text-yellow-400">{score}</span></div>
+                <canvas ref={canvasRef} className="shooter-canvas rounded-lg max-w-full" />
+                {gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-20">
+                        <div className="bg-[#1e293b] p-8 rounded-2xl border border-white/20 text-center shadow-2xl animate-in zoom-in">
+                            <h2 className="text-red-500 font-black text-4xl mb-2">GAME OVER</h2>
+                            <p className="text-gray-300 mb-6 text-lg">Score Final: <span className="text-white font-bold">{score}</span></p>
+                            <button onClick={restart} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform active:scale-95">Jogar Novamente</button>
+                        </div>
+                    </div>
+                )}
+             </div>
+         );
+      };
+
       // --- TETRIS GAME COMPONENT ---
       const TetrisGame = ({ playSound, onGameOver }) => {
           const [grid, setGrid] = useState(Array(20).fill(Array(10).fill([0, 'clear'])));
@@ -385,7 +657,6 @@
           const [gameOver, setGameOver] = useState(false);
           const [dropTime, setDropTime] = useState(null);
           
-          // Helper to create empty grid
           const createStage = () => Array.from(Array(20), () => new Array(10).fill([0, 'clear']));
           
           useEffect(() => {
@@ -497,7 +768,6 @@
               return dir > 0 ? rotated.map(row => row.reverse()) : rotated.reverse();
           };
 
-          // Game Loop (Gravity)
           useInterval(() => { drop(); }, dropTime);
 
           function useInterval(callback, delay) {
@@ -511,7 +781,6 @@
             }, [delay]);
           }
 
-          // Render Grid Logic
           useEffect(() => {
               const sweepRows = (newStage) => {
                   return newStage.reduce((ack, row) => {
@@ -549,7 +818,6 @@
               setGrid(prev => updateStage(prev));
           }, [player, player.collided, playSound]);
           
-          // Keyboard controls
           useEffect(() => {
             const handler = (e) => { if(!gameOver) move(e); };
             const upHandler = (e) => { if(!gameOver) keyUp(e); };
@@ -560,13 +828,10 @@
 
           return (
              <div className="flex flex-col items-center w-full max-w-[320px] mx-auto select-none" onClick={stopAdEvent}>
-                {/* Score Header */}
                 <div className="flex w-full justify-between bg-black/40 p-2 rounded-t-lg border-x border-t border-white/10 text-white font-mono text-xs">
                     <div>SCORE: <span className="text-yellow-400 font-bold">{score}</span></div>
                     <div>LEVEL: <span className="text-emerald-400 font-bold">{level}</span></div>
                 </div>
-
-                {/* Grid */}
                 <div className="relative border-2 border-white/20 bg-black/80 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
                     <div className="tetris-grid" style={{ width: '250px', height: '500px' }}>
                         {grid.map((row, y) => row.map((cell, x) => (
@@ -584,8 +849,6 @@
                         </div>
                     )}
                 </div>
-
-                {/* Mobile Controls */}
                 <div className="mt-6 grid grid-cols-3 gap-4 w-full px-4">
                     <div className="col-span-1 flex justify-center"><button className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center active:bg-white/30 active:scale-95" onPointerDown={(e)=>{ stopAdEvent(e); move({keyCode: 37})}}><ArrowLeft className="text-white" /></button></div>
                     <div className="col-span-1 flex flex-col items-center gap-2">
@@ -623,10 +886,7 @@
         useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
         const startNewGame = useCallback(() => {
-            if (gameMode === GameMode.Tetris) {
-                // Tetris resets itself via key prop or internal state
-                return;
-            }
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
             if (gameMode === GameMode.FreeCell) {
@@ -788,7 +1048,7 @@
              }); setSelected(null); playSound('pickup');
         };
         const handleHint = () => {
-              if (gameMode === GameMode.Tetris) return;
+              if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i]; if(col.length){ const card = col[col.length-1]; const fTarget = gameState.foundation[card.suit].length ? gameState.foundation[card.suit][gameState.foundation[card.suit].length-1] : null; if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)){ setHint({sourceId: card.id, targetId: `foundation-${card.suit}`}); setTimeout(()=>setHint(null), 2000); return; } }
               }
@@ -797,7 +1057,7 @@
               }
         };
         const handleAuto = () => {
-             if (gameMode === GameMode.Tetris) return;
+             if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
              let moved = false; let ns = JSON.parse(JSON.stringify(gameState));
              const tryMove = (card) => {
                  const fTarget = ns.foundation[card.suit].length ? ns.foundation[card.suit][ns.foundation[card.suit].length-1] : null;
@@ -820,7 +1080,7 @@
             return () => { clearInterval(onlineInterval); clearInterval(visitInterval); }
         }, []);
         useEffect(() => {
-            if (gameMode === GameMode.Tetris) return;
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
             const total = Object.values(gameState.foundation).reduce((acc, pile) => acc + pile.length, 0);
             if (total === 52 && !gameState.gameWon) { setGameState(p => ({...p, gameWon: true})); playSound('win'); setShowWinningBounce(true); setTimeout(() => setShowWinningBounce(false), 6000); }
         }, [gameState.foundation, playSound, gameMode]);
@@ -837,6 +1097,7 @@
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.FreeCell)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Klondike)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Tetris)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Tetris?'bg-emerald-600 text-white':'text-white/50'}`}>Blocos</button>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Shooter)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap flex items-center gap-1 ${gameMode===GameMode.Shooter?'bg-emerald-600 text-white':'text-white/50'}`}><Rocket size={10} /> Nave</button>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 border-l border-white/10 pl-1.5">
                             {!isStandalone && (
@@ -850,7 +1111,7 @@
                     </div>
                 </header>
                 
-                {gameMode !== GameMode.Tetris && (
+                {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && (
                 <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5 shrink-0" onClick={stopAdEvent}>
                     <span>SCORE: {gameState.score}</span><span>MOVES: {gameState.moves}</span>
                 </div>
@@ -866,6 +1127,8 @@
                         <div className="flex flex-col gap-1 sm:gap-3 items-center w-full">
                             {gameMode === GameMode.Tetris ? (
                                 <TetrisGame playSound={playSound} onGameOver={(score) => { /* Handle Game Over */ }} />
+                            ) : gameMode === GameMode.Shooter ? (
+                                <SpaceShooterGame playSound={playSound} onGameOver={(score) => { /* Handle Game Over */ }} />
                             ) : (
                                 <>
                                 <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8 w-full">
@@ -923,10 +1186,11 @@
                 </main>
 
                 <DraggableMenu>
-                    <button onClick={() => gameMode === GameMode.Tetris ? setGameMode(GameMode.Tetris) : startNewGame()} className="flex flex-col items-center p-1.5 rounded-lg w-11 hover:bg-white/10 text-blue-400 transition">
-                        <PlusCircle size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Novo</span>
+                    <button onClick={() => gameMode === GameMode.Tetris || gameMode === GameMode.Shooter ? setGameMode(gameMode) : startNewGame()} className="flex flex-col items-center p-1.5 rounded-lg w-11 hover:bg-white/10 text-blue-400 transition">
+                        {gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? <RotateCcw size={18} /> : <PlusCircle size={18} />}
+                        <span className="text-[8px] uppercase font-bold mt-0.5">{gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? 'Reset' : 'Novo'}</span>
                     </button>
-                    {gameMode !== GameMode.Tetris && (
+                    {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && (
                         <>
                         <div className="w-px h-6 bg-white/10"></div>
                         <button onClick={(e)=>{ stopAdEvent(e); handleUndo()}} disabled={!history.length} className={`flex flex-col items-center p-1.5 rounded-lg w-11 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
