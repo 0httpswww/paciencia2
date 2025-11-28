@@ -239,11 +239,11 @@
                   osc.connect(gain);
                   osc.start(t);
                   osc.stop(t + 0.15);
-              } else if (type === 'powerup') {
+              } else if (type === 'powerup' || type === 'heal') {
                    const osc = ctx.createOscillator();
                    osc.type = 'sine';
-                   osc.frequency.setValueAtTime(440, t);
-                   osc.frequency.linearRampToValueAtTime(880, t + 0.2);
+                   osc.frequency.setValueAtTime(type==='heal'?300:440, t);
+                   osc.frequency.linearRampToValueAtTime(type==='heal'?600:880, t + 0.2);
                    gain.gain.setValueAtTime(0.1, t);
                    gain.gain.linearRampToValueAtTime(0.001, t + 0.2);
                    osc.connect(gain);
@@ -604,18 +604,20 @@
                  // Shoot
                  if(st.keys['Space'] || st.frameCount % 10 === 0) { 
                     if(st.frameCount - st.lastShot > 15) {
-                        const shotColor = st.powerLevel === 1 ? '#fbbf24' : st.powerLevel === 2 ? '#3b82f6' : st.powerLevel === 3 ? '#22c55e' : '#f472b6';
+                        const shotColor = st.powerLevel === 1 ? '#fbbf24' : st.powerLevel === 2 ? '#3b82f6' : st.powerLevel === 3 ? '#22c55e' : st.powerLevel === 4 ? '#f472b6' : st.powerLevel === 5 ? '#a855f7' : '#22d3ee';
                         
                         // Center shot (Always)
-                        st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8, color: shotColor });
+                        if (st.powerLevel <= 5) {
+                            st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8, color: shotColor });
+                        }
                         
                         // Level 2+
-                        if (st.powerLevel >= 2) {
+                        if (st.powerLevel >= 2 && st.powerLevel <= 5) {
                              st.bullets.push({ x: st.player.x - 10, y: st.player.y - 15, v: 7, vx: -0.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 10, y: st.player.y - 15, v: 7, vx: 0.5, color: shotColor });
                         }
                         // Level 3+
-                        if (st.powerLevel >= 3) {
+                        if (st.powerLevel >= 3 && st.powerLevel <= 5) {
                              st.bullets.push({ x: st.player.x - 15, y: st.player.y - 10, v: 6, vx: -1.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 15, y: st.player.y - 10, v: 6, vx: 1.5, color: shotColor });
                         }
@@ -629,6 +631,20 @@
                                     color: '#f472b6' 
                                 });
                             }
+                        }
+                        // Level 5 (Plasma - Fast Vertical)
+                        if (st.powerLevel >= 5) {
+                            st.bullets.push({ x: st.player.x - 20, y: st.player.y, v: 12, color: '#a855f7' });
+                            st.bullets.push({ x: st.player.x + 20, y: st.player.y, v: 12, color: '#a855f7' });
+                        }
+
+                         // Level 6 (Beam/Wall)
+                         if (st.powerLevel >= 6) {
+                            st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 10, color: '#22d3ee', w: 6 });
+                            st.bullets.push({ x: st.player.x - 10, y: st.player.y, v: 10, color: '#4ade80' });
+                            st.bullets.push({ x: st.player.x + 10, y: st.player.y, v: 10, color: '#4ade80' });
+                            st.bullets.push({ x: st.player.x - 25, y: st.player.y + 10, v: 10, color: '#22d3ee' });
+                            st.bullets.push({ x: st.player.x + 25, y: st.player.y + 10, v: 10, color: '#22d3ee' });
                         }
 
                         st.lastShot = st.frameCount;
@@ -652,9 +668,10 @@
                      }
                  }
 
-                 // Spawn Items
-                 if (Math.random() < 0.002) {
-                     st.items.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, v: 2, type: 'power' });
+                 // Spawn Items (Power or Heal)
+                 if (Math.random() < 0.003) {
+                     const isHeal = Math.random() > 0.65; // 35% chance for heart
+                     st.items.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, v: 2, type: isHeal ? 'heal' : 'power' });
                  }
                  
                  // Update Bullets
@@ -665,7 +682,7 @@
                      if(b.vy) b.y += b.vy;
                      
                      ctx.fillStyle = b.color;
-                     ctx.fillRect(b.x - 2, b.y - 2, 4, 10);
+                     ctx.fillRect(b.x - 2, b.y - 2, b.w || 4, 10);
                      if(b.y < 0 || b.y > canvas.height || b.x < 0 || b.x > canvas.width) st.bullets.splice(i, 1);
                  }
                  
@@ -755,20 +772,30 @@
                      const item = st.items[i];
                      item.y += item.v;
                      
-                     ctx.fillStyle = '#fbbf24';
-                     ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill();
-                     ctx.fillStyle = '#000';
-                     ctx.font = '12px monospace'; ctx.fillText('⚡', item.x-4, item.y+4);
+                     if (item.type === 'power') {
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#000'; ctx.font = '12px monospace'; ctx.fillText('⚡', item.x-4, item.y+4);
+                     } else if (item.type === 'heal') {
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#fff'; ctx.font = '12px monospace'; ctx.fillText('❤️', item.x-6, item.y+4);
+                     }
 
                      const dx = item.x - st.player.x;
                      const dy = item.y - st.player.y;
                      if (Math.hypot(dx, dy) < 25) {
-                         st.powerLevel = Math.min(4, st.powerLevel + 1); // Max level 4
-                         setPowerLevel(st.powerLevel); // Sync UI
+                         if (item.type === 'power') {
+                             st.powerLevel = Math.min(6, st.powerLevel + 1); // Max level 6
+                             setPowerLevel(st.powerLevel);
+                             st.score += 50;
+                             playSound('powerup');
+                         } else if (item.type === 'heal') {
+                             setPlayerHp(h => Math.min(100, h + 30));
+                             playSound('heal');
+                         }
                          st.items.splice(i, 1);
-                         playSound('powerup');
-                         st.score += 50;
-                         setScore(st.score); // Sync UI
+                         setScore(st.score);
                      }
                      if (item.y > canvas.height) st.items.splice(i, 1);
                  }
@@ -844,7 +871,7 @@
                  }
                  
                  // Draw Player
-                 ctx.fillStyle = st.powerLevel >= 4 ? '#f472b6' : '#3b82f6';
+                 ctx.fillStyle = st.powerLevel >= 6 ? '#22d3ee' : st.powerLevel >= 5 ? '#a855f7' : st.powerLevel >= 4 ? '#f472b6' : '#3b82f6';
                  ctx.beginPath();
                  ctx.moveTo(st.player.x, st.player.y - 20);
                  ctx.lineTo(st.player.x - 15, st.player.y + 15);
@@ -889,7 +916,7 @@
                              <div className={`h-full transition-all duration-300 ${playerHp > 50 ? 'bg-green-500' : playerHp > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${Math.max(0, playerHp)}%` }}></div>
                          </div>
                          <div className="text-xs text-white/70 font-mono">VIDA: {playerHp}%</div>
-                         {powerLevel > 1 && <div className="text-xs text-blue-400 font-bold uppercase animate-pulse">Arma Lvl {powerLevel} {powerLevel >= 4 && '(MAX)'}</div>}
+                         {powerLevel > 1 && <div className="text-xs text-blue-400 font-bold uppercase animate-pulse">Arma Lvl {powerLevel} {powerLevel >= 6 && '(MAX)'}</div>}
                          {bossActive && <div className="text-sm text-red-500 font-black animate-pulse">⚠️ BOSS FIGHT ⚠️</div>}
                      </div>
                 </div>
@@ -1368,6 +1395,9 @@
                         <h1 className="text-white font-serif font-bold text-base sm:text-lg hidden xs:block">JosiPuff</h1>
                     </div>
                     <div className="flex items-center gap-2 flex-1 justify-end">
+                        <div className="hidden md:flex bg-black/40 rounded-lg p-1 mr-4 border border-white/5">
+                            <AdsterraBanner width={320} height={50} dataKey="40ea244e14933019fbfcc00a3875f885" />
+                        </div>
                         <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar">
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.FreeCell)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Klondike)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
