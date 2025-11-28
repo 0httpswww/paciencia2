@@ -527,7 +527,8 @@
                  
                  const st = state.current;
                  st.frameCount++;
-                 st.difficulty = 1 + Math.min(3, Math.floor(st.score / 500) * 0.2); 
+                 // Increase difficulty every 2000 points
+                 st.difficulty = 1 + Math.min(5, Math.floor(st.score / 2000) * 0.5);
                  
                  // Update Background
                  ctx.fillStyle = '#000';
