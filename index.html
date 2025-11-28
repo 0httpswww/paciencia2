@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -47,8 +46,8 @@
                             '50%': { 'background-position': '100% 50%' }
                         },
                         'neon-pulse': {
-                            '0%, 100%': { boxShadow: '0 0 5px #9333ea, 0 0 10px #9333ea', borderColor: '#9333ea' },
-                            '50%': { boxShadow: '0 0 5px #22c55e, 0 0 10px #22c55e', borderColor: '#22c55e' }
+                            '0%, 100%': { boxShadow: '0 0 5px #9333ea, 0 0 10px #9333ea, borderColor: #9333ea' },
+                            '50%': { boxShadow: '0 0 5px #22c55e, 0 0 10px #22c55e, borderColor: #22c55e' }
                         },
                         shimmer: {
                             '0%': { transform: 'translateX(-150%) skewX(-15deg)' },
@@ -507,27 +506,27 @@
       };
 
       const InstallModal = ({ onInstall, onClose, isIOS, deferredPrompt }) => {
+        // --- LOGIC: If deferredPrompt exists, SIM clicks prompt(). If not, SIM shows instructions inside modal.
         const handleSimClick = () => {
-            if (deferredPrompt) {
-                onInstall(); // Execute native prompt immediately
-            } else {
-               // Fallback: This only happens if we expected a prompt but it's null.
-               // Update UI to show manual instructions instead of closing/alerting
-               const container = document.getElementById('install-options-container');
-               if(container) {
-                   container.innerHTML = `
+             if (deferredPrompt) {
+                 onInstall();
+             } else {
+                 // Fallback to manual instructions if prompt is missing (e.g., already dismissed or unsupported)
+                 const content = document.getElementById('modal-content-area');
+                 if(content) {
+                     content.innerHTML = `
                         <div class="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6 text-xs text-gray-300 space-y-2 animate-in slide-in-from-bottom-2">
-                             <p class="font-bold text-yellow-400">Instalação Manual Necessária:</p>
-                             <p>1. Abra o menu do navegador (três pontos ou compartilhar)</p>
-                             <p>2. Selecione <strong>"Adicionar à Tela Inicial"</strong> ou <strong>"Instalar App"</strong></p>
+                             <p class="font-bold text-yellow-400">Instalação Manual:</p>
+                             <p>1. Abra o menu do navegador (três pontos)</p>
+                             <p>2. Toque em <strong>"Adicionar à Tela Inicial"</strong></p>
                              <div class="text-center mt-4">
-                                <button id="close-btn" class="py-2 px-6 bg-white/10 rounded-lg">OK, Entendi</button>
+                                <button id="close-btn-inner" class="py-2 px-6 bg-white/10 rounded-lg w-full">OK</button>
                              </div>
                         </div>
-                   `;
-                   document.getElementById('close-btn').onclick = onClose;
-               }
-            }
+                     `;
+                     document.getElementById('close-btn-inner').onclick = onClose;
+                 }
+             }
         };
 
         return (
@@ -535,14 +534,14 @@
                 <div className="bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in">
                     <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-green-500/20 pointer-events-none"></div>
                     
-                    <div className="relative z-10">
+                    <div className="relative z-10" id="modal-content-area">
                         <div className="mb-6 inline-block relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
                             <div className="relative bg-white/10 p-2 rounded-xl border border-white/20">
                                 <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-20 h-20 object-contain drop-shadow-lg" alt="App Icon" />
                             </div>
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR APP?</h2>
+                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR O APP?</h2>
                         <p className="text-gray-300 mb-8 text-sm leading-relaxed">Deseja adicionar o atalho à sua área de trabalho para jogar em tela cheia?</p>
                         
                         {isIOS ? (
@@ -553,7 +552,7 @@
                                 <button onClick={onClose} className="mt-4 w-full py-2.5 rounded-lg font-bold uppercase text-white/70 bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">Entendi</button>
                             </div>
                         ) : (
-                            <div id="install-options-container" className="flex gap-4">
+                            <div className="flex gap-4">
                                 <button onClick={onClose} className="flex-1 py-4 rounded-xl font-bold uppercase text-white/70 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors tracking-widest text-sm">NÃO</button>
                                 <button onClick={handleSimClick} className="flex-[1.5] py-4 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse shadow-lg shadow-green-900/40 transition-transform active:scale-95 tracking-widest text-sm border border-green-400/30">SIM</button>
                             </div>
@@ -563,35 +562,6 @@
             </div>
         );
       };
-
-      const StatsModal = ({ onClose, stats }) => (
-          <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={stopAdEvent}>
-              <div className="bg-[#1e293b] rounded-2xl w-full max-w-md border border-white/10 shadow-2xl overflow-hidden">
-                  <div className="bg-black/30 p-4 border-b border-white/10 flex justify-between items-center">
-                      <h2 className="text-lg font-bold text-white flex items-center gap-2"><BarChart3 className="text-yellow-400" /> Estatísticas</h2>
-                      <button onClick={onClose} className="text-white/50 hover:text-white"><X /></button>
-                  </div>
-                  <div className="p-6 grid grid-cols-2 gap-4">
-                      <div className="bg-white/5 p-4 rounded-xl text-center">
-                          <div className="text-2xl font-black text-emerald-400">{stats.wins}</div>
-                          <div className="text-xs text-white/50 uppercase tracking-wider">Vitórias</div>
-                      </div>
-                      <div className="bg-white/5 p-4 rounded-xl text-center">
-                          <div className="text-2xl font-black text-yellow-400">{stats.bestScore}</div>
-                          <div className="text-xs text-white/50 uppercase tracking-wider">Melhor Pontos</div>
-                      </div>
-                      <div className="bg-white/5 p-4 rounded-xl text-center">
-                          <div className="text-2xl font-black text-blue-400">{stats.bestMoves > 0 ? stats.bestMoves : '-'}</div>
-                          <div className="text-xs text-white/50 uppercase tracking-wider">Menor Mov.</div>
-                      </div>
-                      <div className="bg-white/5 p-4 rounded-xl text-center">
-                          <div className="text-2xl font-black text-purple-400">{stats.gamesPlayed}</div>
-                          <div className="text-xs text-white/50 uppercase tracking-wider">Partidas</div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      );
 
       // --- MAIN APP ---
       function App() {
@@ -610,11 +580,9 @@
         const [showInstallModal, setShowInstallModal] = useState(false);
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         const [isStandalone, setIsStandalone] = useState(false);
-        
         const [showStatsModal, setShowStatsModal] = useState(false);
         const [isSoundEnabled, setIsSoundEnabled] = useState(true);
         const [stats, setStats] = useState({ wins: 0, gamesPlayed: 0, bestScore: 0, bestMoves: 0 });
-
         const [showWinningBounce, setShowWinningBounce] = useState(false);
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
@@ -665,45 +633,43 @@
 
         useEffect(() => { startNewGame(); }, [startNewGame]);
 
-        // Service Worker Registration for PWA
+        // --- PWA INSTALLATION LOGIC ---
         useEffect(() => {
+            // Standard Service Worker Registration for PWA support
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registered', reg))
-                    .catch(err => console.log('Service Worker failed', err));
+                    .then(registration => {
+                        console.log('SW Registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW Registration Failed:', error);
+                    });
             }
-        }, []);
 
-        useEffect(() => {
-            // Check if installed
             const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             setIsStandalone(installed);
             if (installed) return;
 
-            // 1. Check if we already captured the prompt globally
+            // 1. Capture prompt globally if already fired
             if (window.deferredInstallPrompt) {
                 setDeferredPrompt(window.deferredInstallPrompt);
-                setShowInstallModal(true); // Open immediately
+                setShowInstallModal(true);
             }
 
-            // 2. Listen for the custom event if it happens later
+            // 2. Listener for prompt
             const handleReady = () => {
                 setDeferredPrompt(window.deferredInstallPrompt);
-                setShowInstallModal(true);
+                setShowInstallModal(true); // Open Modal automatically when prompt is ready
             };
             window.addEventListener('install-prompt-ready', handleReady);
             
-            // 3. Fallback for iOS
+            // 3. iOS Fallback
             const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-            let iosTimer;
             if (isIOS) {
-                iosTimer = setTimeout(() => setShowInstallModal(true), 2000);
+                setTimeout(() => setShowInstallModal(true), 2000);
             }
 
-            return () => {
-                window.removeEventListener('install-prompt-ready', handleReady);
-                if(iosTimer) clearTimeout(iosTimer);
-            };
+            return () => window.removeEventListener('install-prompt-ready', handleReady);
         }, []);
 
         const handleInstallClick = async () => {
@@ -734,12 +700,11 @@
         };
 
         const handleCardMove = (source, targetType, targetIndex, suit) => {
-            saveHistory(); // CRITICAL: Save BEFORE mutation
+            saveHistory(); 
             setGameState(prev => {
-                const newState = JSON.parse(JSON.stringify(prev)); // Deep copy
+                const newState = JSON.parse(JSON.stringify(prev)); 
                 let cards = [];
                 
-                // --- EXTRACT FROM SOURCE ---
                 if (source.pileType === 'freeCell') { 
                     cards = [newState.freeCells[source.pileIndex]]; 
                     newState.freeCells[source.pileIndex] = null; 
@@ -750,26 +715,19 @@
                 else if (source.pileType === 'tableau') {
                     const col = newState.tableau[source.pileIndex];
                     cards = col.slice(source.cardIndex);
-                    
-                    // FreeCell Super Move Check
                     if (prev.mode === GameMode.FreeCell && cards.length > 1) {
                          const emptyFC = newState.freeCells.filter(c => c === null).length;
                          let emptyTab = newState.tableau.filter(c => c.length === 0).length;
-                         // If target is an empty tableau col, don't count it as "helper"
                          if (targetType === 'tableau' && newState.tableau[targetIndex].length === 0) emptyTab = Math.max(0, emptyTab - 1);
-                         if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev; // Invalid move
+                         if (cards.length > getMaxMovableStack(emptyFC, emptyTab)) return prev; 
                     }
-
                     newState.tableau[source.pileIndex] = col.slice(0, source.cardIndex);
-                    
-                    // Klondike Auto Flip
                     if (prev.mode === GameMode.Klondike && newState.tableau[source.pileIndex].length > 0) {
                         const top = newState.tableau[source.pileIndex][newState.tableau[source.pileIndex].length - 1];
                         if (!top.isFaceUp) { top.isFaceUp = true; newState.score += 5; }
                     }
                 }
 
-                // --- ADD TO TARGET ---
                 if (targetType === 'freeCell') newState.freeCells[targetIndex] = cards[0];
                 else if (targetType === 'tableau') newState.tableau[targetIndex].push(...cards);
                 else if (targetType === 'foundation') newState.foundation[suit].push(cards[0]);
@@ -789,11 +747,9 @@
             }
             if (!card || (!card.isFaceUp && pileType === 'tableau')) return;
 
-            // Smart Move: Tap to Foundation
             if (pileType !== 'foundation') {
                 const fPile = gameState.foundation[card.suit];
                 const fTarget = fPile.length ? fPile[fPile.length-1] : null;
-                // Only if it's the top card of the pile
                 let isTop = false;
                 if(pileType==='tableau' && cardIndex === gameState.tableau[pileIndex].length-1) isTop = true;
                 if(pileType==='freeCell' || pileType==='waste') isTop = true;
@@ -828,12 +784,9 @@
         const handleDragStart = (e, card, pileType, pileIndex, cardIndex, domEl) => {
              stopAdEvent(e);
              if(!card.isFaceUp) return;
-             
-             // Check if stack drag is valid
              if(pileType === 'tableau') {
                  const stack = gameState.tableau[pileIndex].slice(cardIndex);
                  if(!isStackValid(stack)) return;
-                 // FreeCell Drag Limit Check
                  if(gameState.mode === GameMode.FreeCell && stack.length > 1) {
                      const emptyFC = gameState.freeCells.filter(c => c === null).length;
                      const emptyTab = gameState.tableau.filter(c => c.length === 0).length;
@@ -931,7 +884,6 @@
              setGameState(prev => {
                  const ns = JSON.parse(JSON.stringify(prev));
                  if(ns.stock.length === 0) {
-                     // Recycle waste to stock
                      ns.stock = ns.waste.reverse().map(c => ({...c, isFaceUp: false}));
                      ns.waste = [];
                  } else {
@@ -947,7 +899,6 @@
         };
         
         const handleHint = () => {
-              // 1. Check moves to Foundation
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i];
                   if(col.length){
@@ -959,7 +910,6 @@
                       }
                   }
               }
-              // 2. Check Tableau Moves
               for(let i=0; i<gameState.tableau.length; i++) {
                   const col = gameState.tableau[i];
                   if(col.length) {
@@ -980,9 +930,7 @@
         const handleAuto = () => {
              let moved = false;
              let ns = JSON.parse(JSON.stringify(gameState));
-             
-             // Try to move anything to foundation
-             const tryMove = (card, fromColIdx) => {
+             const tryMove = (card) => {
                  const fTarget = ns.foundation[card.suit].length ? ns.foundation[card.suit][ns.foundation[card.suit].length-1] : null;
                  if(isMoveValid(card, fTarget, 'foundation', ns.mode, card.suit)) {
                      ns.foundation[card.suit].push(card);
@@ -991,7 +939,6 @@
                  return false;
              };
 
-             // Scan Tableau
              for(let i=0; i<ns.tableau.length; i++) {
                  const col = ns.tableau[i];
                  if(col.length) {
@@ -1004,7 +951,6 @@
                  }
              }
 
-             // Scan FreeCells/Waste
              if(!moved) {
                  if(ns.mode === GameMode.FreeCell) {
                      for(let i=0; i<ns.freeCells.length; i++) {
@@ -1027,7 +973,6 @@
              }
         };
 
-        // --- Simulated Stats ---
         useEffect(() => {
             setOnlineCount(Math.floor(Math.random() * (350 - 150) + 150));
             setVisitCount(1250000 + Math.floor(Math.random() * 50000));
@@ -1173,10 +1118,6 @@
                         {isSoundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
                         <span className="text-[8px] uppercase font-bold mt-0.5">Som</span>
                     </button>
-                    <div className="w-px h-6 bg-white/10"></div>
-                    <button onClick={(e)=>{ stopAdEvent(e); setShowStatsModal(true)}} className="flex flex-col items-center p-1.5 rounded-lg w-11 hover:bg-white/10 text-orange-400 transition">
-                        <BarChart3 size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Stats</span>
-                    </button>
                 </DraggableMenu>
 
                 <div className="fixed bottom-28 right-4 z-40 hidden md:flex flex-col gap-2 pointer-events-none">
@@ -1191,7 +1132,6 @@
                 </div>
                 
                 {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} deferredPrompt={deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
-                {showStatsModal && <StatsModal onClose={()=>setShowStatsModal(false)} stats={stats} />}
                 
                 {(gameState.gameWon || showWinningBounce) && (
                     <>
@@ -1222,7 +1162,6 @@
         );
       }
       
-      // --- Winning Bounce & Confetti Components ---
       const Confetti = () => {
          const canvasRef = useRef(null);
          useEffect(() => {

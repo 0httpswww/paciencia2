@@ -1,7 +1,7 @@
-
-// PWA Handler to satisfy installation criteria
+// PWA Handler: Required for Chrome to show the Install Prompt
 self.addEventListener('fetch', function(event) {
-  // Empty fetch handler allows the browser to recognize this as an installable PWA
+  // A dummy handler is enough to trick the browser into thinking it's offline-capable
+  // This is essential for the "Add to Home Screen" button to appear.
 });
 
 self.options = {
