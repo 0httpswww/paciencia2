@@ -125,12 +125,12 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert, Home } from 'lucide-react';
 
       // --- TYPES & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
-      const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris', Shooter: 'shooter' };
+      const GameMode = { Home: 'home', FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris', Shooter: 'shooter' };
       
       const TETROMINOS = {
           0: { shape: [[0]], color: '0, 0, 0' },
@@ -239,11 +239,11 @@
                   osc.connect(gain);
                   osc.start(t);
                   osc.stop(t + 0.15);
-              } else if (type === 'powerup' || type === 'heal') {
+              } else if (type === 'powerup' || type === 'heal' || type === 'shield') {
                    const osc = ctx.createOscillator();
                    osc.type = 'sine';
-                   osc.frequency.setValueAtTime(type==='heal'?300:440, t);
-                   osc.frequency.linearRampToValueAtTime(type==='heal'?600:880, t + 0.2);
+                   osc.frequency.setValueAtTime(type==='heal'?300 : type==='shield'?600 : 440, t);
+                   osc.frequency.linearRampToValueAtTime(type==='heal'?600 : type==='shield'?1200 : 880, t + 0.2);
                    gain.gain.setValueAtTime(0.1, t);
                    gain.gain.linearRampToValueAtTime(0.001, t + 0.2);
                    osc.connect(gain);
@@ -303,6 +303,7 @@
         }
         if (targetType === 'tableau') {
           if (!targetCard) {
+            // FreeCell: Any card can go to empty tableau. Klondike: Only King.
             if (mode === GameMode.Klondike) return card.rank === Rank.King;
             return true;
           }
@@ -458,7 +459,10 @@
              powerLevel: 1,
              nextBossThreshold: 5000,
              boss: null,
-             bossLevel: 0
+             bossLevel: 0,
+             immune: false,
+             immuneTimer: 0,
+             originalPower: 1
          });
          const animationRef = useRef(null);
 
@@ -470,7 +474,8 @@
              state.current = {
                  player: { x: 300, y: 700, w: 30, h: 40, speed: 5, maxHp: 100 },
                  bullets: [], enemyBullets: [], items: [], enemies: [], particles: [], keys: {}, lastShot: 0, enemyTimer: 0, frameCount: 0, stars: state.current.stars, difficulty: 1,
-                 score: 0, powerLevel: 1, nextBossThreshold: 5000, boss: null, bossLevel: 0
+                 score: 0, powerLevel: 1, nextBossThreshold: 5000, boss: null, bossLevel: 0,
+                 immune: false, immuneTimer: 0, originalPower: 1
              };
              setScore(0);
              setPlayerHp(100);
@@ -562,6 +567,16 @@
                  const st = state.current;
                  st.frameCount++;
                  
+                 // Update Immunity
+                 if (st.immune) {
+                     st.immuneTimer--;
+                     if (st.immuneTimer <= 0) {
+                         st.immune = false;
+                         // Restore power level if needed, but we keep upgrades generally
+                         // Only the fire rate bonus is tied to immunity flag implicitly below
+                     }
+                 }
+
                  // Update Difficulty
                  if (!st.boss) {
                     st.difficulty = 1 + Math.min(5, Math.floor(st.score / 2000) * 0.5);
@@ -569,23 +584,19 @@
 
                  // BOSS TRIGGER
                  if (st.score >= st.nextBossThreshold && !st.boss) {
-                     // SPAWN BOSS
-                     st.bossLevel++; // Increment Boss Level
-                     
-                     // Increase size by 20% each level
+                     st.bossLevel++;
                      const sizeMult = 1 + (st.bossLevel * 0.2);
                      
                      st.boss = {
                          x: canvas.width / 2, y: -150,
-                         w: Math.min(canvas.width - 40, 120 * sizeMult), // Cap width slightly
+                         w: Math.min(canvas.width - 40, 120 * sizeMult),
                          h: 80 * sizeMult,
-                         // Exponential HP Growth: Base * 1.5 ^ Level
                          hp: 1000 * Math.pow(1.5, st.bossLevel), 
                          maxHp: 1000 * Math.pow(1.5, st.bossLevel),
                          vx: 2, state: 'entering',
                          timer: 0
                      };
-                     st.enemies = []; // Clear existing enemies
+                     st.enemies = []; 
                      setBossActive(true);
                      playSound('boss_roar');
                  }
@@ -601,7 +612,7 @@
                      ctx.fillRect(s.x, s.y, s.s, s.s);
                  });
                  
-                 // Update Player (Keyboard)
+                 // Update Player
                  if(st.keys['ArrowLeft']) st.player.x -= st.player.speed;
                  if(st.keys['ArrowRight']) st.player.x += st.player.speed;
                  if(st.keys['ArrowUp']) st.player.y -= st.player.speed;
@@ -611,44 +622,47 @@
                  st.player.y = Math.max(20, Math.min(canvas.height - 20, st.player.y));
                  
                  // Shoot
-                 if(st.keys['Space'] || st.frameCount % 10 === 0) { 
-                    if(st.frameCount - st.lastShot > 15) {
-                        const shotColor = st.powerLevel === 1 ? '#fbbf24' : st.powerLevel === 2 ? '#3b82f6' : st.powerLevel === 3 ? '#22c55e' : st.powerLevel === 4 ? '#f472b6' : st.powerLevel === 5 ? '#a855f7' : '#22d3ee';
+                 const fireRate = st.immune ? 5 : 10; // Immune = Double Fire Rate
+                 if(st.keys['Space'] || st.frameCount % fireRate === 0) { 
+                    if(st.frameCount - st.lastShot > (fireRate + 5)) {
+                        // While immune, force max power level (6) temporarily or use current if higher
+                        const effectivePower = st.immune ? 6 : st.powerLevel;
+                        const shotColor = effectivePower === 1 ? '#fbbf24' : effectivePower === 2 ? '#3b82f6' : effectivePower === 3 ? '#22c55e' : effectivePower === 4 ? '#f472b6' : effectivePower === 5 ? '#a855f7' : '#22d3ee';
                         
                         // Center shot (Always)
-                        if (st.powerLevel <= 5) {
+                        if (effectivePower <= 5) {
                             st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8, color: shotColor });
                         }
                         
                         // Level 2+
-                        if (st.powerLevel >= 2 && st.powerLevel <= 5) {
+                        if (effectivePower >= 2 && effectivePower <= 5) {
                              st.bullets.push({ x: st.player.x - 10, y: st.player.y - 15, v: 7, vx: -0.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 10, y: st.player.y - 15, v: 7, vx: 0.5, color: shotColor });
                         }
                         // Level 3+
-                        if (st.powerLevel >= 3 && st.powerLevel <= 5) {
+                        if (effectivePower >= 3 && effectivePower <= 5) {
                              st.bullets.push({ x: st.player.x - 15, y: st.player.y - 10, v: 6, vx: -1.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 15, y: st.player.y - 10, v: 6, vx: 1.5, color: shotColor });
                         }
                         // Level 4 (Omni-Directional)
-                        if (st.powerLevel >= 4) {
+                        if (effectivePower >= 4) {
                             for(let i=0; i<8; i++) {
                                 const angle = (i / 8) * Math.PI * 2;
                                 st.bullets.push({ 
                                     x: st.player.x, y: st.player.y, 
-                                    vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6, v: 0, // Manual movement
+                                    vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6, v: 0,
                                     color: '#f472b6' 
                                 });
                             }
                         }
-                        // Level 5 (Plasma - Fast Vertical)
-                        if (st.powerLevel >= 5) {
+                        // Level 5 (Plasma)
+                        if (effectivePower >= 5) {
                             st.bullets.push({ x: st.player.x - 20, y: st.player.y, v: 12, color: '#a855f7' });
                             st.bullets.push({ x: st.player.x + 20, y: st.player.y, v: 12, color: '#a855f7' });
                         }
 
                          // Level 6 (Beam/Wall)
-                         if (st.powerLevel >= 6) {
+                         if (effectivePower >= 6) {
                             st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 10, color: '#22d3ee', w: 6 });
                             st.bullets.push({ x: st.player.x - 10, y: st.player.y, v: 10, color: '#4ade80' });
                             st.bullets.push({ x: st.player.x + 10, y: st.player.y, v: 10, color: '#4ade80' });
@@ -661,7 +675,7 @@
                     }
                  }
                  
-                 // Spawn Enemies (Only if no boss)
+                 // Spawn Enemies
                  if(!st.boss && st.enemyTimer++ > 60 / st.difficulty) {
                      st.enemyTimer = 0;
                      const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
@@ -677,10 +691,14 @@
                      }
                  }
 
-                 // Spawn Items (Power or Heal)
+                 // Spawn Items (Power, Heal, Shield)
                  if (Math.random() < 0.003) {
-                     const isHeal = Math.random() > 0.65; // 35% chance for heart
-                     st.items.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, v: 2, type: isHeal ? 'heal' : 'power' });
+                     const r = Math.random();
+                     let type = 'power';
+                     if (r > 0.85) type = 'shield';
+                     else if (r > 0.6) type = 'heal';
+                     
+                     st.items.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, v: 2, type });
                  }
                  
                  // Update Bullets
@@ -689,7 +707,6 @@
                      if(b.v) b.y -= b.v;
                      if(b.vx) b.x += b.vx;
                      if(b.vy) b.y += b.vy;
-                     
                      ctx.fillStyle = b.color;
                      ctx.fillRect(b.x - 2, b.y - 2, b.w || 4, 10);
                      if(b.y < 0 || b.y > canvas.height || b.x < 0 || b.x > canvas.width) st.bullets.splice(i, 1);
@@ -704,8 +721,6 @@
                      } else {
                          b.x += b.vx;
                          if (b.x < (b.w/2) || b.x > canvas.width - (b.w/2)) b.vx *= -1;
-                         
-                         // Boss Shoot
                          if (st.frameCount % 40 === 0) {
                              const angle = Math.atan2(st.player.y - b.y, st.player.x - b.x);
                              st.enemyBullets.push({ x: b.x, y: b.y + b.h/2, vx: Math.cos(angle)*4, vy: Math.sin(angle)*4 });
@@ -713,8 +728,6 @@
                              st.enemyBullets.push({ x: b.x + b.w/3, y: b.y + b.h/4, vx: 0, vy: 5 });
                          }
                      }
-                     
-                     // Draw Boss (Dynamic Size)
                      ctx.fillStyle = '#ef4444';
                      ctx.beginPath();
                      ctx.moveTo(b.x, b.y + b.h/2);
@@ -722,27 +735,19 @@
                      ctx.lineTo(b.x + b.w/2, b.y - b.h/4);
                      ctx.fill();
                      
-                     // Boss HP Bar (on Boss)
                      ctx.fillStyle = 'red';
                      ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, 10);
                      ctx.fillStyle = 'green';
                      ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w * (b.hp / b.maxHp), 10);
 
-                     // Collision Boss vs Player Bullets
                      for(let i = st.bullets.length - 1; i >= 0; i--) {
                          const bul = st.bullets[i];
-                         // Simple AABB approximation for hit
                          if (Math.abs(bul.x - b.x) < b.w/2 && Math.abs(bul.y - b.y) < b.h/2) {
-                             b.hp -= 2; // Damage
+                             b.hp -= 2;
                              st.bullets.splice(i, 1);
                              if (b.hp <= 0) {
                                  st.boss = null;
-                                 st.score += 5000 * st.bossLevel; // Bonus increases with level
-                                 
-                                 // EXPONENTIAL THRESHOLD LOGIC
-                                 // 1st: 5000 (Defeated) -> Next is 10000
-                                 // 2nd: 10000 (Defeated) -> Next is 30000
-                                 // 3rd: 30000 (Defeated) -> Next is previous * 2.5
+                                 st.score += 5000 * st.bossLevel;
                                  if (st.bossLevel === 1) st.nextBossThreshold = 10000;
                                  else if (st.bossLevel === 2) st.nextBossThreshold = 30000;
                                  else st.nextBossThreshold = Math.floor(st.nextBossThreshold * 2.5);
@@ -750,7 +755,6 @@
                                  setBossActive(false);
                                  setScore(st.score);
                                  playSound('explosion');
-                                 // Explosion particles
                                  for(let k=0; k<20; k++) {
                                      st.particles.push({x: b.x, y: b.y, vx: Math.random()*10-5, vy: Math.random()*10-5, life: 60, color: '#ef4444'});
                                  }
@@ -769,7 +773,8 @@
                      
                      const dx = eb.x - st.player.x;
                      const dy = eb.y - st.player.y;
-                     if (Math.hypot(dx, dy) < 10) { 
+                     // DAMAGE PLAYER
+                     if (!st.immune && Math.hypot(dx, dy) < 10) { 
                          setPlayerHp(h => {
                              const nh = h - 10;
                              if(nh <= 0 && !gameOverRef.current) { 
@@ -798,19 +803,27 @@
                         ctx.fillStyle = '#ef4444';
                         ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill();
                         ctx.fillStyle = '#fff'; ctx.font = '12px monospace'; ctx.fillText('❤️', item.x-6, item.y+4);
+                     } else if (item.type === 'shield') {
+                        ctx.fillStyle = '#06b6d4';
+                        ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#fff'; ctx.font = '12px monospace'; ctx.fillText('🛡️', item.x-6, item.y+4);
                      }
 
                      const dx = item.x - st.player.x;
                      const dy = item.y - st.player.y;
                      if (Math.hypot(dx, dy) < 25) {
                          if (item.type === 'power') {
-                             st.powerLevel = Math.min(6, st.powerLevel + 1); // Max level 6
+                             st.powerLevel = Math.min(6, st.powerLevel + 1);
                              setPowerLevel(st.powerLevel);
                              st.score += 50;
                              playSound('powerup');
                          } else if (item.type === 'heal') {
                              setPlayerHp(h => Math.min(100, h + 30));
                              playSound('heal');
+                         } else if (item.type === 'shield') {
+                             st.immune = true;
+                             st.immuneTimer = 600; // 10 seconds (60fps * 10)
+                             playSound('shield');
                          }
                          st.items.splice(i, 1);
                          setScore(st.score);
@@ -843,7 +856,8 @@
                      const dx = e.x - st.player.x;
                      const dy = e.y - st.player.y;
                      const dist = Math.hypot(dx, dy);
-                     if(dist < 20) { 
+                     // COLLISION PLAYER vs ENEMY
+                     if(!st.immune && dist < 20) { 
                          setPlayerHp(h => {
                              const nh = h - 20;
                              if(nh <= 0 && !gameOverRef.current) { 
@@ -878,7 +892,7 @@
                                  }
                                  st.enemies.splice(i, 1);
                                  st.score += e.score;
-                                 setScore(st.score); // Sync UI
+                                 setScore(st.score);
                                  playSound('explosion');
                                  break;
                              }
@@ -896,6 +910,18 @@
                  ctx.lineTo(st.player.x, st.player.y + 10);
                  ctx.lineTo(st.player.x + 15, st.player.y + 15);
                  ctx.fill();
+
+                 // Draw Immunity Shield
+                 if (st.immune) {
+                     ctx.strokeStyle = '#06b6d4'; // Cyan
+                     ctx.lineWidth = 3;
+                     ctx.shadowBlur = 10;
+                     ctx.shadowColor = '#06b6d4';
+                     ctx.beginPath();
+                     ctx.arc(st.player.x, st.player.y, 30, 0, Math.PI * 2);
+                     ctx.stroke();
+                     ctx.shadowBlur = 0;
+                 }
                  
                  for(let i=st.particles.length-1; i>=0; i--) {
                      const p = st.particles[i];
@@ -1169,7 +1195,7 @@
 
       // --- MAIN APP ---
       function App() {
-        const [gameMode, setGameMode] = useState(GameMode.FreeCell);
+        const [gameMode, setGameMode] = useState(GameMode.Home);
         const [gameState, setGameState] = useState({
             mode: GameMode.FreeCell,
             freeCells: [null,null,null,null], stock: [], waste: [], foundation: { [Suit.Hearts]: [], [Suit.Diamonds]: [], [Suit.Clubs]: [], [Suit.Spades]: [] },
@@ -1195,7 +1221,7 @@
         useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
         const startNewGame = useCallback(() => {
-            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
             if (gameMode === GameMode.FreeCell) {
@@ -1240,9 +1266,6 @@
                 setShowInstallModal(true); 
             };
             window.addEventListener('install-prompt-ready', handleReady);
-            
-            // iOS Fallback (always show after delay)
-            if (/iPhone|iPad|iPod/.test(navigator.userAgent)) setTimeout(() => setShowInstallModal(true), 2000);
             
             return () => window.removeEventListener('install-prompt-ready', handleReady);
         }, []);
@@ -1368,7 +1391,7 @@
              }); setSelected(null); playSound('pickup');
         };
         const handleHint = () => {
-              if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
+              if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i]; if(col.length){ const card = col[col.length-1]; const fTarget = gameState.foundation[card.suit].length ? gameState.foundation[card.suit][gameState.foundation[card.suit].length-1] : null; if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)){ setHint({sourceId: card.id, targetId: `foundation-${card.suit}`}); setTimeout(()=>setHint(null), 2000); return; } }
               }
@@ -1377,7 +1400,7 @@
               }
         };
         const handleAuto = () => {
-             if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
+             if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
              let moved = false; let ns = JSON.parse(JSON.stringify(gameState));
              const tryMove = (card) => {
                  const fTarget = ns.foundation[card.suit].length ? ns.foundation[card.suit][ns.foundation[card.suit].length-1] : null;
@@ -1400,29 +1423,87 @@
             return () => { clearInterval(onlineInterval); clearInterval(visitInterval); }
         }, []);
         useEffect(() => {
-            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter) return;
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
             const total = Object.values(gameState.foundation).reduce((acc, pile) => acc + pile.length, 0);
             if (total === 52 && !gameState.gameWon) { setGameState(p => ({...p, gameWon: true})); playSound('win'); setShowWinningBounce(true); setTimeout(() => setShowWinningBounce(false), 6000); }
         }, [gameState.foundation, playSound, gameMode]);
+
+        // Home Screen Logic
+        if (gameMode === GameMode.Home) {
+            return (
+                <div className={`min-h-[100dvh] flex flex-col items-center justify-center p-4 overflow-hidden relative ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'}`}>
+                     {/* Background Animation */}
+                     <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, ${isNightMode?'#334155':'#10b981'} 1px, transparent 1px)`, backgroundSize: '30px 30px' }}></div>
+                     
+                     <div className="relative z-10 w-full max-w-lg flex flex-col gap-6 animate-in zoom-in duration-500">
+                         {/* Logo */}
+                         <div className="flex flex-col items-center mb-4">
+                             <div className="bg-yellow-500/10 p-4 rounded-full border-2 border-yellow-500/30 mb-2 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                                 <Trophy className="w-12 h-12 text-yellow-400" />
+                             </div>
+                             <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-lg">JosiPuff</h1>
+                             <p className="text-white/60 text-sm font-mono tracking-widest uppercase">Arcade & Solitaire</p>
+                         </div>
+
+                         {/* Game Cards */}
+                         <div className="grid grid-cols-2 gap-3">
+                             <button onClick={() => setGameMode(GameMode.Klondike)} className="group relative bg-black/40 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/50 p-4 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 overflow-hidden">
+                                 <div className="bg-emerald-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><Club className="w-8 h-8 text-emerald-400" /></div>
+                                 <div className="text-center"><div className="font-bold text-white">Clássica</div><div className="text-[10px] text-white/50">Paciência Klondike</div></div>
+                             </button>
+
+                             <button onClick={() => setGameMode(GameMode.FreeCell)} className="group relative bg-black/40 hover:bg-blue-600/20 border border-white/10 hover:border-blue-500/50 p-4 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 overflow-hidden">
+                                 <div className="bg-blue-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><LayoutGrid className="w-8 h-8 text-blue-400" /></div>
+                                 <div className="text-center"><div className="font-bold text-white">FreeCell</div><div className="text-[10px] text-white/50">Estratégia Pura</div></div>
+                             </button>
+
+                             <button onClick={() => setGameMode(GameMode.Tetris)} className="group relative bg-black/40 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/50 p-4 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 overflow-hidden">
+                                 <div className="bg-purple-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><LayoutGrid className="w-8 h-8 text-purple-400 rotate-45" /></div>
+                                 <div className="text-center"><div className="font-bold text-white">Blocos</div><div className="text-[10px] text-white/50">Estilo Tetris</div></div>
+                             </button>
+
+                             <button onClick={() => setGameMode(GameMode.Shooter)} className="group relative bg-black/40 hover:bg-red-600/20 border border-white/10 hover:border-red-500/50 p-4 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 overflow-hidden">
+                                 <div className="bg-red-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><Rocket className="w-8 h-8 text-red-400" /></div>
+                                 <div className="text-center"><div className="font-bold text-white">Nave</div><div className="text-[10px] text-white/50">Space Shooter</div></div>
+                             </button>
+                         </div>
+
+                         {/* Footer Actions */}
+                         <div className="flex gap-3 mt-2">
+                             {!isStandalone && (
+                                <button onClick={handleInstallClick} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-900/40 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                    <Smartphone className="w-4 h-4" /> Instalar App
+                                </button>
+                             )}
+                             <button onClick={() => setIsNightMode(!isNightMode)} className="bg-white/5 hover:bg-white/10 text-white p-3 rounded-xl border border-white/10">
+                                 {isNightMode ? <Sun /> : <Moon />}
+                             </button>
+                         </div>
+                     </div>
+                     {showInstallModal && <InstallModal onInstall={handleInstallClick} onClose={()=>setShowInstallModal(false)} deferredPrompt={deferredPrompt} isIOS={/iPhone|iPad|iPod/.test(navigator.userAgent)} />}
+                </div>
+            );
+        }
 
         return (
             <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`}>
                 <header className="px-2 py-2 bg-black/30 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 pt-safe flex flex-wrap items-center justify-between gap-2 max-h-[60px]" onClick={stopAdEvent}>
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="bg-yellow-500/20 p-1.5 rounded-lg"><Crown className="text-yellow-500 w-4 h-4 sm:w-5 sm:h-5" /></div>
-                        <h1 className="text-white font-serif font-bold text-base sm:text-lg hidden xs:block">JosiPuff</h1>
+                        {/* LEFT: Game Selector Icons */}
+                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar border border-white/10">
+                            <button onClick={() => setGameMode(GameMode.Home)} className="p-1.5 rounded text-white/50 hover:bg-white/10 hover:text-white transition"><Home size={16} /></button>
+                            <div className="w-px h-4 bg-white/10 mx-1 self-center"></div>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.FreeCell)}} className={`p-1.5 rounded ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="FreeCell"><LayoutGrid size={16} /></button>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Klondike)}} className={`p-1.5 rounded ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Clássico"><Club size={16} /></button>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Tetris)}} className={`p-1.5 rounded ${gameMode===GameMode.Tetris?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Blocos"><LayoutGrid size={16} className="rotate-45" /></button>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Shooter)}} className={`p-1.5 rounded ${gameMode===GameMode.Shooter?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Nave"><Rocket size={16} /></button>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2 flex-1 justify-end">
                         <div className="hidden md:flex bg-black/40 rounded-lg p-1 mr-4 border border-white/5">
                             <AdsterraBanner width={320} height={50} dataKey="40ea244e14933019fbfcc00a3875f885" />
                         </div>
-                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar">
-                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.FreeCell)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
-                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Klondike)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
-                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Tetris)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Tetris?'bg-emerald-600 text-white':'text-white/50'}`}>Blocos</button>
-                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Shooter)}} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap flex items-center gap-1 ${gameMode===GameMode.Shooter?'bg-emerald-600 text-white':'text-white/50'}`}><Rocket size={10} /> Nave</button>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0 border-l border-white/10 pl-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0 pl-1.5">
                             {!isStandalone && (
                                 <button onClick={handleInstallClick} className="group relative px-3 py-1.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse border border-purple-500/50">
                                     <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
@@ -1434,7 +1515,7 @@
                     </div>
                 </header>
                 
-                {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && (
+                {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Home && (
                 <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5 shrink-0" onClick={stopAdEvent}>
                     <span>SCORE: {gameState.score}</span><span>MOVES: {gameState.moves}</span>
                 </div>
@@ -1513,7 +1594,7 @@
                         {gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? <RotateCcw size={18} /> : <PlusCircle size={18} />}
                         <span className="text-[8px] uppercase font-bold mt-0.5">{gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? 'Reset' : 'Novo'}</span>
                     </button>
-                    {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && (
+                    {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Home && (
                         <>
                         <div className="w-px h-6 bg-white/10"></div>
                         <button onClick={(e)=>{ stopAdEvent(e); handleUndo()}} disabled={!history.length} className={`flex flex-col items-center p-1.5 rounded-lg w-11 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
