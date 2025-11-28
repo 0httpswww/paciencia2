@@ -667,10 +667,20 @@
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                      setDeferredPrompt(null);
+                     setShowInstallButton(false);
                      setShowInstallModal(false);
                 }
             } else {
-                setShowInstallModal(true);
+                // If deferredPrompt is null, we can't force install.
+                // It means either not ready or not supported.
+                // We'll show an alert instruction as fallback if user clicked SIM
+                const isMobile = /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    alert("Instalação automática não disponível. Por favor, toque no menu do navegador (⋮) e selecione 'Adicionar à Tela Inicial'.");
+                } else {
+                    alert("Instalação automática não disponível. Verifique a barra de endereços para o ícone de instalação.");
+                }
+                setShowInstallModal(false);
             }
         };
 
