@@ -498,10 +498,18 @@
             if (deferredPrompt) {
                 onInstall(); // Trigger native prompt
             } else {
-               // Fallback if browser says "I can't install right now" (e.g., iPhone or PC already installed)
-               // Don't close, show manual instructions instead.
-               alert("Por favor, use a opção 'Adicionar à Tela Inicial' no menu do seu navegador.");
-               onClose();
+               // Fallback: If prompt is missing (race condition or not supported), show error visual within modal
+               const btn = document.getElementById('install-sim-btn');
+               if(btn) {
+                   btn.innerText = "Tente pelo Menu...";
+                   btn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                   btn.classList.remove('bg-gradient-to-r', 'from-green-600', 'to-emerald-600', 'animate-pulse');
+                   setTimeout(() => {
+                        // If really failing, let them close it
+                        alert("Não foi possível iniciar a instalação automática. Por favor, instale manualmente pelo menu do navegador.");
+                        onClose();
+                   }, 1000);
+               }
             }
         };
 
@@ -517,7 +525,7 @@
                                 <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-20 h-20 object-contain drop-shadow-lg" alt="App Icon" />
                             </div>
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR O APP?</h2>
+                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">CRIAR ATALHO?</h2>
                         <p className="text-gray-300 mb-8 text-sm leading-relaxed">Deseja adicionar o atalho à sua área de trabalho?</p>
                         
                         {isIOS ? (
@@ -530,7 +538,7 @@
                         ) : (
                             <div className="flex gap-4">
                                 <button onClick={onClose} className="flex-1 py-4 rounded-xl font-bold uppercase text-white/70 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors tracking-widest text-sm">NÃO</button>
-                                <button onClick={handleSimClick} className="flex-[1.5] py-4 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse shadow-lg shadow-green-900/40 transition-transform active:scale-95 tracking-widest text-sm border border-green-400/30">SIM</button>
+                                <button id="install-sim-btn" onClick={handleSimClick} className="flex-[1.5] py-4 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse shadow-lg shadow-green-900/40 transition-transform active:scale-95 tracking-widest text-sm border border-green-400/30">SIM</button>
                             </div>
                         )}
                     </div>
@@ -657,25 +665,24 @@
 
             const handlePrompt = (e) => { 
                 e.preventDefault(); 
-                setDeferredPrompt(e); 
-                // Auto Open Modal when Prompt is Ready
+                setDeferredPrompt(e);
+                // Open modal immediately when prompt is ready
                 setShowInstallModal(true);
             };
             
             window.addEventListener('beforeinstallprompt', handlePrompt);
             
+            // For iOS or cases where prompt doesn't fire but we still want to show instructions
+            // Only fire if not standalone and prompt hasn't fired yet after a delay
             const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
             let timer;
             if (isIOS) {
-                // Force open for iOS since no event exists
-                timer = setTimeout(() => {
-                    setShowInstallModal(true);
-                }, 2000);
+                timer = setTimeout(() => setShowInstallModal(true), 2000);
             }
 
             return () => {
                 window.removeEventListener('beforeinstallprompt', handlePrompt);
-                if (timer) clearTimeout(timer);
+                if(timer) clearTimeout(timer);
             };
         }, []);
 
@@ -688,7 +695,7 @@
                      setShowInstallModal(false);
                 }
             } else {
-                // Trigger manual help if prompt not ready/available
+                // If deferredPrompt is null, manual mode
                 setShowInstallModal(true);
             }
         };

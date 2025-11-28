@@ -1,7 +1,8 @@
 {
   "name": "Paciência Pro",
   "short_name": "Paciência",
-  "start_url": "./",
+  "start_url": ".",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f3526",
   "theme_color": "#0f3526",
