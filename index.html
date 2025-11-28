@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JosiPuff - Jogos</title>
-    <meta name="description" content="Jogue JosiPuff: Solitaire, FreeCell e Tetris Grátis. Leve, rápido e funciona offline.">
-    <meta name="keywords" content="jogo online, jogo paciencia, jogo paciencia dw, jogo paciencia josiane, solitaire, freecell, tetris, blocos, josipuff">
+    <meta name="description" content="Jogue JosiPuff: Solitaire, FreeCell, Tetris, Nave e Slither Grátis. Leve, rápido e funciona offline.">
+    <meta name="keywords" content="jogo online, jogo paciencia, jogo paciencia dw, jogo paciencia josiane, solitaire, freecell, tetris, blocos, josipuff, slither, snake">
     <meta name="theme-color" content="#0f3526">
     <meta name="monetag" content="90e74a99c3a7b6c2ba03e69c9477a61d">
     
@@ -103,8 +103,8 @@
         .tetris-grid { display: grid; grid-template-rows: repeat(20, 1fr); grid-template-columns: repeat(10, 1fr); gap: 1px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1); }
         .tetris-cell { width: 100%; height: 100%; border-radius: 2px; }
         
-        /* Space Shooter Canvas */
-        .shooter-canvas { border: 2px solid rgba(255,255,255,0.1); background: black; box-shadow: 0 0 20px rgba(0,0,0,0.8); cursor: crosshair; touch-action: none; }
+        /* Game Canvas */
+        .game-canvas { border: 2px solid rgba(255,255,255,0.1); background: black; box-shadow: 0 0 20px rgba(0,0,0,0.8); touch-action: none; }
     </style>
     
     <script type="importmap">
@@ -125,12 +125,12 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert, Home } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert, Home, Ghost } from 'lucide-react';
 
       // --- TYPES & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
-      const GameMode = { Home: 'home', FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris', Shooter: 'shooter' };
+      const GameMode = { Home: 'home', FreeCell: 'freeCell', Klondike: 'klondike', Tetris: 'tetris', Shooter: 'shooter', Slither: 'slither' };
       
       const TETROMINOS = {
           0: { shape: [[0]], color: '0, 0, 0' },
@@ -189,10 +189,10 @@
                   osc.connect(gain);
                   osc.start(t);
                   osc.stop(t + 0.05);
-              } else if (type === 'drop' || type === 'softdrop') {
+              } else if (type === 'drop' || type === 'softdrop' || type === 'eat') {
                   const osc = ctx.createOscillator();
                   osc.type = 'sine';
-                  osc.frequency.setValueAtTime(type==='drop'?120:100, t);
+                  osc.frequency.setValueAtTime(type==='drop'?120: type==='eat'?600:100, t);
                   osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
                   gain.gain.setValueAtTime(0.1, t);
                   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
@@ -249,7 +249,7 @@
                    osc.connect(gain);
                    osc.start(t);
                    osc.stop(t + 0.2);
-              } else if (type === 'explosion') {
+              } else if (type === 'explosion' || type === 'die') {
                   const bufferSize = ctx.sampleRate * 0.3;
                   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
                   const data = buffer.getChannelData(0);
@@ -423,6 +423,370 @@
                 </div>
             </div>
         );
+      };
+
+      // --- SLITHER GAME (SNAKE.IO) ---
+      const SlitherGame = ({ playSound, onGameOver, resetTrigger }) => {
+          const canvasRef = useRef(null);
+          const [score, setScore] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [leaderboard, setLeaderboard] = useState([]);
+          
+          const WORLD_SIZE = 2000;
+          const VIEWPORT_W = 800;
+          const VIEWPORT_H = 600;
+
+          const state = useRef({
+              player: { x: 1000, y: 1000, angle: 0, length: 10, radius: 10, speed: 3, boost: false, body: [], color: '#06b6d4', name: 'You' },
+              bots: [],
+              foods: [],
+              camera: { x: 0, y: 0 },
+              frameCount: 0,
+              mouse: { x: 0, y: 0 },
+              active: true
+          });
+          const animationRef = useRef(null);
+
+          const createBot = () => {
+              const names = ['Viper', 'Kobra', 'Python', 'Anaconda', 'Snek', 'Noodle', 'Worm', 'Hydra', 'Basilisk', 'Venom'];
+              const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+              return {
+                  x: Math.random() * WORLD_SIZE,
+                  y: Math.random() * WORLD_SIZE,
+                  angle: Math.random() * Math.PI * 2,
+                  length: 10 + Math.floor(Math.random() * 20),
+                  radius: 10,
+                  speed: 3,
+                  boost: false,
+                  body: [],
+                  color: colors[Math.floor(Math.random() * colors.length)],
+                  name: names[Math.floor(Math.random() * names.length)],
+                  targetAngle: 0,
+                  changeDirTimer: 0,
+                  id: Math.random()
+              };
+          };
+
+          const spawnFood = (amount) => {
+              for(let i=0; i<amount; i++) {
+                  state.current.foods.push({
+                      x: Math.random() * WORLD_SIZE,
+                      y: Math.random() * WORLD_SIZE,
+                      color: `hsl(${Math.random()*360}, 70%, 60%)`,
+                      val: 1,
+                      radius: 3 + Math.random() * 3
+                  });
+              }
+          };
+
+          useEffect(() => {
+              state.current.active = true;
+              setGameOver(false);
+              setScore(0);
+              state.current.player = { x: WORLD_SIZE/2, y: WORLD_SIZE/2, angle: 0, length: 10, radius: 10, speed: 3, boost: false, body: [], color: '#06b6d4', name: 'You' };
+              state.current.foods = [];
+              state.current.bots = Array.from({length: 15}, createBot);
+              spawnFood(300);
+          }, [resetTrigger]);
+
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              if(!canvas) return;
+              const ctx = canvas.getContext('2d');
+              
+              const resize = () => {
+                  const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+                  canvas.width = Math.min(parentWidth, 800);
+                  canvas.height = Math.min(window.innerHeight - 200, 600);
+              };
+              resize();
+              window.addEventListener('resize', resize);
+
+              const handleMove = (e) => {
+                  const rect = canvas.getBoundingClientRect();
+                  let clientX = e.clientX;
+                  let clientY = e.clientY;
+                  if (e.touches && e.touches.length > 0) {
+                      clientX = e.touches[0].clientX;
+                      clientY = e.touches[0].clientY;
+                  }
+                  state.current.mouse.x = clientX - rect.left - canvas.width/2;
+                  state.current.mouse.y = clientY - rect.top - canvas.height/2;
+              };
+
+              const handleDown = () => state.current.player.boost = true;
+              const handleUp = () => state.current.player.boost = false;
+
+              window.addEventListener('pointermove', handleMove);
+              canvas.addEventListener('touchmove', handleMove, {passive: false});
+              window.addEventListener('pointerdown', handleDown);
+              window.addEventListener('pointerup', handleUp);
+
+              const loop = () => {
+                  if (!state.current.active) return;
+                  const st = state.current;
+                  st.frameCount++;
+
+                  // Update Camera
+                  st.camera.x = st.player.x - canvas.width / 2;
+                  st.camera.y = st.player.y - canvas.height / 2;
+
+                  // Update Player
+                  if (!gameOver) {
+                      const angle = Math.atan2(st.mouse.y, st.mouse.x);
+                      // Smooth rotation
+                      let diff = angle - st.player.angle;
+                      while (diff < -Math.PI) diff += Math.PI * 2;
+                      while (diff > Math.PI) diff -= Math.PI * 2;
+                      st.player.angle += diff * 0.1;
+
+                      const speed = st.player.boost && st.player.length > 10 ? 6 : 3;
+                      if (st.player.boost && st.player.length > 10 && st.frameCount % 5 === 0) {
+                          st.player.length--; // Lose mass
+                          st.foods.push({x: st.player.x, y: st.player.y, color: '#fff', val: 1, radius: 4}); // Drop food
+                      }
+                      
+                      st.player.x += Math.cos(st.player.angle) * speed;
+                      st.player.y += Math.sin(st.player.angle) * speed;
+                      
+                      // Boundary
+                      if (st.player.x < 0 || st.player.x > WORLD_SIZE || st.player.y < 0 || st.player.y > WORLD_SIZE) {
+                          setGameOver(true);
+                          playSound('die');
+                          st.active = false;
+                      }
+
+                      // Body Trail
+                      st.player.body.unshift({x: st.player.x, y: st.player.y});
+                      const bodySpacing = 5;
+                      const maxBodyPoints = st.player.length * bodySpacing;
+                      if (st.player.body.length > maxBodyPoints) st.player.body.pop();
+                  }
+
+                  // Update Bots
+                  st.bots.forEach((bot, i) => {
+                      // AI Logic
+                      bot.changeDirTimer--;
+                      if (bot.changeDirTimer <= 0) {
+                          bot.targetAngle = Math.random() * Math.PI * 2;
+                          bot.changeDirTimer = 50 + Math.random() * 100;
+                      }
+                      
+                      // Avoid walls
+                      if (bot.x < 100) bot.targetAngle = 0;
+                      if (bot.x > WORLD_SIZE - 100) bot.targetAngle = Math.PI;
+                      if (bot.y < 100) bot.targetAngle = Math.PI / 2;
+                      if (bot.y > WORLD_SIZE - 100) bot.targetAngle = -Math.PI / 2;
+
+                      let diff = bot.targetAngle - bot.angle;
+                      while (diff < -Math.PI) diff += Math.PI * 2;
+                      while (diff > Math.PI) diff -= Math.PI * 2;
+                      bot.angle += diff * 0.05;
+
+                      bot.x += Math.cos(bot.angle) * bot.speed;
+                      bot.y += Math.sin(bot.angle) * bot.speed;
+
+                      // Bot Boundaries
+                      if (bot.x < 0 || bot.x > WORLD_SIZE || bot.y < 0 || bot.y > WORLD_SIZE) {
+                          // Bot Die
+                          for(let k=0; k<bot.length; k+=2) {
+                              if(bot.body[k*5]) st.foods.push({x: bot.body[k*5].x, y: bot.body[k*5].y, color: bot.color, val: 2, radius: 6});
+                          }
+                          st.bots[i] = createBot();
+                      }
+
+                      // Bot Body
+                      bot.body.unshift({x: bot.x, y: bot.y});
+                      if (bot.body.length > bot.length * 5) bot.body.pop();
+                  });
+
+                  // Collision Detection (Player vs Food)
+                  for (let i = st.foods.length - 1; i >= 0; i--) {
+                      const f = st.foods[i];
+                      const dx = st.player.x - f.x;
+                      const dy = st.player.y - f.y;
+                      if (dx*dx + dy*dy < (st.player.radius + f.radius)**2) {
+                          st.player.length += f.val * 0.5;
+                          st.score += f.val * 10;
+                          st.foods.splice(i, 1);
+                          playSound('eat');
+                          setScore(Math.floor(st.score));
+                      }
+                  }
+                  
+                  // Bot vs Food
+                  st.bots.forEach(bot => {
+                      for (let i = st.foods.length - 1; i >= 0; i--) {
+                        const f = st.foods[i];
+                        const dx = bot.x - f.x;
+                        const dy = bot.y - f.y;
+                        if (dx*dx + dy*dy < (bot.radius + f.radius + 20)**2) { // Bots grab easier
+                             st.foods.splice(i, 1);
+                             bot.length += f.val * 0.5;
+                        }
+                      }
+                  });
+
+                  // Player vs Bots (Collision)
+                  st.bots.forEach((bot, bIdx) => {
+                      // Player Head vs Bot Body
+                      for (let i = 0; i < bot.body.length; i+=5) { // Check segments
+                          const seg = bot.body[i];
+                          if (!seg) continue;
+                          const dx = st.player.x - seg.x;
+                          const dy = st.player.y - seg.y;
+                          if (dx*dx + dy*dy < (st.player.radius + bot.radius - 5)**2) {
+                              setGameOver(true);
+                              playSound('die');
+                              st.active = false;
+                          }
+                      }
+                      
+                      // Bot Head vs Player Body
+                      for (let i = 0; i < st.player.body.length; i+=5) {
+                          const seg = st.player.body[i];
+                          if (!seg) continue;
+                          const dx = bot.x - seg.x;
+                          const dy = bot.y - seg.y;
+                          if (dx*dx + dy*dy < (bot.radius + st.player.radius - 5)**2) {
+                              // Bot Dies
+                              for(let k=0; k<bot.length; k++) {
+                                   if(bot.body[k*5]) st.foods.push({x: bot.body[k*5].x, y: bot.body[k*5].y, color: bot.color, val: 2, radius: 6});
+                              }
+                              playSound('explosion');
+                              st.score += bot.length * 50;
+                              setScore(Math.floor(st.score));
+                              st.bots[bIdx] = createBot();
+                          }
+                      }
+                  });
+
+                  // Replenish food
+                  if (st.foods.length < 300) spawnFood(5);
+
+                  // Leaderboard Update (slowly)
+                  if (st.frameCount % 60 === 0) {
+                      const all = [{name: st.player.name, score: Math.floor(st.score)}, ...st.bots.map(b => ({name: b.name, score: Math.floor(b.length * 100)}))];
+                      all.sort((a,b) => b.score - a.score);
+                      setLeaderboard(all.slice(0, 5));
+                  }
+
+                  // RENDER
+                  ctx.fillStyle = '#0f172a';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  ctx.save();
+                  ctx.translate(-st.camera.x, -st.camera.y);
+
+                  // Grid
+                  ctx.strokeStyle = '#1e293b';
+                  ctx.lineWidth = 2;
+                  const gridSize = 100;
+                  ctx.beginPath();
+                  for(let x = 0; x <= WORLD_SIZE; x+=gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); }
+                  for(let y = 0; y <= WORLD_SIZE; y+=gridSize) { ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); }
+                  ctx.stroke();
+                  
+                  // Draw Border
+                  ctx.strokeStyle = '#ef4444';
+                  ctx.lineWidth = 10;
+                  ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+                  // Foods
+                  st.foods.forEach(f => {
+                      ctx.fillStyle = f.color;
+                      ctx.shadowBlur = 10; ctx.shadowColor = f.color;
+                      ctx.beginPath(); ctx.arc(f.x, f.y, f.radius, 0, Math.PI*2); ctx.fill();
+                      ctx.shadowBlur = 0;
+                  });
+
+                  // Bots
+                  st.bots.forEach(bot => {
+                      ctx.fillStyle = bot.color;
+                      // Draw Body
+                      bot.body.forEach((seg, i) => {
+                          if (i % 5 === 0) {
+                              ctx.beginPath(); ctx.arc(seg.x, seg.y, bot.radius, 0, Math.PI*2); ctx.fill();
+                          }
+                      });
+                      // Draw Head
+                      ctx.fillStyle = '#fff';
+                      ctx.beginPath(); ctx.arc(bot.x, bot.y, bot.radius, 0, Math.PI*2); ctx.fill();
+                      // Name
+                      ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+                      ctx.fillText(bot.name, bot.x, bot.y - 20);
+                  });
+
+                  // Player
+                  if (!gameOver) {
+                      ctx.fillStyle = st.player.color;
+                      ctx.shadowBlur = 15; ctx.shadowColor = st.player.color;
+                      st.player.body.forEach((seg, i) => {
+                          if (i % 5 === 0) {
+                              ctx.beginPath(); ctx.arc(seg.x, seg.y, st.player.radius, 0, Math.PI*2); ctx.fill();
+                          }
+                      });
+                      // Head
+                      ctx.fillStyle = '#fff';
+                      ctx.beginPath(); ctx.arc(st.player.x, st.player.y, st.player.radius, 0, Math.PI*2); ctx.fill();
+                      ctx.shadowBlur = 0;
+                      
+                      // Eyes
+                      ctx.fillStyle = '#000';
+                      const eyeOffX = Math.cos(st.player.angle + 0.5) * 6;
+                      const eyeOffY = Math.sin(st.player.angle + 0.5) * 6;
+                      ctx.beginPath(); ctx.arc(st.player.x + eyeOffX, st.player.y + eyeOffY, 3, 0, Math.PI*2); ctx.fill();
+                      const eyeOffX2 = Math.cos(st.player.angle - 0.5) * 6;
+                      const eyeOffY2 = Math.sin(st.player.angle - 0.5) * 6;
+                      ctx.beginPath(); ctx.arc(st.player.x + eyeOffX2, st.player.y + eyeOffY2, 3, 0, Math.PI*2); ctx.fill();
+                  }
+
+                  ctx.restore();
+                  
+                  animationRef.current = requestAnimationFrame(loop);
+              };
+
+              loop();
+              return () => {
+                  window.removeEventListener('pointermove', handleMove);
+                  canvas.removeEventListener('touchmove', handleMove);
+                  window.removeEventListener('pointerdown', handleDown);
+                  window.removeEventListener('pointerup', handleUp);
+                  window.removeEventListener('resize', resize);
+                  cancelAnimationFrame(animationRef.current);
+              };
+          }, [resetTrigger]);
+
+          return (
+              <div className="flex flex-col items-center justify-center w-full h-full relative" onClick={stopAdEvent}>
+                  {/* Leaderboard */}
+                  <div className="absolute top-4 right-4 z-10 bg-black/50 p-3 rounded-lg text-white font-mono text-xs pointer-events-none">
+                      <div className="font-bold text-yellow-400 mb-2 border-b border-white/20 pb-1">LEADERBOARD</div>
+                      {leaderboard.map((entry, i) => (
+                          <div key={i} className="flex justify-between w-32 mb-1">
+                              <span className={entry.name === 'You' ? 'text-cyan-400' : 'text-gray-300'}>{i+1}. {entry.name.substring(0,8)}</span>
+                              <span>{entry.score}</span>
+                          </div>
+                      ))}
+                  </div>
+                  
+                  <div className="absolute top-4 left-4 z-10 text-white font-mono text-xl drop-shadow-md bg-black/40 px-2 rounded pointer-events-none">
+                      LENGTH: <span className="text-cyan-400">{Math.floor(score/10)}</span>
+                  </div>
+
+                  <canvas ref={canvasRef} className="game-canvas rounded-lg max-w-full" style={{ touchAction: 'none' }} />
+                  
+                  {gameOver && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-20">
+                          <div className="bg-[#1e293b] p-8 rounded-2xl border border-white/20 text-center shadow-2xl animate-in zoom-in">
+                              <h2 className="text-red-500 font-black text-4xl mb-2">GAME OVER</h2>
+                              <p className="text-gray-300 mb-6 text-lg">Tamanho Final: <span className="text-white font-bold">{Math.floor(score/10)}</span></p>
+                              <button onClick={() => { setGameOver(false); state.current.active = false; setTimeout(()=> resetTrigger(), 10) }} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform active:scale-95">Jogar Novamente</button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
       };
 
       // --- SPACE SHOOTER GAME ---
@@ -1213,7 +1577,7 @@
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
         
-        // Reset trigger specifically for non-react-state games (Shooter)
+        // Reset trigger specifically for non-react-state games (Shooter, Slither)
         const [gameResetTrigger, setGameResetTrigger] = useState(0);
 
         const playSound = useSound(isSoundEnabled);
@@ -1221,7 +1585,7 @@
         useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
         const startNewGame = useCallback(() => {
-            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Slither || gameMode === GameMode.Home) return;
             const deck = shuffleDeck(createDeck(gameMode === GameMode.FreeCell));
             let newTableau = [], stock = [], waste = [];
             if (gameMode === GameMode.FreeCell) {
@@ -1391,7 +1755,7 @@
              }); setSelected(null); playSound('pickup');
         };
         const handleHint = () => {
-              if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
+              if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Slither || gameMode === GameMode.Home) return;
               for (let i = 0; i < gameState.tableau.length; i++) {
                   const col = gameState.tableau[i]; if(col.length){ const card = col[col.length-1]; const fTarget = gameState.foundation[card.suit].length ? gameState.foundation[card.suit][gameState.foundation[card.suit].length-1] : null; if(isMoveValid(card, fTarget, 'foundation', gameState.mode, card.suit)){ setHint({sourceId: card.id, targetId: `foundation-${card.suit}`}); setTimeout(()=>setHint(null), 2000); return; } }
               }
@@ -1400,7 +1764,7 @@
               }
         };
         const handleAuto = () => {
-             if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
+             if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Slither || gameMode === GameMode.Home) return;
              let moved = false; let ns = JSON.parse(JSON.stringify(gameState));
              const tryMove = (card) => {
                  const fTarget = ns.foundation[card.suit].length ? ns.foundation[card.suit][ns.foundation[card.suit].length-1] : null;
@@ -1423,7 +1787,7 @@
             return () => { clearInterval(onlineInterval); clearInterval(visitInterval); }
         }, []);
         useEffect(() => {
-            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Home) return;
+            if (gameMode === GameMode.Tetris || gameMode === GameMode.Shooter || gameMode === GameMode.Slither || gameMode === GameMode.Home) return;
             const total = Object.values(gameState.foundation).reduce((acc, pile) => acc + pile.length, 0);
             if (total === 52 && !gameState.gameWon) { setGameState(p => ({...p, gameWon: true})); playSound('win'); setShowWinningBounce(true); setTimeout(() => setShowWinningBounce(false), 6000); }
         }, [gameState.foundation, playSound, gameMode]);
@@ -1466,6 +1830,11 @@
                                  <div className="bg-red-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><Rocket className="w-8 h-8 text-red-400" /></div>
                                  <div className="text-center"><div className="font-bold text-white">Nave</div><div className="text-[10px] text-white/50">Space Shooter</div></div>
                              </button>
+
+                             <button onClick={() => setGameMode(GameMode.Slither)} className="group relative bg-black/40 hover:bg-cyan-600/20 border border-white/10 hover:border-cyan-500/50 p-4 rounded-xl flex flex-col items-center gap-3 transition-all active:scale-95 overflow-hidden col-span-2">
+                                 <div className="bg-cyan-500/20 p-3 rounded-lg group-hover:scale-110 transition-transform"><Ghost className="w-8 h-8 text-cyan-400" /></div>
+                                 <div className="text-center"><div className="font-bold text-white">Slither</div><div className="text-[10px] text-white/50">Cobrinha.io</div></div>
+                             </button>
                          </div>
 
                          {/* Footer Actions */}
@@ -1497,6 +1866,7 @@
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Klondike)}} className={`p-1.5 rounded ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Clássico"><Club size={16} /></button>
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Tetris)}} className={`p-1.5 rounded ${gameMode===GameMode.Tetris?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Blocos"><LayoutGrid size={16} className="rotate-45" /></button>
                             <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Shooter)}} className={`p-1.5 rounded ${gameMode===GameMode.Shooter?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Nave"><Rocket size={16} /></button>
+                            <button onClick={(e)=>{ stopAdEvent(e); setGameMode(GameMode.Slither)}} className={`p-1.5 rounded ${gameMode===GameMode.Slither?'bg-emerald-600 text-white':'text-white/50 hover:text-white'}`} title="Slither"><Ghost size={16} /></button>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 flex-1 justify-end">
@@ -1515,7 +1885,7 @@
                     </div>
                 </header>
                 
-                {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Home && (
+                {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Slither && gameMode !== GameMode.Home && (
                 <div className="flex justify-center py-1 bg-black/20 gap-6 text-xs font-mono text-white/80 border-b border-white/5 shrink-0" onClick={stopAdEvent}>
                     <span>SCORE: {gameState.score}</span><span>MOVES: {gameState.moves}</span>
                 </div>
@@ -1533,6 +1903,8 @@
                                 <TetrisGame playSound={playSound} onGameOver={(score) => { /* Handle Game Over */ }} />
                             ) : gameMode === GameMode.Shooter ? (
                                 <SpaceShooterGame playSound={playSound} onGameOver={(score) => { /* Handle Game Over */ }} resetTrigger={gameResetTrigger} />
+                            ) : gameMode === GameMode.Slither ? (
+                                <SlitherGame playSound={playSound} onGameOver={(score) => { /* Handle Game Over */ }} resetTrigger={gameResetTrigger} />
                             ) : (
                                 <>
                                 <div className="grid grid-cols-8 gap-1 sm:gap-3 mb-4 sm:mb-8 w-full">
@@ -1590,11 +1962,11 @@
                 </main>
 
                 <DraggableMenu>
-                    <button onClick={() => { if(gameMode === GameMode.Shooter) { setGameResetTrigger(prev => prev+1); } else if (gameMode === GameMode.Tetris) { setGameMode(gameMode); } else { startNewGame(); } }} className="flex flex-col items-center p-1.5 rounded-lg w-11 hover:bg-white/10 text-blue-400 transition">
-                        {gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? <RotateCcw size={18} /> : <PlusCircle size={18} />}
-                        <span className="text-[8px] uppercase font-bold mt-0.5">{gameMode === GameMode.Shooter || gameMode === GameMode.Tetris ? 'Reset' : 'Novo'}</span>
+                    <button onClick={() => { if(gameMode === GameMode.Shooter || gameMode === GameMode.Slither) { setGameResetTrigger(prev => prev+1); } else if (gameMode === GameMode.Tetris) { setGameMode(gameMode); } else { startNewGame(); } }} className="flex flex-col items-center p-1.5 rounded-lg w-11 hover:bg-white/10 text-blue-400 transition">
+                        {gameMode === GameMode.Shooter || gameMode === GameMode.Tetris || gameMode === GameMode.Slither ? <RotateCcw size={18} /> : <PlusCircle size={18} />}
+                        <span className="text-[8px] uppercase font-bold mt-0.5">{gameMode === GameMode.Shooter || gameMode === GameMode.Tetris || gameMode === GameMode.Slither ? 'Reset' : 'Novo'}</span>
                     </button>
-                    {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Home && (
+                    {gameMode !== GameMode.Tetris && gameMode !== GameMode.Shooter && gameMode !== GameMode.Slither && gameMode !== GameMode.Home && (
                         <>
                         <div className="w-px h-6 bg-white/10"></div>
                         <button onClick={(e)=>{ stopAdEvent(e); handleUndo()}} disabled={!history.length} className={`flex flex-col items-center p-1.5 rounded-lg w-11 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
