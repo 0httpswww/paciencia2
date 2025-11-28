@@ -556,6 +556,8 @@
         const [onlineCount, setOnlineCount] = useState(150);
         const [visitCount, setVisitCount] = useState(843210);
 
+        const [isAdClickProtected, setIsAdClickProtected] = useState(true);
+
         const playSound = useSound(isSoundEnabled);
 
         const activeDragRef = useRef(null);
@@ -948,16 +950,30 @@
             }
         }, [gameState.foundation, playSound]);
 
-        // --- Ad Timer Logic ---
+        // --- Strict Ad Timer Logic (5 mins) ---
+        // 1. Start protected.
+        // 2. Wait 5 mins -> Unprotect.
+        // 3. User clicks -> Protect -> Wait 5 mins.
         useEffect(() => {
-            const showAd = () => { /* Ad logic triggers externally via Monetag/AdSense */ };
-            const timer1 = setTimeout(showAd, 60000); 
-            const interval = setInterval(showAd, 300000); 
-            return () => { clearTimeout(timer1); clearInterval(interval); };
-        }, []);
+            if (isAdClickProtected) {
+                const timer = setTimeout(() => {
+                    setIsAdClickProtected(false); // Unprotect after 5 mins
+                }, 300000); // 300,000ms = 5 minutes
+                return () => clearTimeout(timer);
+            }
+        }, [isAdClickProtected]);
+
+        const handleBackgroundClick = (e) => {
+            if (isAdClickProtected) {
+                stopAdEvent(e); // Block ad
+            } else {
+                // Allow ad (bubble up)
+                setIsAdClickProtected(true); // Re-protect immediately
+            }
+        };
 
         return (
-            <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={(e) => { stopAdEvent(e); }}>
+            <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={handleBackgroundClick}>
                 {/* Header */}
                 <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5 pt-safe">
                     <div className="flex items-center gap-3 shrink-0">
