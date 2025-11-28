@@ -493,37 +493,60 @@
          );
       };
 
-      const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => (
-        <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={stopAdEvent}>
-            <div className="bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in">
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-green-500/20 pointer-events-none"></div>
-                
-                <div className="relative z-10">
-                    <div className="mb-6 inline-block relative">
-                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                         <div className="relative bg-white/10 p-2 rounded-xl border border-white/20">
-                            <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-20 h-20 object-contain drop-shadow-lg" alt="App Icon" />
-                         </div>
-                    </div>
-                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR APLICATIVO?</h2>
-                    <p className="text-gray-300 mb-8 text-sm leading-relaxed">Deseja adicionar o atalho à sua área de trabalho?</p>
+      const InstallModal = ({ onInstall, onClose, isIOS, hasNativePrompt }) => {
+        // State to show manual instructions if prompt failed
+        const [showManual, setShowManual] = useState(false);
+
+        const handleSimClick = () => {
+            if (hasNativePrompt) {
+                onInstall();
+            } else {
+                setShowManual(true);
+            }
+        };
+
+        return (
+            <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={stopAdEvent}>
+                <div className="bg-[#1e293b] rounded-3xl p-8 max-w-sm w-full text-center border border-yellow-500/50 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-green-500/20 pointer-events-none"></div>
                     
-                    {isIOS ? (
-                        <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6 text-xs text-gray-300 space-y-2">
-                             <p>1. Toque em <Share className="w-3 h-3 inline" /> <strong>Compartilhar</strong></p>
-                             <p>2. Selecione <strong>Adicionar à Tela de Início</strong></p>
-                             <button onClick={onClose} className="mt-4 w-full py-2.5 rounded-lg font-bold uppercase text-white/70 bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">Entendi</button>
+                    <div className="relative z-10">
+                        <div className="mb-6 inline-block relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                            <div className="relative bg-white/10 p-2 rounded-xl border border-white/20">
+                                <img src="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png" className="w-20 h-20 object-contain drop-shadow-lg" alt="App Icon" />
+                            </div>
                         </div>
-                    ) : (
-                        <div className="flex gap-4">
-                            <button onClick={onClose} className="flex-1 py-4 rounded-xl font-bold uppercase text-white/70 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors tracking-widest text-sm">NÃO</button>
-                            <button onClick={onInstall} className="flex-[1.5] py-4 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse shadow-lg shadow-green-900/40 transition-transform active:scale-95 tracking-widest text-sm border border-green-400/30">SIM</button>
-                        </div>
-                    )}
+                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR O APP?</h2>
+                        <p className="text-gray-300 mb-8 text-sm leading-relaxed">Deseja adicionar o atalho à sua área de trabalho?</p>
+                        
+                        {isIOS || showManual ? (
+                            <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6 text-xs text-gray-300 space-y-2 animate-in slide-in-from-bottom-2">
+                                <p><strong>Instalação Manual:</strong></p>
+                                {isIOS ? (
+                                    <>
+                                        <p>1. Toque em <Share className="w-3 h-3 inline" /> <strong>Compartilhar</strong></p>
+                                        <p>2. Selecione <strong>Adicionar à Tela de Início</strong></p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p>1. Toque no menu do navegador (⋮)</p>
+                                        <p>2. Selecione <strong>Adicionar à Tela Inicial</strong> ou <strong>Instalar Aplicativo</strong></p>
+                                    </>
+                                )}
+                                <button onClick={onClose} className="mt-4 w-full py-2.5 rounded-lg font-bold uppercase text-white/70 bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">Entendi</button>
+                            </div>
+                        ) : (
+                            <div className="flex gap-4">
+                                <button onClick={onClose} className="flex-1 py-4 rounded-xl font-bold uppercase text-white/70 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors tracking-widest text-sm">NÃO</button>
+                                <button onClick={handleSimClick} className="flex-[1.5] py-4 rounded-xl font-bold uppercase text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 animate-pulse shadow-lg shadow-green-900/40 transition-transform active:scale-95 tracking-widest text-sm border border-green-400/30">SIM</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
-      );
+        );
+      };
 
       const StatsModal = ({ onClose, stats }) => (
           <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={stopAdEvent}>
@@ -568,7 +591,7 @@
         const [selected, setSelected] = useState(null);
         const [hint, setHint] = useState(null);
         const [isNightMode, setIsNightMode] = useState(false);
-        const [showInstallButton, setShowInstallButton] = useState(true);
+        const [showInstallButton, setShowInstallButton] = useState(false);
         const [showInstallModal, setShowInstallModal] = useState(false);
         const [deferredPrompt, setDeferredPrompt] = useState(null);
         
@@ -643,18 +666,24 @@
                 return;
             }
 
-            // Force modal open shortly after load to prompt installation
-            const timer = setTimeout(() => {
-                setShowInstallModal(true);
-            }, 1500);
-
             const handlePrompt = (e) => { 
                 e.preventDefault(); 
                 setDeferredPrompt(e); 
                 setShowInstallButton(true);
+                // Prompt ready! Trigger modal to ask user
+                setShowInstallModal(true);
             };
             
             window.addEventListener('beforeinstallprompt', handlePrompt);
+            
+            // Fallback: If no prompt event after 4 seconds (iOS or slow Android), open modal anyway
+            const timer = setTimeout(() => {
+                setShowInstallModal(prev => {
+                    if (!prev) return true; 
+                    return prev;
+                });
+            }, 4000);
+
             return () => {
                 window.removeEventListener('beforeinstallprompt', handlePrompt);
                 clearTimeout(timer);
@@ -671,16 +700,8 @@
                      setShowInstallModal(false);
                 }
             } else {
-                // If deferredPrompt is null, we can't force install.
-                // It means either not ready or not supported.
-                // We'll show an alert instruction as fallback if user clicked SIM
-                const isMobile = /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    alert("Instalação automática não disponível. Por favor, toque no menu do navegador (⋮) e selecione 'Adicionar à Tela Inicial'.");
-                } else {
-                    alert("Instalação automática não disponível. Verifique a barra de endereços para o ícone de instalação.");
-                }
-                setShowInstallModal(false);
+                // Manually open modal if button clicked but prompt missing (e.g. manual instructions needed)
+                setShowInstallModal(true);
             }
         };
 
