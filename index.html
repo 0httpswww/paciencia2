@@ -416,8 +416,8 @@
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
              >
-                <div className="bg-[#0a1f16]/95 backdrop-blur-xl p-2.5 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-2 pointer-events-auto select-none ring-1 ring-white/10">
-                    <div className="text-white/20 mr-1"><GripHorizontal size={16} /></div>
+                <div className="bg-[#0a1f16]/95 backdrop-blur-xl p-1.5 rounded-2xl border border-yellow-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-1.5 pointer-events-auto select-none ring-1 ring-white/10">
+                    <div className="text-white/20 mr-0.5"><GripHorizontal size={14} /></div>
                     {children}
                 </div>
              </div>
@@ -975,28 +975,29 @@
         return (
             <div className={`min-h-[100dvh] flex flex-col ${isNightMode ? 'bg-[#0f172a]' : 'bg-[#0f3526]'} transition-colors duration-500 overflow-hidden`} onClick={handleBackgroundClick}>
                 {/* Header */}
-                <header className="px-4 py-2 bg-black/30 backdrop-blur-md flex items-center justify-between sticky top-0 z-50 border-b border-white/5 pt-safe">
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="bg-yellow-500/20 p-1.5 rounded-lg"><Crown className="text-yellow-500 w-5 h-5" /></div>
-                        <h1 className="text-white font-serif font-bold text-lg hidden xs:block">JosiPuff</h1>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 flex-1 justify-end">
-                        <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar">
-                            <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-3 py-1 text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
-                            <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-3 py-1 text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
+                <header className="px-2 py-2 bg-black/30 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 pt-safe">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
+                            <div className="bg-yellow-500/20 p-1.5 rounded-lg"><Crown className="text-yellow-500 w-4 h-4 sm:w-5 sm:h-5" /></div>
+                            <h1 className="text-white font-serif font-bold text-base sm:text-lg hidden xs:block">JosiPuff</h1>
                         </div>
                         
-                        <div className="flex items-center gap-2 shrink-0 border-l border-white/10 pl-2">
-                             {showInstallButton && <button onClick={handleInstallClick} className="group relative px-6 py-2 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95 animate-neon-pulse mr-2 border-2">
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
-                                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-10"></div>
-                                <div className="relative flex items-center gap-2 z-20">
-                                    <div className="bg-white text-purple-700 rounded-full p-1 animate-bounce shadow-lg"><Smartphone className="w-4 h-4 stroke-[2.5]" /></div>
-                                    <span className="text-sm font-black uppercase tracking-wider text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">Instalar</span>
-                                </div>
-                            </button>}
-                            <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-2 shrink-0 bg-white/5 rounded-full hover:bg-white/10 transition-colors">{isNightMode?<Sun size={18}/>:<Moon size={18}/>}</button>
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                            <div className="flex bg-black/40 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar">
+                                <button onClick={()=>setGameMode(GameMode.FreeCell)} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.FreeCell?'bg-emerald-600 text-white':'text-white/50'}`}>FreeCell</button>
+                                <button onClick={()=>setGameMode(GameMode.Klondike)} className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded whitespace-nowrap ${gameMode===GameMode.Klondike?'bg-emerald-600 text-white':'text-white/50'}`}>Clássico</button>
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5 shrink-0 border-l border-white/10 pl-1.5">
+                                 {showInstallButton && <button onClick={handleInstallClick} className="group relative px-3 py-1.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 animate-neon-pulse border border-purple-500/50">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-900 via-green-600 to-purple-900 opacity-90 group-hover:opacity-100 animate-gradient-xy"></div>
+                                    <div className="relative flex items-center gap-1.5 z-20">
+                                        <div className="bg-white text-purple-700 rounded-full p-0.5"><Smartphone className="w-3 h-3 stroke-[3]" /></div>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-white drop-shadow-md hidden sm:inline">Instalar</span>
+                                    </div>
+                                </button>}
+                                <button onClick={()=>setIsNightMode(!isNightMode)} className="text-yellow-300 p-1.5 shrink-0 bg-white/5 rounded-full hover:bg-white/10 transition-colors">{isNightMode?<Sun size={16}/>:<Moon size={16}/>}</button>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -1069,36 +1070,36 @@
                         </div>
                     </div>
                     
-                    {/* Bottom Ad Container for Adsterra */}
+                    {/* Bottom Ad Container for Adsterra (320x50 fits here perfectly) */}
                     <div className="w-full max-w-[1000px] mt-8 mb-8 min-h-[60px] bg-black/10 rounded-lg flex items-center justify-center text-white/10 uppercase font-bold text-xs tracking-widest border-t border-white/5 overflow-hidden p-2">
                         <AdsterraBanner />
                     </div>
                 </main>
 
                 <DraggableMenu>
-                    <button onClick={startNewGame} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-blue-400 transition">
-                        <PlusCircle size={20} /><span className="text-[9px] uppercase font-bold mt-1">Novo</span>
+                    <button onClick={startNewGame} className="flex flex-col items-center p-1.5 rounded-lg w-10 hover:bg-white/10 text-blue-400 transition">
+                        <PlusCircle size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Novo</span>
                     </button>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-2 rounded-lg w-14 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
-                        <Undo2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Undo</span>
+                    <div className="w-px h-6 bg-white/10"></div>
+                    <button onClick={handleUndo} disabled={!history.length} className={`flex flex-col items-center p-1.5 rounded-lg w-10 ${!history.length?'opacity-30 cursor-not-allowed':'hover:bg-white/10'} text-white transition`}>
+                        <Undo2 size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Undo</span>
                     </button>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={handleHint} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-yellow-300 transition">
-                        <Lightbulb size={20} /><span className="text-[9px] uppercase font-bold mt-1">Dica</span>
+                    <div className="w-px h-6 bg-white/10"></div>
+                    <button onClick={handleHint} className="flex flex-col items-center p-1.5 rounded-lg w-10 hover:bg-white/10 text-yellow-300 transition">
+                        <Lightbulb size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Dica</span>
                     </button>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={handleAuto} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-emerald-400 transition">
-                        <Wand2 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Auto</span>
+                    <div className="w-px h-6 bg-white/10"></div>
+                    <button onClick={handleAuto} className="flex flex-col items-center p-1.5 rounded-lg w-10 hover:bg-white/10 text-emerald-400 transition">
+                        <Wand2 size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Auto</span>
                     </button>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={()=>setIsSoundEnabled(!isSoundEnabled)} className={`flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 transition ${isSoundEnabled?'text-white':'text-white/30'}`}>
-                        {isSoundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-                        <span className="text-[9px] uppercase font-bold mt-1">Som</span>
+                    <div className="w-px h-6 bg-white/10"></div>
+                    <button onClick={()=>setIsSoundEnabled(!isSoundEnabled)} className={`flex flex-col items-center p-1.5 rounded-lg w-10 hover:bg-white/10 transition ${isSoundEnabled?'text-white':'text-white/30'}`}>
+                        {isSoundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                        <span className="text-[8px] uppercase font-bold mt-0.5">Som</span>
                     </button>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <button onClick={()=>setShowStatsModal(true)} className="flex flex-col items-center p-2 rounded-lg w-14 hover:bg-white/10 text-orange-400 transition">
-                        <BarChart3 size={20} /><span className="text-[9px] uppercase font-bold mt-1">Stats</span>
+                    <div className="w-px h-6 bg-white/10"></div>
+                    <button onClick={()=>setShowStatsModal(true)} className="flex flex-col items-center p-1.5 rounded-lg w-10 hover:bg-white/10 text-orange-400 transition">
+                        <BarChart3 size={18} /><span className="text-[8px] uppercase font-bold mt-0.5">Stats</span>
                     </button>
                 </DraggableMenu>
 
