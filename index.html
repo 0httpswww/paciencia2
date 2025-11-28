@@ -508,7 +508,7 @@
                          </div>
                     </div>
                     <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">INSTALAR O APP?</h2>
-                    <p className="text-gray-300 mb-6 text-sm">Deseja instalar o aplicativo para jogar em tela cheia?</p>
+                    <p className="text-gray-300 mb-6 text-sm">Deseja criar um atalho rápido para o jogo?</p>
                     
                     {isIOS ? (
                         <div className="text-left bg-white/5 p-4 rounded-xl border border-white/10 mb-6 text-xs text-gray-300 space-y-2">
@@ -633,6 +633,15 @@
         }, [gameMode, playSound]);
 
         useEffect(() => { startNewGame(); }, [startNewGame]);
+
+        // Service Worker Registration for PWA
+        useEffect(() => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.log('Service Worker failed', err));
+            }
+        }, []);
 
         useEffect(() => {
             // Check if installed
