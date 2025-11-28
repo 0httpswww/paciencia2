@@ -495,6 +495,41 @@
         );
       };
 
+      const AdsterraBanner = () => {
+          const containerRef = useRef(null);
+          useEffect(() => {
+              if (!containerRef.current) return;
+              const iframe = document.createElement('iframe');
+              iframe.width = "320";
+              iframe.height = "50";
+              iframe.style.border = "none";
+              iframe.style.overflow = "hidden";
+              
+              const html = `
+                  <script type="text/javascript">
+                      atOptions = {
+                          'key' : '40ea244e14933019fbfcc00a3875f885',
+                          'format' : 'iframe',
+                          'height' : 50,
+                          'width' : 320,
+                          'params' : {}
+                      };
+                  <\/script>
+                  <script type="text/javascript" src="//www.highperformanceformat.com/40ea244e14933019fbfcc00a3875f885/invoke.js"><\/script>
+              `;
+              
+              containerRef.current.innerHTML = '';
+              containerRef.current.appendChild(iframe);
+              
+              const doc = iframe.contentWindow.document;
+              doc.open();
+              doc.write(html);
+              doc.close();
+          }, []);
+          
+          return <div ref={containerRef} className="flex justify-center items-center w-full h-full" />;
+      };
+
       // --- MAIN APP ---
       function App() {
         const [gameMode, setGameMode] = useState(GameMode.FreeCell);
@@ -1016,6 +1051,11 @@
                         <div className="hidden lg:flex flex-col gap-4">
                             <AdBanner className="w-[120px] h-[600px] sticky top-36 rounded-lg shadow-2xl border border-white/5 bg-black/20 backdrop-blur-sm" slotId="1109009056" format="auto" />
                         </div>
+                    </div>
+                    
+                    {/* Bottom Ad Container for Adsterra */}
+                    <div className="w-full max-w-[1000px] mt-8 mb-8 min-h-[50px] bg-black/10 rounded-lg flex items-center justify-center text-white/10 uppercase font-bold text-xs tracking-widest border-t border-white/5 overflow-hidden">
+                        <AdsterraBanner />
                     </div>
                 </main>
 
