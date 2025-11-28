@@ -137,7 +137,7 @@
       import { createRoot } from 'react-dom/client';
       import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, BarChart3, Settings, PlusCircle } from 'lucide-react';
 
-      // --- UTILS & CONSTANTS ---
+      // --- TYPES & UTILS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
       const Rank = { Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13 };
       const GameMode = { FreeCell: 'freeCell', Klondike: 'klondike' };
@@ -145,11 +145,7 @@
       const stopAdEvent = (e) => {
           if (!e) return;
           e.stopPropagation();
-          // We do NOT preventDefault on buttons that need to trigger actions, 
-          // but we stop propagation to prevent background clicks.
-          // However, for Monetag to work on specific buttons, we MUST allow propagation on those buttons.
-          // This function is for blocking ads.
-          e.preventDefault();
+          // We allow default on buttons usually, but stopping propagation prevents "clickjacking" listeners on body
           if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
       };
 
@@ -318,7 +314,6 @@
       const PARCHMENT_TEXTURE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")`;
       const BACK_PATTERN = `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23991b1b' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M10 0L20 10L10 20L0 10z'/%3E%3C/g%3E%3C/svg%3E")`;
 
-      // Helper to render pips for number cards
       const PipLayer = ({ rank, suit }) => {
         const pips = [];
         const L = '20%', C = '50%', R = '80%';
@@ -407,6 +402,47 @@
         );
       });
 
+      const AdsterraBanner = ({ width, height, dataKey }) => {
+          const containerRef = useRef(null);
+          useEffect(() => {
+              if (!containerRef.current || !dataKey) return;
+              
+              // Adsterra uses document.write, so we MUST use an isolated iframe to prevent React crashes
+              const iframe = document.createElement('iframe');
+              iframe.width = width;
+              iframe.height = height;
+              iframe.style.border = 'none';
+              iframe.style.overflow = 'hidden';
+              iframe.scrolling = 'no';
+              
+              // Clear and append
+              containerRef.current.innerHTML = '';
+              containerRef.current.appendChild(iframe);
+              
+              const doc = iframe.contentWindow.document;
+              doc.open();
+              doc.write(`
+                <html>
+                <body style="margin:0;padding:0;background:transparent;display:flex;justify-content:center;align-items:center;overflow:hidden;">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '${dataKey}',
+                            'format' : 'iframe',
+                            'height' : ${height},
+                            'width' : ${width},
+                            'params' : {}
+                        };
+                    <\/script>
+                    <script type="text/javascript" src="//www.highperformanceformat.com/${dataKey}/invoke.js"><\/script>
+                </body>
+                </html>
+              `);
+              doc.close();
+          }, [width, height, dataKey]);
+          
+          return <div ref={containerRef} style={{ width, height }} className="mx-auto flex justify-center items-center" />;
+      };
+
       const DraggableMenu = ({ children }) => {
          const [pos, setPos] = useState({ x: 0, y: 0 }); 
          const initialized = useRef(false);
@@ -421,12 +457,7 @@
          }, []);
 
          const handlePointerDown = (e) => {
-             // If target is a button, we don't drag.
-             // IMPORTANT: We do NOT call stopAdEvent here if it's a button, to allow propagation for New Game.
-             // But for the menu container itself, we should probably stop propagation if dragging.
-             if (e.target.closest('button')) {
-                 return;
-             }
+             if (e.target.closest('button')) return;
              stopAdEvent(e);
              setIsDragging(true);
              offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
@@ -522,42 +553,6 @@
               </div>
           </div>
       );
-
-      const AdsterraBanner = ({ width, height, dataKey, format = 'iframe' }) => {
-          const containerRef = useRef(null);
-          useEffect(() => {
-              if (!containerRef.current || !dataKey) return;
-              const iframe = document.createElement('iframe');
-              iframe.width = width.toString();
-              iframe.height = height.toString();
-              iframe.style.border = "none";
-              iframe.style.overflow = "hidden";
-              
-              const html = `
-                  <script type="text/javascript">
-                      atOptions = {
-                          'key' : '${dataKey}',
-                          'format' : '${format}',
-                          'height' : ${height},
-                          'width' : ${width},
-                          'params' : {}
-                      };
-                  <\/script>
-                  <script type="text/javascript" src="//www.highperformanceformat.com/${dataKey}/invoke.js"><\/script>
-                  <style>body{margin:0;padding:0;overflow:hidden;background:transparent;display:flex;justify-content:center;align-items:center;}</style>
-              `;
-              
-              containerRef.current.innerHTML = '';
-              containerRef.current.appendChild(iframe);
-              
-              const doc = iframe.contentWindow.document;
-              doc.open();
-              doc.write(html);
-              doc.close();
-          }, [width, height, dataKey]);
-          
-          return <div ref={containerRef} className="flex justify-center items-center w-full h-full" />;
-      };
 
       // --- MAIN APP ---
       function App() {
