@@ -426,7 +426,7 @@
          const canvasRef = useRef(null);
          const [score, setScore] = useState(0);
          const [gameOver, setGameOver] = useState(false);
-         const gameOverRef = useRef(false); // To sync with game loop immediately
+         const gameOverRef = useRef(false);
          const [playerHp, setPlayerHp] = useState(100);
          const [powerLevel, setPowerLevel] = useState(1);
          
@@ -442,7 +442,9 @@
              enemyTimer: 0,
              frameCount: 0,
              stars: [],
-             difficulty: 1
+             difficulty: 1,
+             score: 0,
+             powerLevel: 1
          });
          const animationRef = useRef(null);
 
@@ -460,16 +462,25 @@
                  const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
                  canvas.width = Math.min(parentWidth, 600);
                  canvas.height = Math.min(window.innerHeight - 200, 800);
-                 state.current.player.x = canvas.width / 2;
-                 state.current.player.y = canvas.height - 100;
                  
-                 // Init Stars
-                 state.current.stars = Array.from({length: 50}, () => ({
-                     x: Math.random() * canvas.width,
-                     y: Math.random() * canvas.height,
-                     s: Math.random() * 2 + 1,
-                     v: Math.random() * 3 + 1
-                 }));
+                 // Initial position or reset if needed
+                 if(state.current.player.x === 0 && state.current.player.y === 0) {
+                     state.current.player.x = canvas.width / 2;
+                     state.current.player.y = canvas.height - 100;
+                 } else {
+                     // Clamp current pos
+                     state.current.player.x = Math.max(15, Math.min(canvas.width - 15, state.current.player.x));
+                     state.current.player.y = Math.max(20, Math.min(canvas.height - 20, state.current.player.y));
+                 }
+                 
+                 if(state.current.stars.length === 0) {
+                     state.current.stars = Array.from({length: 50}, () => ({
+                         x: Math.random() * canvas.width,
+                         y: Math.random() * canvas.height,
+                         s: Math.random() * 2 + 1,
+                         v: Math.random() * 3 + 1
+                     }));
+                 }
              };
              resize();
              window.addEventListener('resize', resize);
@@ -480,7 +491,7 @@
              window.addEventListener('keydown', handleDown);
              window.addEventListener('keyup', handleUp);
              
-             // Touch Controls - Improved for 1:1 tracking
+             // Touch Controls
              let isTouching = false;
              const handleTouchStart = (e) => {
                  isTouching = true;
@@ -488,7 +499,6 @@
              };
              const handleTouchMove = (e) => {
                  if (!isTouching) return;
-                 // Prevent scroll
                  if(e.cancelable) e.preventDefault(); 
                  
                  const t = e.touches[0];
@@ -496,14 +506,12 @@
                  const touchX = t.clientX - rect.left;
                  const touchY = t.clientY - rect.top;
 
-                 // Move player directly to finger, with slight lag for smoothness
                  const dx = touchX - state.current.player.x;
                  const dy = touchY - state.current.player.y;
                  
-                 state.current.player.x += dx * 0.2; // Smooth follow
+                 state.current.player.x += dx * 0.2; 
                  state.current.player.y += dy * 0.2;
 
-                 // Clamp
                  state.current.player.x = Math.max(15, Math.min(canvas.width - 15, state.current.player.x));
                  state.current.player.y = Math.max(20, Math.min(canvas.height - 20, state.current.player.y));
              };
@@ -519,7 +527,7 @@
                  
                  const st = state.current;
                  st.frameCount++;
-                 st.difficulty = 1 + Math.min(3, Math.floor(score / 500) * 0.2); 
+                 st.difficulty = 1 + Math.min(3, Math.floor(st.score / 500) * 0.2); 
                  
                  // Update Background
                  ctx.fillStyle = '#000';
@@ -538,21 +546,20 @@
                  if(st.keys['ArrowUp']) st.player.y -= st.player.speed;
                  if(st.keys['ArrowDown']) st.player.y += st.player.speed;
                  
-                 // Clamp
                  st.player.x = Math.max(15, Math.min(canvas.width - 15, st.player.x));
                  st.player.y = Math.max(20, Math.min(canvas.height - 20, st.player.y));
                  
                  // Shoot
-                 if(st.keys['Space'] || st.frameCount % 10 === 0) { // Auto shoot
+                 if(st.keys['Space'] || st.frameCount % 10 === 0) { 
                     if(st.frameCount - st.lastShot > 15) {
-                        const shotColor = powerLevel === 1 ? '#fbbf24' : powerLevel === 2 ? '#3b82f6' : '#22c55e';
+                        const shotColor = st.powerLevel === 1 ? '#fbbf24' : st.powerLevel === 2 ? '#3b82f6' : '#22c55e';
                         
                         st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8, color: shotColor });
-                        if (powerLevel >= 2) {
+                        if (st.powerLevel >= 2) {
                              st.bullets.push({ x: st.player.x - 10, y: st.player.y - 15, v: 7, vx: -0.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 10, y: st.player.y - 15, v: 7, vx: 0.5, color: shotColor });
                         }
-                        if (powerLevel >= 3) {
+                        if (st.powerLevel >= 3) {
                              st.bullets.push({ x: st.player.x - 15, y: st.player.y - 10, v: 6, vx: -1.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 15, y: st.player.y - 10, v: 6, vx: 1.5, color: shotColor });
                         }
@@ -578,7 +585,7 @@
                      }
                  }
 
-                 // Spawn Items (Rare)
+                 // Spawn Items
                  if (Math.random() < 0.002) {
                      st.items.push({ x: Math.random() * (canvas.width - 20) + 10, y: -20, v: 2, type: 'power' });
                  }
@@ -601,7 +608,6 @@
                      ctx.fillStyle = '#ef4444';
                      ctx.beginPath(); ctx.arc(eb.x, eb.y, 4, 0, Math.PI*2); ctx.fill();
                      
-                     // Hit Player? Smaller hitbox (10px) for fairness
                      const dx = eb.x - st.player.x;
                      const dy = eb.y - st.player.y;
                      if (Math.hypot(dx, dy) < 10) { 
@@ -633,10 +639,12 @@
                      const dx = item.x - st.player.x;
                      const dy = item.y - st.player.y;
                      if (Math.hypot(dx, dy) < 25) {
-                         setPowerLevel(l => Math.min(3, l + 1));
+                         st.powerLevel = Math.min(3, st.powerLevel + 1);
+                         setPowerLevel(st.powerLevel); // Sync UI
                          st.items.splice(i, 1);
                          playSound('powerup');
-                         setScore(s => s + 50);
+                         st.score += 50;
+                         setScore(st.score); // Sync UI
                      }
                      if (item.y > canvas.height) st.items.splice(i, 1);
                  }
@@ -646,7 +654,6 @@
                      const e = st.enemies[i];
                      e.y += e.v;
                      
-                     // Enemy AI: Shoot
                      if (e.shoots && st.frameCount % 100 === 0 && e.y > 0 && e.y < canvas.height - 100) {
                          const angle = Math.atan2(st.player.y - e.y, st.player.x - e.x);
                          st.enemyBullets.push({
@@ -656,7 +663,6 @@
                          });
                      }
                      
-                     // Draw Enemy
                      ctx.fillStyle = e.color;
                      ctx.beginPath();
                      if (e.shape === 'square') { ctx.rect(e.x - 15, e.y - 15, 30, 30); }
@@ -665,11 +671,10 @@
                      else { ctx.moveTo(e.x, e.y + 15); ctx.lineTo(e.x - 15, e.y - 15); ctx.lineTo(e.x + 15, e.y - 15); }
                      ctx.fill();
                      
-                     // Check Player Collision
                      const dx = e.x - st.player.x;
                      const dy = e.y - st.player.y;
                      const dist = Math.hypot(dx, dy);
-                     if(dist < 20) { // Reduced hitbox size for body collision
+                     if(dist < 20) { 
                          setPlayerHp(h => {
                              const nh = h - 20;
                              if(nh <= 0 && !gameOverRef.current) { 
@@ -684,12 +689,11 @@
                              st.enemies.splice(i, 1);
                              playSound('explosion');
                          } else {
-                             e.y -= 30; // Bounce
+                             e.y -= 30; 
                          }
                          continue;
                      }
                      
-                     // Check Bullet Collision
                      for(let j = st.bullets.length - 1; j >= 0; j--) {
                          const b = st.bullets[j];
                          if(Math.abs(b.x - e.x) < e.w/2 + 5 && Math.abs(b.y - e.y) < e.h/2 + 5) {
@@ -704,7 +708,8 @@
                                      });
                                  }
                                  st.enemies.splice(i, 1);
-                                 setScore(s => s + e.score);
+                                 st.score += e.score;
+                                 setScore(st.score); // Sync UI
                                  playSound('explosion');
                                  break;
                              }
@@ -723,10 +728,6 @@
                  ctx.lineTo(st.player.x + 15, st.player.y + 15);
                  ctx.fill();
                  
-                 // Hitbox debug (optional)
-                 // ctx.strokeStyle = 'rgba(255,0,0,0.5)'; ctx.beginPath(); ctx.arc(st.player.x, st.player.y, 10, 0, Math.PI*2); ctx.stroke();
-
-                 // Particles
                  for(let i=st.particles.length-1; i>=0; i--) {
                      const p = st.particles[i];
                      p.x += p.vx; p.y += p.vy; p.life--;
@@ -750,12 +751,13 @@
                  canvas.removeEventListener('touchend', handleTouchEnd);
                  cancelAnimationFrame(animationRef.current);
              };
-         }, [playSound, powerLevel, score]); // Removed gameOver from deps to use ref
+         }, [playSound]);
 
          const restart = () => {
              state.current = {
                  player: { x: 300, y: 700, w: 30, h: 40, speed: 5, maxHp: 100 },
-                 bullets: [], enemyBullets: [], items: [], enemies: [], particles: [], keys: {}, lastShot: 0, enemyTimer: 0, frameCount: 0, stars: state.current.stars, difficulty: 1
+                 bullets: [], enemyBullets: [], items: [], enemies: [], particles: [], keys: {}, lastShot: 0, enemyTimer: 0, frameCount: 0, stars: state.current.stars, difficulty: 1,
+                 score: 0, powerLevel: 1
              };
              setScore(0);
              setPlayerHp(100);
