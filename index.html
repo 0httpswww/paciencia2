@@ -125,7 +125,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert, Home, Ghost } from 'lucide-react';
+      import { Heart, Diamond, Club, Spade, Trophy, Clock, RotateCcw, X, LayoutGrid, RefreshCw, Eye, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Crown, Undo2, Lightbulb, Wand2, CalendarCheck, Moon, Sun, Smartphone, Gift, CheckCircle2, Share, GripHorizontal, PlusCircle, ArrowLeft, ArrowRight, ArrowDown, RotateCw, Rocket, Zap, ShieldAlert, Home, Ghost } from 'lucide-react';
 
       // --- TYPES & CONSTANTS ---
       const Suit = { Hearts: 'hearts', Diamonds: 'diamonds', Clubs: 'clubs', Spades: 'spades' };
@@ -427,6 +427,7 @@
 
       // --- SLITHER GAME (SNAKE.IO) ---
       const SlitherGame = ({ playSound, onGameOver, resetTrigger }) => {
+          // ... (Existing Slither Logic - Preserved)
           const canvasRef = useRef(null);
           const [score, setScore] = useState(0);
           const [gameOver, setGameOver] = useState(false);
@@ -534,7 +535,6 @@
                   // Update Player
                   if (!gameOver) {
                       const angle = Math.atan2(st.mouse.y, st.mouse.x);
-                      // Smooth rotation
                       let diff = angle - st.player.angle;
                       while (diff < -Math.PI) diff += Math.PI * 2;
                       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -549,14 +549,12 @@
                       st.player.x += Math.cos(st.player.angle) * speed;
                       st.player.y += Math.sin(st.player.angle) * speed;
                       
-                      // Boundary
                       if (st.player.x < 0 || st.player.x > WORLD_SIZE || st.player.y < 0 || st.player.y > WORLD_SIZE) {
                           setGameOver(true);
                           playSound('die');
                           st.active = false;
                       }
 
-                      // Body Trail
                       st.player.body.unshift({x: st.player.x, y: st.player.y});
                       const bodySpacing = 5;
                       const maxBodyPoints = st.player.length * bodySpacing;
@@ -565,14 +563,12 @@
 
                   // Update Bots
                   st.bots.forEach((bot, i) => {
-                      // AI Logic
                       bot.changeDirTimer--;
                       if (bot.changeDirTimer <= 0) {
                           bot.targetAngle = Math.random() * Math.PI * 2;
                           bot.changeDirTimer = 50 + Math.random() * 100;
                       }
                       
-                      // Avoid walls
                       if (bot.x < 100) bot.targetAngle = 0;
                       if (bot.x > WORLD_SIZE - 100) bot.targetAngle = Math.PI;
                       if (bot.y < 100) bot.targetAngle = Math.PI / 2;
@@ -586,21 +582,18 @@
                       bot.x += Math.cos(bot.angle) * bot.speed;
                       bot.y += Math.sin(bot.angle) * bot.speed;
 
-                      // Bot Boundaries
                       if (bot.x < 0 || bot.x > WORLD_SIZE || bot.y < 0 || bot.y > WORLD_SIZE) {
-                          // Bot Die
                           for(let k=0; k<bot.length; k+=2) {
                               if(bot.body[k*5]) st.foods.push({x: bot.body[k*5].x, y: bot.body[k*5].y, color: bot.color, val: 2, radius: 6});
                           }
                           st.bots[i] = createBot();
                       }
 
-                      // Bot Body
                       bot.body.unshift({x: bot.x, y: bot.y});
                       if (bot.body.length > bot.length * 5) bot.body.pop();
                   });
 
-                  // Collision Detection (Player vs Food)
+                  // Collision
                   for (let i = st.foods.length - 1; i >= 0; i--) {
                       const f = st.foods[i];
                       const dx = st.player.x - f.x;
@@ -614,23 +607,20 @@
                       }
                   }
                   
-                  // Bot vs Food
                   st.bots.forEach(bot => {
                       for (let i = st.foods.length - 1; i >= 0; i--) {
                         const f = st.foods[i];
                         const dx = bot.x - f.x;
                         const dy = bot.y - f.y;
-                        if (dx*dx + dy*dy < (bot.radius + f.radius + 20)**2) { // Bots grab easier
+                        if (dx*dx + dy*dy < (bot.radius + f.radius + 20)**2) {
                              st.foods.splice(i, 1);
                              bot.length += f.val * 0.5;
                         }
                       }
                   });
 
-                  // Player vs Bots (Collision)
                   st.bots.forEach((bot, bIdx) => {
-                      // Player Head vs Bot Body
-                      for (let i = 0; i < bot.body.length; i+=5) { // Check segments
+                      for (let i = 0; i < bot.body.length; i+=5) {
                           const seg = bot.body[i];
                           if (!seg) continue;
                           const dx = st.player.x - seg.x;
@@ -642,14 +632,12 @@
                           }
                       }
                       
-                      // Bot Head vs Player Body
                       for (let i = 0; i < st.player.body.length; i+=5) {
                           const seg = st.player.body[i];
                           if (!seg) continue;
                           const dx = bot.x - seg.x;
                           const dy = bot.y - seg.y;
                           if (dx*dx + dy*dy < (bot.radius + st.player.radius - 5)**2) {
-                              // Bot Dies
                               for(let k=0; k<bot.length; k++) {
                                    if(bot.body[k*5]) st.foods.push({x: bot.body[k*5].x, y: bot.body[k*5].y, color: bot.color, val: 2, radius: 6});
                               }
@@ -661,10 +649,8 @@
                       }
                   });
 
-                  // Replenish food
                   if (st.foods.length < 300) spawnFood(5);
 
-                  // Leaderboard Update (slowly)
                   if (st.frameCount % 60 === 0) {
                       const all = [{name: st.player.name, score: Math.floor(st.score)}, ...st.bots.map(b => ({name: b.name, score: Math.floor(b.length * 100)}))];
                       all.sort((a,b) => b.score - a.score);
@@ -674,11 +660,8 @@
                   // RENDER
                   ctx.fillStyle = '#0f172a';
                   ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
                   ctx.save();
                   ctx.translate(-st.camera.x, -st.camera.y);
-
-                  // Grid
                   ctx.strokeStyle = '#1e293b';
                   ctx.lineWidth = 2;
                   const gridSize = 100;
@@ -686,13 +669,10 @@
                   for(let x = 0; x <= WORLD_SIZE; x+=gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE); }
                   for(let y = 0; y <= WORLD_SIZE; y+=gridSize) { ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y); }
                   ctx.stroke();
-                  
-                  // Draw Border
                   ctx.strokeStyle = '#ef4444';
                   ctx.lineWidth = 10;
                   ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
 
-                  // Foods
                   st.foods.forEach(f => {
                       ctx.fillStyle = f.color;
                       ctx.shadowBlur = 10; ctx.shadowColor = f.color;
@@ -700,24 +680,19 @@
                       ctx.shadowBlur = 0;
                   });
 
-                  // Bots
                   st.bots.forEach(bot => {
                       ctx.fillStyle = bot.color;
-                      // Draw Body
                       bot.body.forEach((seg, i) => {
                           if (i % 5 === 0) {
                               ctx.beginPath(); ctx.arc(seg.x, seg.y, bot.radius, 0, Math.PI*2); ctx.fill();
                           }
                       });
-                      // Draw Head
                       ctx.fillStyle = '#fff';
                       ctx.beginPath(); ctx.arc(bot.x, bot.y, bot.radius, 0, Math.PI*2); ctx.fill();
-                      // Name
                       ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
                       ctx.fillText(bot.name, bot.x, bot.y - 20);
                   });
 
-                  // Player
                   if (!gameOver) {
                       ctx.fillStyle = st.player.color;
                       ctx.shadowBlur = 15; ctx.shadowColor = st.player.color;
@@ -726,12 +701,9 @@
                               ctx.beginPath(); ctx.arc(seg.x, seg.y, st.player.radius, 0, Math.PI*2); ctx.fill();
                           }
                       });
-                      // Head
                       ctx.fillStyle = '#fff';
                       ctx.beginPath(); ctx.arc(st.player.x, st.player.y, st.player.radius, 0, Math.PI*2); ctx.fill();
                       ctx.shadowBlur = 0;
-                      
-                      // Eyes
                       ctx.fillStyle = '#000';
                       const eyeOffX = Math.cos(st.player.angle + 0.5) * 6;
                       const eyeOffY = Math.sin(st.player.angle + 0.5) * 6;
@@ -742,7 +714,6 @@
                   }
 
                   ctx.restore();
-                  
                   animationRef.current = requestAnimationFrame(loop);
               };
 
@@ -759,7 +730,6 @@
 
           return (
               <div className="flex flex-col items-center justify-center w-full h-full relative" onClick={stopAdEvent}>
-                  {/* Leaderboard */}
                   <div className="absolute top-4 right-4 z-10 bg-black/50 p-3 rounded-lg text-white font-mono text-xs pointer-events-none">
                       <div className="font-bold text-yellow-400 mb-2 border-b border-white/20 pb-1">LEADERBOARD</div>
                       {leaderboard.map((entry, i) => (
@@ -769,13 +739,10 @@
                           </div>
                       ))}
                   </div>
-                  
                   <div className="absolute top-4 left-4 z-10 text-white font-mono text-xl drop-shadow-md bg-black/40 px-2 rounded pointer-events-none">
                       LENGTH: <span className="text-cyan-400">{Math.floor(score/10)}</span>
                   </div>
-
                   <canvas ref={canvasRef} className="game-canvas rounded-lg max-w-full" style={{ touchAction: 'none' }} />
-                  
                   {gameOver && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-20">
                           <div className="bg-[#1e293b] p-8 rounded-2xl border border-white/20 text-center shadow-2xl animate-in zoom-in">
@@ -799,12 +766,14 @@
 
       const SpaceShooterGame = ({ playSound, onGameOver, resetTrigger }) => {
          const canvasRef = useRef(null);
+         const containerRef = useRef(null);
          const [score, setScore] = useState(0);
          const [gameOver, setGameOver] = useState(false);
          const gameOverRef = useRef(false);
          const [playerHp, setPlayerHp] = useState(100);
          const [powerLevel, setPowerLevel] = useState(1);
          const [bossActive, setBossActive] = useState(false);
+         const [isFullscreen, setIsFullscreen] = useState(false);
          
          const state = useRef({
              player: { x: 0, y: 0, w: 30, h: 40, speed: 5, maxHp: 100 },
@@ -855,6 +824,25 @@
              }
          }, [resetTrigger, restart]);
 
+         // Fullscreen logic
+         const toggleFullscreen = () => {
+             if (!document.fullscreenElement) {
+                 if(containerRef.current.requestFullscreen) {
+                     containerRef.current.requestFullscreen().catch(err => {
+                         console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+                     });
+                 }
+             } else {
+                 if(document.exitFullscreen) document.exitFullscreen();
+             }
+         };
+
+         useEffect(() => {
+             const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+             document.addEventListener('fullscreenchange', handleFsChange);
+             return () => document.removeEventListener('fullscreenchange', handleFsChange);
+         }, []);
+
          useEffect(() => {
              const canvas = canvasRef.current;
              if(!canvas) return;
@@ -862,19 +850,23 @@
              
              // Resize logic
              const resize = () => {
-                 const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
-                 canvas.width = Math.min(parentWidth, 600);
-                 canvas.height = Math.min(window.innerHeight - 200, 800);
+                 const isFs = !!document.fullscreenElement;
+                 if (isFs) {
+                     canvas.width = window.innerWidth;
+                     canvas.height = window.innerHeight;
+                 } else {
+                     const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+                     canvas.width = Math.min(parentWidth, 600);
+                     canvas.height = Math.min(window.innerHeight - 200, 800);
+                 }
                  
-                 // Initial position or reset if needed
+                 // Clamp current pos
                  if(state.current.player.x === 0 && state.current.player.y === 0) {
                      state.current.player.x = canvas.width / 2;
                      state.current.player.y = canvas.height - 100;
-                 } else {
-                     // Clamp current pos
-                     state.current.player.x = Math.max(15, Math.min(canvas.width - 15, state.current.player.x));
-                     state.current.player.y = Math.max(20, Math.min(canvas.height - 20, state.current.player.y));
                  }
+                 state.current.player.x = Math.max(15, Math.min(canvas.width - 15, state.current.player.x));
+                 state.current.player.y = Math.max(20, Math.min(canvas.height - 20, state.current.player.y));
                  
                  if(state.current.stars.length === 0) {
                      state.current.stars = Array.from({length: 50}, () => ({
@@ -936,8 +928,6 @@
                      st.immuneTimer--;
                      if (st.immuneTimer <= 0) {
                          st.immune = false;
-                         // Restore power level if needed, but we keep upgrades generally
-                         // Only the fire rate bonus is tied to immunity flag implicitly below
                      }
                  }
 
@@ -989,26 +979,20 @@
                  const fireRate = st.immune ? 5 : 10; // Immune = Double Fire Rate
                  if(st.keys['Space'] || st.frameCount % fireRate === 0) { 
                     if(st.frameCount - st.lastShot > (fireRate + 5)) {
-                        // While immune, force max power level (6) temporarily or use current if higher
                         const effectivePower = st.immune ? 6 : st.powerLevel;
                         const shotColor = effectivePower === 1 ? '#fbbf24' : effectivePower === 2 ? '#3b82f6' : effectivePower === 3 ? '#22c55e' : effectivePower === 4 ? '#f472b6' : effectivePower === 5 ? '#a855f7' : '#22d3ee';
                         
-                        // Center shot (Always)
                         if (effectivePower <= 5) {
                             st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 8, color: shotColor });
                         }
-                        
-                        // Level 2+
                         if (effectivePower >= 2 && effectivePower <= 5) {
                              st.bullets.push({ x: st.player.x - 10, y: st.player.y - 15, v: 7, vx: -0.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 10, y: st.player.y - 15, v: 7, vx: 0.5, color: shotColor });
                         }
-                        // Level 3+
                         if (effectivePower >= 3 && effectivePower <= 5) {
                              st.bullets.push({ x: st.player.x - 15, y: st.player.y - 10, v: 6, vx: -1.5, color: shotColor });
                              st.bullets.push({ x: st.player.x + 15, y: st.player.y - 10, v: 6, vx: 1.5, color: shotColor });
                         }
-                        // Level 4 (Omni-Directional)
                         if (effectivePower >= 4) {
                             for(let i=0; i<8; i++) {
                                 const angle = (i / 8) * Math.PI * 2;
@@ -1019,13 +1003,10 @@
                                 });
                             }
                         }
-                        // Level 5 (Plasma)
                         if (effectivePower >= 5) {
                             st.bullets.push({ x: st.player.x - 20, y: st.player.y, v: 12, color: '#a855f7' });
                             st.bullets.push({ x: st.player.x + 20, y: st.player.y, v: 12, color: '#a855f7' });
                         }
-
-                         // Level 6 (Beam/Wall)
                          if (effectivePower >= 6) {
                             st.bullets.push({ x: st.player.x, y: st.player.y - 20, v: 10, color: '#22d3ee', w: 6 });
                             st.bullets.push({ x: st.player.x - 10, y: st.player.y, v: 10, color: '#4ade80' });
@@ -1137,7 +1118,6 @@
                      
                      const dx = eb.x - st.player.x;
                      const dy = eb.y - st.player.y;
-                     // DAMAGE PLAYER
                      if (!st.immune && Math.hypot(dx, dy) < 10) { 
                          setPlayerHp(h => {
                              const nh = h - 10;
@@ -1186,7 +1166,7 @@
                              playSound('heal');
                          } else if (item.type === 'shield') {
                              st.immune = true;
-                             st.immuneTimer = 600; // 10 seconds (60fps * 10)
+                             st.immuneTimer = 600; 
                              playSound('shield');
                          }
                          st.items.splice(i, 1);
@@ -1220,7 +1200,6 @@
                      const dx = e.x - st.player.x;
                      const dy = e.y - st.player.y;
                      const dist = Math.hypot(dx, dy);
-                     // COLLISION PLAYER vs ENEMY
                      if(!st.immune && dist < 20) { 
                          setPlayerHp(h => {
                              const nh = h - 20;
@@ -1266,7 +1245,6 @@
                      if(e.y > canvas.height) st.enemies.splice(i, 1);
                  }
                  
-                 // Draw Player
                  ctx.fillStyle = st.powerLevel >= 6 ? '#22d3ee' : st.powerLevel >= 5 ? '#a855f7' : st.powerLevel >= 4 ? '#f472b6' : '#3b82f6';
                  ctx.beginPath();
                  ctx.moveTo(st.player.x, st.player.y - 20);
@@ -1275,9 +1253,8 @@
                  ctx.lineTo(st.player.x + 15, st.player.y + 15);
                  ctx.fill();
 
-                 // Draw Immunity Shield
                  if (st.immune) {
-                     ctx.strokeStyle = '#06b6d4'; // Cyan
+                     ctx.strokeStyle = '#06b6d4'; 
                      ctx.lineWidth = 3;
                      ctx.shadowBlur = 10;
                      ctx.shadowColor = '#06b6d4';
@@ -1313,11 +1290,18 @@
          }, [playSound, resetTrigger, restart]);
 
          return (
-             <div className="flex flex-col items-center justify-center w-full h-full relative" onClick={stopAdEvent}>
+             <div ref={containerRef} className={`flex flex-col items-center justify-center w-full h-full relative ${isFullscreen ? 'fixed inset-0 z-[500] bg-black' : ''}`} onClick={stopAdEvent}>
                 {/* HUD */}
                 <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
-                     <div className="text-white font-mono text-xl drop-shadow-md bg-black/40 px-2 rounded">
-                        SCORE: <span className="text-yellow-400">{score}</span>
+                     <div className="flex flex-col gap-2">
+                         <div className="text-white font-mono text-xl drop-shadow-md bg-black/40 px-2 rounded">
+                            SCORE: <span className="text-yellow-400">{score}</span>
+                         </div>
+                         <div className="pointer-events-auto">
+                             <button onClick={toggleFullscreen} className="bg-white/10 p-2 rounded-full hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition-all active:scale-95 shadow-lg">
+                                 {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                             </button>
+                         </div>
                      </div>
                      <div className="flex flex-col items-end gap-1">
                          <div className="w-32 h-4 bg-gray-800 rounded-full border border-white/20 overflow-hidden">
