@@ -100,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap, Car, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Fuel, ShoppingCart, Play, ArrowRight, Trophy, Pause, Settings, Info, Gauge, Maximize } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize } from 'lucide-react';
 
       // --- Sound System (Synthesized & Safe) ---
       let audioContext = null;
@@ -164,24 +164,16 @@
                   osc.start(now);
                   osc.stop(now + 0.5);
                   break;
-              case 'engine':
-                  osc.type = 'sawtooth';
-                  // Simulate engine RPM
-                  const freq = Math.max(60, 60 + pitchMod * 150); 
-                  osc.frequency.setValueAtTime(freq, now);
-                  gainNode.gain.setValueAtTime(0.05, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+              case '1up':
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(400, now);
+                  osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                  osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                  osc.frequency.linearRampToValueAtTime(1600, now + 0.3);
+                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
                   osc.start(now);
-                  osc.stop(now + 0.1);
-                  break;
-              case 'nitro':
-                  osc.type = 'square';
-                  osc.frequency.setValueAtTime(200, now);
-                  osc.frequency.linearRampToValueAtTime(800, now + 1.0);
-                  gainNode.gain.setValueAtTime(0.05, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
-                  osc.start(now);
-                  osc.stop(now + 1.0);
+                  osc.stop(now + 0.3);
                   break;
               case 'crash':
                   osc.type = 'sawtooth';
@@ -191,15 +183,6 @@
                   gainNode.gain.exponentialRampToValueAtTime(0, now + 0.3);
                   osc.start(now);
                   osc.stop(now + 0.3);
-                  break;
-              case 'checkpoint': 
-                  osc.type = 'sine';
-                  osc.frequency.setValueAtTime(600, now);
-                  osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                  osc.start(now);
-                  osc.stop(now + 0.2);
                   break;
               case 'correct':
                   osc.type = 'sine';
@@ -380,587 +363,11 @@
           );
       };
 
-      // --- Neon Racer (Advanced 3D Engine) ---
-      
-      const TRACKS = [
-          { name: 'COASTAL BREEZE', length: 1600, curves: 2, hills: 2, color: { road: '#333', grass: '#0a0', rumble: '#fff', sky: '#87CEEB' } },
-          { name: 'CITY NIGHTS', length: 2000, curves: 4, hills: 1, color: { road: '#222', grass: '#111', rumble: '#f0f', sky: '#000033' } },
-          { name: 'DESERT RUN', length: 2400, curves: 3, hills: 5, color: { road: '#543', grass: '#e6c288', rumble: '#c00', sky: '#f97316' } },
-          { name: 'ALPINE PEAK', length: 3000, curves: 6, hills: 8, color: { road: '#444', grass: '#fff', rumble: '#c00', sky: '#bfdbfe' } },
-          { name: 'CANYON DRIFT', length: 2800, curves: 8, hills: 3, color: { road: '#543', grass: '#7c2d12', rumble: '#fbbf24', sky: '#60a5fa' } },
-          { name: 'CYBER CITY', length: 3200, curves: 5, hills: 2, color: { road: '#111', grass: '#000', rumble: '#0ff', sky: '#000' } },
-          { name: 'JUNGLE FEVER', length: 3400, curves: 7, hills: 4, color: { road: '#332', grass: '#064e3b', rumble: '#fff', sky: '#86efac' } },
-          { name: 'VOLCANO', length: 3600, curves: 4, hills: 10, color: { road: '#222', grass: '#450a0a', rumble: '#ef4444', sky: '#7f1d1d' } },
-          { name: 'RAINBOW ROAD', length: 4000, curves: 9, hills: 6, color: { road: '#ccf', grass: '#000', rumble: '#ff0', sky: '#1d4ed8' } },
-          { name: 'THE GAUNTLET', length: 5000, curves: 10, hills: 10, color: { road: '#000', grass: '#333', rumble: '#fff', sky: '#581c87' } },
-      ];
-
-      const NeonRacer = ({ onBack, triggerAd }) => {
-          const canvasRef = useRef(null);
-          const requestRef = useRef();
-          const [view, setView] = useState('menu'); // menu, options, credits, race, pause, result, gameover
-          const [unlockedLevel, setUnlockedLevel] = useState(parseInt(localStorage.getItem('nr_unlocked') || 1));
-          const [selectedTrack, setSelectedTrack] = useState(0);
-          const [settings, setSettings] = useState({ music: true, sfx: true });
-
-          // Game State
-          const state = useRef({
-              speed: 0, maxSpeed: 220, accel: 0, 
-              position: 0, playerX: 0, playerZ: 0,
-              segments: [], trackLength: 0,
-              fuel: 100, maxFuel: 100, 
-              nitro: 3, nitroActive: false, nitroTimer: 0,
-              cars: [],
-              keyLeft: false, keyRight: false, keyUp: false, keyDown: false,
-              startTime: 0, timeRemaining: 60, totalTime: 0,
-              finished: false, failReason: null
-          });
-
-          // Persistent Save
-          useEffect(() => { localStorage.setItem('nr_unlocked', unlockedLevel); }, [unlockedLevel]);
-
-          const initTrack = (levelIndex) => {
-              const s = state.current;
-              const track = TRACKS[levelIndex];
-              
-              s.segments = [];
-              s.cars = [];
-              s.fuel = 100;
-              s.nitro = 3;
-              s.nitroActive = false;
-              s.speed = 0;
-              s.position = 0;
-              s.playerX = 0;
-              s.timeRemaining = 50 + (levelIndex * 5); // More time for longer tracks
-              s.finished = false;
-              s.failReason = null;
-              s.keyLeft = false; s.keyRight = false; s.keyUp = false; s.keyDown = false;
-              
-              const SEGMENT_LENGTH = 200;
-              const RUMBLE_LENGTH = 3;
-              
-              const addSegment = (curve, y) => {
-                  const n = s.segments.length;
-                  s.segments.push({
-                      index: n,
-                      p1: { world: { y: getLastY(), z: n * SEGMENT_LENGTH }, camera: {}, screen: {} },
-                      p2: { world: { y: y, z: (n + 1) * SEGMENT_LENGTH }, camera: {}, screen: {} },
-                      curve: curve,
-                      color: Math.floor(n / RUMBLE_LENGTH) % 2 ? 'dark' : 'light'
-                  });
-              };
-              const getLastY = () => (s.segments.length === 0) ? 0 : s.segments[s.segments.length-1].p2.world.y;
-
-              // Build Track
-              for(let i=0; i<10; i++) addSegment(0,0); // Start line
-              
-              const difficulty = (levelIndex + 1) * 0.5;
-              const len = track.length / 2; // Number of segments roughly
-              
-              let currentH = 0;
-              for(let i=0; i<len; i++) {
-                  let curve = 0;
-                  let dH = 0;
-                  // Randomly generate curves/hills based on track stats
-                  if (Math.random() < 0.1 * track.curves) curve = (Math.random() - 0.5) * difficulty * 6;
-                  if (Math.random() < 0.1 * track.hills) dH = (Math.random() - 0.5) * difficulty * 600;
-                  
-                  // Smooth transition
-                  const steps = 10 + Math.floor(Math.random() * 20);
-                  const targetH = currentH + dH;
-                  for(let j=0; j<steps; j++) {
-                      const p = j/steps;
-                      const h = currentH + (dH * (1 - Math.cos(p*Math.PI))/2);
-                      addSegment(curve, h);
-                      
-                      // Traffic
-                      if (Math.random() < 0.05 + (levelIndex * 0.01)) {
-                          const offset = (Math.random() * 2 - 1) * 0.8;
-                          const z = (s.segments.length-1) * SEGMENT_LENGTH;
-                          const speed = 100 + Math.random() * (50 + levelIndex * 10);
-                          const type = Math.random() > 0.8 ? 'truck' : (Math.random() > 0.5 ? 'sport' : 'sedan');
-                          s.cars.push({ z, offset, speed, type, w: 0.5 }); // w is hitbox width relative to road
-                      }
-                  }
-                  currentH = targetH;
-              }
-              
-              for(let i=0; i<50; i++) addSegment(0, currentH); // Finish line straight
-              s.trackLength = s.segments.length * SEGMENT_LENGTH;
-          };
-
-          const project = (p, cameraX, cameraY, cameraZ, depth, width, height, roadWidth) => {
-              p.camera.x = (p.world.x || 0) - cameraX;
-              p.camera.y = (p.world.y || 0) - cameraY;
-              p.camera.z = (p.world.z || 0) - cameraZ;
-              p.screen.scale = depth / p.camera.z;
-              p.screen.x = Math.round((width/2) + (p.screen.scale * p.camera.x * width/2));
-              p.screen.y = Math.round((height/2) - (p.screen.scale * p.camera.y * height/2));
-              p.screen.w = Math.round(p.screen.scale * roadWidth * width/2);
-          };
-
-          const renderPolygon = (ctx, x1, y1, x2, y2, x3, y3, x4, y4, color) => {
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4);
-              ctx.closePath();
-              ctx.fill();
-          };
-
-          // Sprite Rendering (Procedural)
-          const drawCar = (ctx, type, x, y, scale, isPlayer) => {
-              const w = 150 * scale;
-              const h = 80 * scale;
-              const cx = x - w/2;
-              const cy = y - h;
-              
-              ctx.save();
-              // Shadow
-              ctx.fillStyle = 'rgba(0,0,0,0.5)';
-              ctx.fillRect(cx + 10*scale, cy + h - 10*scale, w - 20*scale, 10*scale);
-
-              if (type === 'player') {
-                  const color = state.current.nitroActive ? '#ff0055' : '#dc2626';
-                  ctx.fillStyle = color; ctx.fillRect(cx, cy + h/2, w, h/2); // Body
-                  ctx.fillStyle = '#7f1d1d'; ctx.fillRect(cx + w*0.1, cy, w*0.8, h/2); // Top
-                  ctx.fillStyle = '#000'; ctx.fillRect(cx + w*0.15, cy + 5*scale, w*0.7, h*0.3); // Window
-                  // Lights
-                  ctx.fillStyle = '#ef4444'; 
-                  ctx.shadowBlur = 10 * scale; ctx.shadowColor = '#f00';
-                  ctx.fillRect(cx + w*0.1, cy + h*0.6, w*0.2, h*0.2);
-                  ctx.fillRect(cx + w*0.7, cy + h*0.6, w*0.2, h*0.2);
-                  if (state.current.nitroActive) {
-                      ctx.fillStyle = '#0ff'; ctx.shadowColor = '#0ff';
-                      ctx.fillRect(cx + w*0.4, cy + h*0.6, w*0.2, h*0.2); // Exhaust
-                  }
-              } else if (type === 'truck') {
-                  ctx.fillStyle = '#555'; ctx.fillRect(cx, cy, w, h);
-                  ctx.fillStyle = '#333'; ctx.fillRect(cx + 5*scale, cy + 5*scale, w - 10*scale, h*0.8); // Door
-                  ctx.fillStyle = '#facc15'; ctx.fillRect(cx + w*0.1, cy + h*0.8, w*0.2, h*0.1); // Lights
-                  ctx.fillStyle = '#facc15'; ctx.fillRect(cx + w*0.7, cy + h*0.8, w*0.2, h*0.1);
-              } else { // sedan/sport
-                  const color = type === 'sport' ? '#facc15' : '#3b82f6';
-                  ctx.fillStyle = color; ctx.fillRect(cx + w*0.1, cy + h*0.4, w*0.8, h*0.6);
-                  ctx.fillStyle = '#1e3a8a'; ctx.fillRect(cx + w*0.2, cy + h*0.1, w*0.6, h*0.3);
-                  ctx.fillStyle = '#ef4444'; ctx.fillRect(cx + w*0.15, cy + h*0.6, w*0.15, h*0.15);
-                  ctx.fillStyle = '#ef4444'; ctx.fillRect(cx + w*0.7, cy + h*0.6, w*0.15, h*0.15);
-              }
-              ctx.restore();
-          };
-
-          const update = (dt) => {
-              const s = state.current;
-              
-              if (s.finished || view !== 'race') return;
-
-              // Physics Stats
-              const maxSpeed = s.nitroActive ? s.maxSpeed * 1.5 : s.maxSpeed;
-              const accel = s.nitroActive ? 150 : 80;
-              const breaking = -200;
-              const decel = -50;
-              const offRoadDecel = -150;
-              const offRoadLimit = maxSpeed / 4;
-              
-              // Nitro Logic
-              if (s.nitroActive) {
-                  s.nitroTimer -= dt;
-                  if (s.nitroTimer <= 0) s.nitroActive = false;
-              }
-
-              // Controls
-              if (s.keyUp && s.fuel > 0) s.speed += accel * dt;
-              else if (s.keyDown) s.speed += breaking * dt;
-              else s.speed += decel * dt;
-
-              // Steering
-              let dx = dt * 1.5 * (s.speed / maxSpeed); 
-              if (s.keyLeft) s.playerX -= dx;
-              else if (s.keyRight) s.playerX += dx;
-
-              // Centrifugal Force
-              const segmentLen = 200;
-              const playerSegment = s.segments[Math.floor((s.position + 100) / segmentLen) % s.segments.length];
-              s.playerX -= (dx * s.speed/maxSpeed * playerSegment.curve * 3); // Force pushes out
-
-              // Off-road physics
-              if ((s.playerX < -1 || s.playerX > 1) && s.speed > offRoadLimit) {
-                  s.speed += offRoadDecel * dt;
-              }
-
-              // Clamp Speed
-              s.speed = Math.max(0, Math.min(s.speed, maxSpeed));
-              
-              // Move Forward
-              s.position += s.speed * dt * 2.5; // speed scale
-              
-              // Fuel
-              s.fuel -= dt * (s.speed / maxSpeed) * 3;
-              if (s.fuel <= 0) {
-                  s.fuel = 0;
-                  s.speed -= 300 * dt; // Rapid stop
-                  if (s.speed <= 10) { s.finished = true; s.failReason = 'fuel'; setView('gameover'); playSound('wrong'); }
-              }
-
-              // Time
-              s.timeRemaining -= dt;
-              if (s.timeRemaining <= 0) {
-                   s.timeRemaining = 0;
-                   s.finished = true; s.failReason = 'time'; setView('gameover'); playSound('wrong');
-              }
-
-              // Finish Line
-              if (s.position >= s.trackLength) {
-                  s.finished = true;
-                  s.position = s.trackLength;
-                  s.speed = 0;
-                  playSound('correct');
-                  if (selectedTrack + 1 >= unlockedLevel) setUnlockedLevel(u => Math.min(10, u + 1));
-                  setView('result');
-              }
-
-              // Traffic Logic
-              for(let i=0; i<s.cars.length; i++) {
-                  const car = s.cars[i];
-                  // Move car
-                  const carSegIdx = Math.floor(car.z / segmentLen);
-                  const carSeg = s.segments[carSegIdx % s.segments.length];
-                  
-                  car.z += car.speed * dt * 2.5;
-                  if (car.z >= s.trackLength) car.z -= s.trackLength; // Wrap loop
-                  
-                  // Simple AI steering
-                  if (Math.abs(car.offset) > 0.8) car.dir = -Math.sign(car.offset);
-                  else if (Math.random() < 0.01) car.dir = Math.random() > 0.5 ? 1 : -1;
-                  // car.offset += (car.dir || 0) * dt * 0.5; // Disabled for stability in this simple version
-                  
-                  // Collision
-                  // Project car relative to player
-                  let carRelZ = car.z - s.position;
-                  if (carRelZ < -500) carRelZ += s.trackLength; // wrap
-                  
-                  if (carRelZ > 0 && carRelZ < 250) { // In front and close
-                       const overlap = (car.w + 0.5) / 2; // Approximate width overlap
-                       if (Math.abs(car.offset - s.playerX) < 0.8) {
-                           s.speed *= 0.8; // Bump slows down
-                           playSound('crash');
-                           // Push player away
-                           s.playerX -= Math.sign(s.playerX - car.offset) * 0.1;
-                       }
-                  }
-              }
-              
-              // Sound loop
-              if (settings.sfx && s.speed > 20 && Math.random() < 0.1) playSound('engine', s.speed/maxSpeed);
-          };
-
-          const draw = (ctx, width, height) => {
-              const s = state.current;
-              const theme = TRACKS[selectedTrack].color;
-              const SEGMENT_LENGTH = 200;
-              const CAM_HEIGHT = 1000;
-              const ROAD_WIDTH = 2000;
-              const DRAW_DISTANCE = 300;
-              const FOV = 100;
-              const DEPTH = 1 / Math.tan((FOV/2) * Math.PI/180);
-
-              // Clear
-              ctx.fillStyle = theme.sky;
-              ctx.fillRect(0, 0, width, height);
-
-              // Sun/Moon
-              ctx.fillStyle = '#fff';
-              ctx.beginPath(); ctx.arc(width*0.8, height*0.2, 40, 0, Math.PI*2); ctx.fill();
-
-              // Road Rendering
-              const baseSegment = s.segments[Math.floor(s.position / SEGMENT_LENGTH) % s.segments.length];
-              const basePercent = (s.position % SEGMENT_LENGTH) / SEGMENT_LENGTH;
-              
-              let dx = -(baseSegment.curve * basePercent);
-              let x = 0;
-              let maxY = height;
-              
-              const playerX = s.playerX * ROAD_WIDTH;
-
-              for(let n=0; n<DRAW_DISTANCE; n++) {
-                  const id = (baseSegment.index + n) % s.segments.length;
-                  const segment = s.segments[id];
-                  const looped = segment.index < baseSegment.index;
-                  
-                  // Coords
-                  segment.p1.world.z = (n * SEGMENT_LENGTH) - (basePercent * SEGMENT_LENGTH);
-                  segment.p1.world.x = x - playerX - dx;
-                  
-                  segment.p2.world.z = ((n+1) * SEGMENT_LENGTH) - (basePercent * SEGMENT_LENGTH);
-                  segment.p2.world.x = x - playerX - dx - segment.curve; // simplified curve projection
-
-                  x += dx;
-                  dx += segment.curve;
-
-                  segment.p1.world.y = segment.p1.world.y || 0;
-                  segment.p2.world.y = segment.p2.world.y || 0;
-                  
-                  // Project
-                  project(segment.p1, 0, CAM_HEIGHT, 0, DEPTH, width, height, ROAD_WIDTH);
-                  project(segment.p2, 0, CAM_HEIGHT, 0, DEPTH, width, height, ROAD_WIDTH);
-
-                  if (segment.p1.camera.z <= DEPTH || segment.p2.screen.y >= maxY || segment.p2.screen.y >= segment.p1.screen.y) continue;
-                  
-                  // Draw Ground
-                  ctx.fillStyle = theme.grass;
-                  ctx.fillRect(0, segment.p2.screen.y, width, segment.p1.screen.y - segment.p2.screen.y);
-                  
-                  // Draw Road
-                  const color = segment.color === 'light' ? 
-                      { road: theme.road, rumble: theme.rumble, lane: '#fff' } : 
-                      { road: '#444', rumble: '#c00', lane: theme.road }; // dark road segment
-
-                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w, segment.p2.screen.y, color.rumble);
-                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w * 0.85, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w * 0.85, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w * 0.85, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w * 0.85, segment.p2.screen.y, color.road);
-                  
-                  if (segment.color === 'light') {
-                       const laneW1 = segment.p1.screen.w * 0.02;
-                       const laneW2 = segment.p2.screen.w * 0.02;
-                       renderPolygon(ctx, segment.p1.screen.x - laneW1, segment.p1.screen.y, segment.p1.screen.x + laneW1, segment.p1.screen.y, segment.p2.screen.x + laneW2, segment.p2.screen.y, segment.p2.screen.x - laneW2, segment.p2.screen.y, color.lane);
-                  }
-
-                  maxY = segment.p1.screen.y;
-
-                  // Draw Traffic
-                  // In a real optimized engine, we'd spatially hash this. Simple loop for now.
-                  for(let i=0; i<s.cars.length; i++) {
-                      const car = s.cars[i];
-                      // Check if car is in this segment Z-range
-                      // Relative Z calculation
-                      let carRelZ = car.z - s.position;
-                      if (carRelZ < 0) carRelZ += s.trackLength;
-                      
-                      const segZStart = n * SEGMENT_LENGTH;
-                      const segZEnd = (n+1) * SEGMENT_LENGTH;
-                      
-                      // Loose check to draw
-                      if (carRelZ >= segZStart && carRelZ < segZEnd) {
-                           const percent = (carRelZ - segZStart) / SEGMENT_LENGTH;
-                           // Interpolate X and Y based on segment projection
-                           const spriteScale = segment.p1.screen.scale + (segment.p2.screen.scale - segment.p1.screen.scale) * percent;
-                           const spriteX = segment.p1.screen.x + (segment.p2.screen.x - segment.p1.screen.x) * percent + (spriteScale * car.offset * ROAD_WIDTH * width/2);
-                           const spriteY = segment.p1.screen.y + (segment.p2.screen.y - segment.p1.screen.y) * percent;
-                           
-                           drawCar(ctx, car.type, spriteX, spriteY, spriteScale * 25, false); // *25 is arbitrary visual scale
-                      }
-                  }
-              }
-
-              // Draw Player Car
-              const carScale = 1;
-              const carX = width / 2;
-              const carY = height - 20;
-              // Bounce effect
-              const bounce = (s.speed / s.maxSpeed) * Math.random() * 2;
-              drawCar(ctx, 'player', carX, carY + bounce, carScale, true);
-              
-              // HUD
-              // Speedometer
-              ctx.beginPath();
-              ctx.arc(width - 80, height - 80, 60, Math.PI * 0.7, Math.PI * 2.3);
-              ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 10; ctx.stroke();
-              const speedAngle = Math.PI * 0.7 + (s.speed / 240) * (Math.PI * 1.6);
-              ctx.beginPath(); ctx.arc(width - 80, height - 80, 60, Math.PI * 0.7, speedAngle);
-              ctx.strokeStyle = s.nitroActive ? '#f0f' : '#0ff'; ctx.stroke();
-              ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center';
-              ctx.fillText(Math.floor(s.speed), width - 80, height - 75);
-              ctx.font = '12px Arial'; ctx.fillText('KM/H', width - 80, height - 60);
-
-              // Bars
-              const barW = 200;
-              // Fuel
-              ctx.fillStyle = '#333'; ctx.fillRect(20, 20, barW, 20);
-              ctx.fillStyle = s.fuel < 20 ? '#f00' : '#ea580c'; ctx.fillRect(20, 20, barW * (s.fuel/100), 20);
-              ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left'; ctx.fillText('FUEL', 25, 34);
-              
-              // Nitro
-              ctx.fillStyle = '#333'; ctx.fillRect(20, 50, barW, 20);
-              const nitroW = barW / 3;
-              for(let i=0; i<3; i++) {
-                   if (i < s.nitro) {
-                       ctx.fillStyle = '#d946ef'; ctx.fillRect(20 + i*nitroW + 2, 52, nitroW - 4, 16);
-                   }
-              }
-              ctx.fillStyle = '#fff'; ctx.fillText('NITRO', 25, 64);
-
-              // Time & Pos
-              ctx.font = 'bold 20px Arial';
-              ctx.fillText(`TIME: ${Math.floor(s.timeRemaining)}`, width/2 - 50, 40);
-              const progress = Math.min(100, Math.floor((s.position / s.trackLength) * 100));
-              ctx.fillText(`${progress}%`, width/2 + 50, 40);
-
-              // Pause Overlay
-              if (view === 'pause') {
-                  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                  ctx.fillRect(0,0,width,height);
-                  ctx.fillStyle = '#fff'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center';
-                  ctx.fillText('PAUSED', width/2, height/2);
-              }
-          };
-
-          useEffect(() => {
-              if (view === 'race') {
-                  const canvas = canvasRef.current;
-                  initTrack(selectedTrack);
-                  
-                  let lastTime = Date.now();
-                  const loop = () => {
-                      if (view !== 'race' && view !== 'pause') return;
-                      const now = Date.now();
-                      const dt = Math.min(1, (now - lastTime) / 1000);
-                      lastTime = now;
-                      if (view === 'race') update(dt);
-                      if (canvas) draw(canvas.getContext('2d'), canvas.width, canvas.height);
-                      requestRef.current = requestAnimationFrame(loop);
-                  };
-                  requestRef.current = requestAnimationFrame(loop);
-
-                  const down = (e) => {
-                      if (view === 'pause' && e.key === 'Escape') setView('race');
-                      else if (view === 'race' && e.key === 'Escape') setView('pause');
-                      
-                      switch(e.key) { 
-                          case 'ArrowUp': state.current.keyUp = true; break; 
-                          case 'ArrowDown': state.current.keyDown = true; break; 
-                          case 'ArrowLeft': state.current.keyLeft = true; break; 
-                          case 'ArrowRight': state.current.keyRight = true; break; 
-                          case ' ': if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } break;
-                      } 
-                  };
-                  const up = (e) => {
-                      switch(e.key) { 
-                          case 'ArrowUp': state.current.keyUp = false; break; 
-                          case 'ArrowDown': state.current.keyDown = false; break; 
-                          case 'ArrowLeft': state.current.keyLeft = false; break; 
-                          case 'ArrowRight': state.current.keyRight = false; break; 
-                      } 
-                  };
-                  window.addEventListener('keydown', down); window.addEventListener('keyup', up);
-                  
-                  // Touch
-                  const tStart = (e) => {
-                      e.preventDefault();
-                      const w = window.innerWidth; const h = window.innerHeight;
-                      for(let i=0; i<e.touches.length; i++) {
-                          const t = e.touches[i];
-                          if (t.clientY > h - 100) { if (t.clientX < w/2) state.current.keyDown = true; else { if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } } }
-                          else if (t.clientX < w * 0.3) state.current.keyLeft = true;
-                          else if (t.clientX > w * 0.7) state.current.keyRight = true;
-                          else state.current.keyUp = true;
-                      }
-                  };
-                  const tEnd = (e) => { 
-                      e.preventDefault();
-                      state.current.keyUp = false; state.current.keyDown = false; state.current.keyLeft = false; state.current.keyRight = false; 
-                  };
-                  if (canvas) { canvas.addEventListener('touchstart', tStart, {passive:false}); canvas.addEventListener('touchend', tEnd, {passive:false}); }
-
-                  return () => { 
-                      cancelAnimationFrame(requestRef.current); 
-                      window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); 
-                      if (canvas) { canvas.removeEventListener('touchstart', tStart); canvas.removeEventListener('touchend', tEnd); }
-                  };
-              }
-          }, [view, selectedTrack]);
-
-          // Menus
-          if (view === 'menu') {
-              return (
-                  <div className="w-full h-full bg-gray-900 text-white flex flex-col items-center justify-center p-6 relative">
-                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                       <h1 className="text-5xl font-black italic text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600 mb-8 racing-font">NEON RACER</h1>
-                       <div className="flex flex-col gap-4 w-full max-w-sm z-10">
-                           <button onClick={() => setView('career')} className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 rounded-xl font-bold text-xl hover:scale-105 transition shadow-lg">CAREER MODE</button>
-                           <button onClick={() => setView('options')} className="glass-box p-4 rounded-xl font-bold hover:bg-white/10 flex items-center justify-center gap-2"><Settings size={20}/> OPTIONS</button>
-                           <button onClick={() => setView('credits')} className="glass-box p-4 rounded-xl font-bold hover:bg-white/10 flex items-center justify-center gap-2"><Info size={20}/> CREDITS</button>
-                           <button onClick={onBack} className="mt-4 text-gray-400 hover:text-white">Back to Arcade</button>
-                       </div>
-                  </div>
-              );
-          }
-          if (view === 'career') {
-              return (
-                  <div className="w-full h-full bg-black text-white p-6 overflow-y-auto">
-                      <div className="max-w-md mx-auto flex flex-col gap-4">
-                           <div className="flex items-center gap-4 mb-4"><button onClick={() => setView('menu')}><ChevronLeft/></button> <h2 className="text-2xl font-bold">SELECT TRACK</h2></div>
-                           {TRACKS.map((t, idx) => (
-                               <button key={idx} disabled={idx + 1 > unlockedLevel} onClick={() => { setSelectedTrack(idx); setView('race'); }} 
-                                   className={`p-4 rounded-xl border flex justify-between items-center transition ${idx + 1 <= unlockedLevel ? 'bg-gray-800 border-purple-500 hover:bg-gray-700' : 'bg-gray-900 border-gray-800 opacity-50'}`}>
-                                   <div className="text-left">
-                                       <div className="font-bold text-lg">{t.name}</div>
-                                       <div className="text-xs text-gray-400">{t.length}m • Hills: {t.hills} • Curves: {t.curves}</div>
-                                   </div>
-                                   {idx + 1 > unlockedLevel && <Shield size={20}/>}
-                                   {idx + 1 <= unlockedLevel && <Play size={20} fill="currentColor"/>}
-                               </button>
-                           ))}
-                      </div>
-                  </div>
-              );
-          }
-          if (view === 'result') {
-              return (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-black/90 text-white z-50">
-                      <Trophy size={80} className="text-yellow-400 mb-4 animate-bounce"/>
-                      <h1 className="text-4xl font-bold mb-2">TRACK CLEARED!</h1>
-                      <div className="text-xl text-gray-300 mb-8">Next track unlocked</div>
-                      <div className="flex gap-4">
-                          <button onClick={() => { triggerAd(); setView('career'); }} className="bg-gray-700 px-8 py-3 rounded-xl font-bold">TRACKS</button>
-                          {selectedTrack < 9 && <button onClick={() => { triggerAd(); setSelectedTrack(t => t+1); setView('race'); }} className="bg-green-600 px-8 py-3 rounded-xl font-bold">NEXT LEVEL</button>}
-                      </div>
-                  </div>
-              );
-          }
-          if (view === 'gameover') {
-              return (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-black/90 text-white z-50">
-                      <XCircle size={80} className="text-red-500 mb-4"/>
-                      <h1 className="text-4xl font-bold mb-2">GAME OVER</h1>
-                      <div className="text-xl text-red-300 mb-8 uppercase">{state.current.failReason === 'fuel' ? 'Out of Fuel' : 'Time Up'}</div>
-                      <div className="flex gap-4">
-                          <button onClick={() => { triggerAd(); setView('menu'); }} className="bg-gray-700 px-8 py-3 rounded-xl font-bold">MENU</button>
-                          <button onClick={() => { triggerAd(); setView('race'); }} className="bg-blue-600 px-8 py-3 rounded-xl font-bold">RETRY</button>
-                      </div>
-                  </div>
-              );
-          }
-          if (view === 'pause') {
-               return (
-                   <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 text-white">
-                       <h2 className="text-3xl font-bold mb-8">PAUSED</h2>
-                       <button onClick={() => setView('race')} className="bg-green-600 px-8 py-3 rounded-xl font-bold mb-4 w-48">RESUME</button>
-                       <button onClick={() => setView('menu')} className="bg-red-600 px-8 py-3 rounded-xl font-bold w-48">EXIT</button>
-                   </div>
-               );
-          }
-
-          return (
-              <div className="w-full h-full bg-black relative">
-                  <canvas ref={canvasRef} className="w-full h-full block" />
-                  {view === 'race' && (
-                       <div className="absolute bottom-6 right-6 lg:hidden">
-                           <button className="w-20 h-20 bg-purple-500/50 rounded-full border-4 border-purple-400 flex items-center justify-center active:bg-purple-500"
-                               onTouchStart={(e) => { e.preventDefault(); if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } }}>
-                               <Rocket fill="white" size={32}/>
-                           </button>
-                       </div>
-                  )}
-                  {view === 'race' && (
-                       <button onClick={() => setView('pause')} className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white"><Pause/></button>
-                  )}
-              </div>
-          );
-      };
-
       // --- Galaxy Invader ---
       const GalaxyInvader = ({ onBack, triggerAd }) => {
           const canvasRef = useRef(null);
           const game = useRef({
-              player: { x: 0, y: 0, w: 40, h: 40, health: 100, maxHealth: 100, weaponLevel: 1, shieldActive: false, shieldTimer: 0, damageMultiplier: 1, lastShot: 0, shootAngle: 0 },
+              player: { x: 0, y: 0, w: 40, h: 40, health: 100, maxHealth: 100, lives: 3, weaponLevel: 1, shieldActive: false, shieldTimer: 0, damageMultiplier: 1, lastShot: 0, shootAngle: 0, invulnerable: 0 },
               bullets: [], enemies: [], powerups: [], boss: null, particles: [], stars: [],
               score: 0, level: 1, levelScore: 0, bossTarget: 5000, gameState: 'menu', width: 0, height: 0,
           });
@@ -974,8 +381,10 @@
               g.player.x = g.width / 2 - g.player.w / 2;
               g.player.y = g.height - 100;
               g.player.health = 100;
+              g.player.lives = 3;
               g.player.weaponLevel = 1;
               g.player.shieldActive = false;
+              g.player.invulnerable = 0;
               g.score = 0; 
               g.level = 1; 
               g.levelScore = 0;
@@ -991,7 +400,8 @@
               if (Math.random() < 0.35) { 
                   const r = Math.random();
                   let type = 'weapon';
-                  if (r > 0.85) type = 'health';
+                  if (r > 0.96) type = 'life';
+                  else if (r > 0.85) type = 'health';
                   else if (r > 0.70) type = 'shield';
                   game.current.powerups.push({ x, y, w: 20, h: 20, type, vy: 2 });
               }
@@ -1189,6 +599,7 @@
 
               g.stars.forEach(s => { s.y += s.speed; if (s.y > g.height) { s.y = 0; s.x = Math.random() * g.width; } });
 
+              if (p.invulnerable > 0) p.invulnerable -= 16;
               if (p.shieldActive) {
                   p.shieldTimer -= 16;
                   if (p.shieldTimer <= 0) { p.shieldActive = false; p.damageMultiplier = 1; }
@@ -1353,14 +764,25 @@
                       } else { 
                           if (!b.hit && rectIntersect(b, p)) {
                               b.hit = true;
-                              if (!p.shieldActive) {
+                              if (!p.shieldActive && p.invulnerable <= 0) {
                                   p.health -= 10;
                                   playSound('hit');
                                   createExplosion(p.x, p.y, '#ef4444', 10);
                                   if (p.health <= 0) {
-                                      g.gameState = 'game-over';
+                                      p.lives--;
+                                      createExplosion(p.x + p.w/2, p.y + p.h/2, '#ef4444', 30);
                                       playSound('explosion');
-                                      setGameOver(true);
+                                      if (p.lives > 0) {
+                                          p.health = p.maxHealth;
+                                          p.x = g.width / 2 - p.w/2;
+                                          p.y = g.height - 100;
+                                          p.invulnerable = 2000;
+                                          // Clear enemy bullets to prevent spawn camping
+                                          g.bullets = g.bullets.filter(bullet => bullet.owner === 'player');
+                                      } else {
+                                          g.gameState = 'game-over';
+                                          setGameOver(true);
+                                      }
                                   }
                               }
                           }
@@ -1372,10 +794,23 @@
                       if (rectIntersect(e, p)) {
                           e.health = 0; // Enemy dies
                           createExplosion(e.x + e.w/2, e.y + e.h/2, '#f00', 20);
-                          if (!p.shieldActive) {
+                          if (!p.shieldActive && p.invulnerable <= 0) {
                               p.health -= 20;
                               playSound('explosion');
-                              if (p.health <= 0) { g.gameState = 'game-over'; setGameOver(true); }
+                              if (p.health <= 0) {
+                                  p.lives--;
+                                  createExplosion(p.x + p.w/2, p.y + p.h/2, '#ef4444', 30);
+                                  if (p.lives > 0) {
+                                      p.health = p.maxHealth;
+                                      p.x = g.width / 2 - p.w/2;
+                                      p.y = g.height - 100;
+                                      p.invulnerable = 2000;
+                                      g.bullets = g.bullets.filter(bullet => bullet.owner === 'player');
+                                  } else {
+                                      g.gameState = 'game-over';
+                                      setGameOver(true);
+                                  }
+                              }
                           }
                       }
                   });
@@ -1387,6 +822,7 @@
                           if (p.type === 'weapon') g.player.weaponLevel = Math.min(10, g.player.weaponLevel + 1);
                           else if (p.type === 'shield') { g.player.shieldActive = true; g.player.shieldTimer = 10000; g.player.damageMultiplier = 5; }
                           else if (p.type === 'health') { g.player.health = Math.min(g.player.maxHealth, g.player.health + 30); createExplosion(p.x, p.y, '#ef4444', 10); }
+                          else if (p.type === 'life') { g.player.lives++; playSound('1up'); createExplosion(p.x, p.y, '#22c55e', 20); }
                       }
                   });
 
@@ -1452,6 +888,13 @@
 
               if (g.gameState !== 'game-over') {
                   const p = g.player;
+
+                  // Player Drawing
+                  // Blink if invulnerable
+                  if (p.invulnerable > 0) {
+                      ctx.globalAlpha = Math.floor(Date.now() / 100) % 2 === 0 ? 0.4 : 1.0;
+                  }
+
                   if (p.shieldActive) {
                       const pulse = Math.sin(Date.now() / 100) * 5;
                       ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = '#8b5cf6'; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w + 10 + pulse, 0, Math.PI * 2); ctx.stroke();
@@ -1460,6 +903,7 @@
 
                   ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
                   ctx.beginPath(); ctx.moveTo(p.x + p.w/2, p.y); ctx.lineTo(p.x + p.w, p.y + p.h); ctx.lineTo(p.x + p.w/2, p.y + p.h - 10); ctx.lineTo(p.x, p.y + p.h); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+                  ctx.globalAlpha = 1.0;
               }
 
               g.powerups.forEach(p => {
@@ -1467,10 +911,11 @@
                   let color = '#22c55e'; let label = 'UP';
                   if (p.type === 'shield') { color = '#facc15'; label = 'SP'; }
                   else if (p.type === 'health') { color = '#ef4444'; label = '❤'; }
+                  else if (p.type === 'life') { color = '#22c55e'; label = '1UP'; }
 
                   ctx.shadowColor = color; ctx.fillStyle = color; 
                   ctx.beginPath(); ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI*2); ctx.fill();
-                  ctx.fillStyle = '#000'; ctx.font = 'bold 10px Arial'; 
+                  ctx.fillStyle = '#000'; ctx.font = 'bold 8px Arial'; 
                   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                   ctx.fillText(label, p.x + 10, p.y + 11); 
                   ctx.restore();
@@ -1583,6 +1028,11 @@
               ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 50, 200 * levelProgress, 6);
               ctx.textAlign = 'left';
 
+              // Lives & Health
+              ctx.fillStyle = '#ef4444';
+              ctx.font = 'bold 20px Arial';
+              ctx.fillText(`❤ x ${g.player.lives}`, 10, g.height - 40);
+
               // Player Health
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
@@ -1648,7 +1098,6 @@
           const renderScreen = () => {
               switch(currentScreen) {
                   case 'galaxy-invader': return <GalaxyInvader onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
-                  case 'neon-racer': return <NeonRacer onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
@@ -1661,12 +1110,6 @@
                                               <Rocket size={32} className="text-purple-400" />
                                           </div>
                                       </button>
-                                      <button onClick={() => startGame('neon-racer')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON RACER</span><span className="text-xs text-gray-400">High Speed Racing</span></div>
-                                              <Car size={32} className="text-pink-400" />
-                                          </div>
-                                      </button>
                                       <button onClick={() => startGame('lingua-quest')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">LINGUA QUEST</span><span className="text-xs text-gray-400">Learn English</span></div>
@@ -1676,7 +1119,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.6</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.7</div>
                           </div>
                       );
               }
