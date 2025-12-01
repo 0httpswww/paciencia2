@@ -1,11 +1,11 @@
 {
-  "name": "JosiPuff",
-  "short_name": "JosiPuff",
+  "name": "JoGos Onilne",
+  "short_name": "JogosOnline",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f3526",
-  "theme_color": "#0f3526",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
     {
