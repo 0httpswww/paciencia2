@@ -99,7 +99,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -298,7 +298,7 @@
       };
 
       // --- HANGMAN GAME ---
-      const HangmanGame = ({ onBack, triggerAd }) => {
+      const HangmanGame = ({ onBack, triggerAd, addCoins }) => {
           const rawWordList = "abacate,abelha,abismo,abraso,acenar,acorde,acusar,adaga,adepto,adocar,adotar,adubo,afetar,afinar,afogar,agente,agitar,agosto,aguado,agudo,ajudar,alameda,alarme,albino,alcateia,aldeia,alegre,algema,alicate,alien,alivio,almoco,altar,altura,aluno,amarelo,amigo,amostra,amuleto,analisar,ananas,anexo,animal,anotar,ansioso,antena,anular,apagar,aperto,apitar,apoio,aprender,aprovar,arame,arara,arco,areia,arena,argila,arma,armada,aroma,arvore,asilo,aspirar,assar,astro,atacar,atento,ativo,ator,atrair,audio,aula,aumento,aura,autor,avanco,aviao,avidez,axila,azar,azedo,azul,bagagem,bagre,baiano,baixa,balde,balanco,bambu,banco,bandido,banho,barata,barco,barraco,barreira,base,basico,bastao,bazar,beber,beijo,belga,bezerro,bicudo,bilhete,bilion,bioma,bispo,bispo,bispo,bloco,blusa,boato,bode,boiadeiro,bolacha,bolha,bolota,bonde,bonita,botao,branco,bravo,breu,brilho,brisa,broca,bronze,bruto,bueiro,bufalo,buraco,burro,caatinga,cabelo,cabide,cabo,cachorro,cacife,cactus,cafeina,caixa,cajado,calar,caldo,calmo,calota,calvo,camada,camelo,camisa,caminho,camomila,campo,cancar,candeeiro,caneta,cangaco,canoa,canto,capaz,capim,capuz,caramelo,carne,carona,carpa,carro,cartaz,casaco,casal,casca,casinha,cassetete,castelo,castor,catador,caverna,ceder,cebola,cedo,cegar,celula,cimento,circo,ciscar,citar,civico,clarim,classe,clero,clima,clone,cloro,coala,coceira,coco,coelho,cofre,coibir,coisa,colher,colina,colocar,cometa,comida,compare,comprar,concha,condor,conectar,conforto,conta,controle,coral,coragem,corda,corno,corpo,correr,coruja,cosmos,cotacao,cotovia,couro,cova,cravo,creme,crer,crespo,crise,cruzar,crystal,cuco,culpa,cupido,curso,curto,danado,dançar,danone,dardos,data,dardo,debate,decidir,decorar,dedo,defesa,degelo,degrau,deixar,delirar,demora,dente,deriva,descer,desenho,desfio,desova,destra,detalhe,deusa,devoto,diario,dieta,diego,digito,diminuir,dinamo,dingue,diodo,disco,disegno,disparo,distante,ditado,diva,divino,divulgar,doca,doce,doido,domino,donzela,dormente,dorso,dragao,drama,dueto,duplo,durante,ecoar,edicao,editor,educar,egoista,eixo,elenco,eletrico,elevar,elite,elogio,embrulho,emendar,emotivo,empate,empurrar,encaixe,encanto,encontro,energia,enigma,enlouquecer,enorme,entender,entrada,entulho,enxame,enxada,epoca,ereto,ervilha,escada,escalar,escama,escena,escolha,escudo,esfera,esforco,esfregar,esgoto,esmalte,espada,espelho,espeto,espiral,esporte,esquilo,estaca,estante,esticar,estilo,estocar,estrela,estudo,eterno,etnia,euforico,euforia,euforia,evasao,evento,evitar,exalar,exame,exato,exibir,exigir,exilio,exito,expor,extra,fada,faisca,falcao,falso,faminto,fantasma,farao,fardo,farinha,farol,fastio,fator,fatia,favo,febre,felino,feliz,fenda,feno,fera,ferrugem,festa,feudo,fiapo,fibra,ficar,figura,fileira,filho,final,financeiro,finger,fiorde,firme,flama,flor,floresta,fluir,fluxo,focinho,fogo,foguete,folha,folclore,fome,forca,forma,forno,fosco,fraco,frango,frasco,freio,frio,frisar,fritar,frota,fruta,fugir,fumaça,fundo,fungo,furor,furto,futuro,gabarito,gado,gala,galeria,galho,galo,galpao,ganso,garagem,garfo,garra,garupa,gasolina,gasto,gato,gelado,geleira,gemido,genio,genoma,geodo,geral,germe,gesto,giesta,gigante,ginasta,girafa,girino,giz,globo,gloria,goela,golpe,golfinho,gonzo,gorda,gordo,gosma,gota,governo,grafo,grama,grande,grito,grudar,grupo,guia,guizo,gume,habito,hacker,harpa,habilidade,haste,helice,heroi,hidro,himalaia,hiper,hipnose,historia,hoje,honor,horario,horta,hotel,humano,hurra,icaro,icone,ideia,iglu,ignorar,igreja,ilheu,ilha,iludir,imaculado,imagear,imitar,imovel,imune,inalar,inbox,incenso,inchado,incluso,indicar,inerca,inferno,infimo,iniciar,inocuo,instinto,insular,inteiro,iodo,iraniano,iris,ironia,isqueiro,isso,istmo,italia,jarra,javali,jazida,jeito,jiboia,jig,joia,jornal,jovem,juiz,junho,junto,junior,labio,lacre,lado,lagarta,lagarto,lama,lambda,lance,lanchonete,lanceiro,largo,larva,laser,latir,lavabo,lava,lazer,leao,lebre,legal,leigo,leira,leite,leme,lenha,lento,leque,leste,letra,leve,liame,libra,ligar,limiar,limo,limpo,linha,lirio,listar,litoral,livro,lixao,locao,lobo,lona,longo,lontra,lorde,lote,louco,louro,lua,luar,lugar,lume,luneta,lupa,luta,luto,macaco,maior,malha,malte,mamao,manejo,manga,mangle,manjar,mapa,marca,marco,mare,margem,marinho,maroto,marreco,marte,mascara,massa,mastro,mate,matriz,medalha,melancia,melodia,melhor,memoria,menor,mergulho,mesada,mesmo,mestre,metal,miar,micro,milho,mimo,minhoca,minuto,miolo,mira,misterio,mito,miudeza,moagem,modelo,modulo,moeda,moinho,moita,mofo,mola,molde,moleque,molho,monge,monstro,montanha,moral,morcego,morder,mosaico,mosca,mosquete,mosto,moto,muda,mudar,muela,muito,mundo,municao,mural,musgo,musica,nação,nadar,naive,narvalo,natural,natureza,navio,neblina,negar,negro,nenem,nervoso,nervo,niche,ninho,nobre,notar,nota,novato,novelo,novembro,novo,nucleo,nublado,numero,nuvem,obedecer,obeso,obito,objeto,obliquo,obrar,ocaso,oceano,ocioso,oculo,odiar,odor,ofegar,oferta,oficio,ogiva,oleo,olhar,olho,ombro,ondas,onix,ontem,opala,opcao,opera,opinar,opoente,oracao,orbe,ordem,orelha,orgao,orientar,origem,orla,ornar,oscar,osso,ostra,otario,otimo,ouro,ousar,ouvido,oval,ovino,ovo,oxido,oxigenio,pacto,padrao,pagar,pagode,palha,palio,palma,palmada,pampa,panda,panelão,papel,paprica,parado,parcela,parede,parma,parque,parte,passo,pasto,pato,patria,pedra,pegar,peixe,pena,pente,perda,perigo,perna,peso,peumo,peixe,piada,piano,picada,pico,pilao,pilha,pimenta,pincel,pingo,pinta,pipa,piquenique,pirar,pirata,piso,pista,pitao,pivete,placa,planta,plasma,pneu,poder,podre,poema,poente,poesia,polen,polpa,polvo,pomar,pombo,ponto,ponte,poodle,popular,porcao,porco,porta,portal,poste,pouso,praia,prata,prato,prece,prego,prelo,preto,prima,primo,prisma,proa,prosa,prumo,pular,pulo,punho,pupilo,pura,puxar,quadro,quark,quarto,quase,queda,queijo,quente,querer,quero,quina,quinta,quiosque,quota,rabeca,rabo,racao,rada,radar,radio,raiva,raiz,ramo,rancho,rapido,rasgar,raspao,rasteiro,ratazana,rato,ravina,razao,reagir,real,rebate,reboco,recado,recife,reboque,reparo,repente,repo,retina,reto,reunir,reves,revista,revoada,rim,risada,riso,ritmo,robalo,roca,rocha,roda,rodeo,rodar,rodovia,roer,rojo,rolar,romano,ronco,rosto,roteiro,rotina,roubar,roxo,rua,rubro,rude,rugido,ruido,ruivo,rumor,rumo,rural,rutina,sabao,sabedoria,saber,sabre,sabugo,sacola,sadio,saia,sala,salada,saldao,salgado,salmão,salto,samba,sanduiche,sangue,sapo,sarda,sargento,sarna,sapo,sarau,sabor,salvar,saliva,salmo,selar,selva,semana,sempre,sena,senhor,senso,sentar,sereno,serra,servo,sexta,shoyu,short,silvo,simbolo,sinal,simples,sino,sioux,sistemico,skate,soar,sobrar,social,soco,soja,solar,solene,solo,solta,sombra,somente,sombras,sonar,sonho,sopro,soquete,soro,sorriso,sorte,sossego,sovina,suave,subir,subito,sucesso,suco,sujo,sulco,sul,superior,superar,suporte,surdo,surfar,surgir,susto,sutil,tabela,tabua,tagarelar,talco,talhao,talher,talvez,tambor,tampa,tanque,tapete,tapira,tarifa,tartaruga,tato,taverna,taxa,tecla,tecido,teia,teimoso,teixo,tela,temor,tempo,tenaz,tenda,tenor,tensor,teorico,terra,tesla,testa,tiara,tiro,tigre,tilapia,tipo,tirar,tiroteio,titanio,titulo,toalha,tocar,toldo,tomar,tomate,tombo,tonel,topete,topo,tordo,tornar,torneio,torpedo,torta,torto,torx,tosco,tostar,total,touro,toxico,trafo,tragico,trama,tranco,tranquilo,trapo,trator,treino,trem,trevo,tribo,trigo,trilho,triste,trono,trovao,tucano,tudo,tufao,tulipa,tumulo,turbo,turista,turvo,turno,turquesa,ubuntu,umbigo,umido,unha,unico,unir,urna,urso,urubu,urina,urna,usina,usuario,usura,utopia,vaca,vadio,vale,valor,valsa,vapor,varal,vara,variavel,varrer,vaso,vasto,velcro,velho,veloz,venda,venerar,vento,venus,verao,verbo,verde,vereda,verme,verso,vertente,vespa,vestir,vezes,viagem,viario,vicente,vidro,viela,vingar,vinho,vinil,vinte,viola,violeta,viral,virar,virgem,virtude,visao,visita,vista,visual,vital,vitima,vitral,vivo,vizinho,voar,voce,volante,voltar,volume,voltagem,voraz,vulcao,wafer,wifi,xeque,xicara,xisto,xote,zangoes,zebra,zelar,zelo,zepelim,zerar,zico,zigue,zona,zumbi,zunido";
           
           const WORDS = useMemo(() => {
@@ -348,6 +348,7 @@
                   if (isWon) {
                       setStatus('won');
                       playSound('powerup');
+                      addCoins(20); // Award 20 coins
                   }
               }
           };
@@ -355,7 +356,7 @@
           const renderHangman = () => {
               const s = "#e2e8f0"; const w = 4;
               return (
-                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible">
+                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                       {mistakes >= 1 && <path d="M 20 240 L 180 240 M 60 240 L 60 20" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
                       {mistakes >= 2 && <path d="M 60 20 L 140 20 L 140 50" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
                       {mistakes >= 3 && <circle cx="140" cy="70" r="20" stroke={s} strokeWidth={w} fill="none" />}
@@ -368,17 +369,17 @@
           };
 
           return (
-              <div className="w-full h-full bg-[#0f172a] flex flex-col items-center text-white relative">
-                  <div className="w-full p-4 flex items-center justify-between bg-slate-800/50 backdrop-blur-md border-b border-slate-700">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-700 transition"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold neon-text-small text-slate-200">JOGO DA FORCA</h1>
+              <div className="w-full h-full flex flex-col items-center text-white relative bg-transparent">
+                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-white/10">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold neon-title text-slate-200">JOGO DA FORCA</h1>
                       <div className="w-10"></div>
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-start w-full max-w-lg p-4 gap-4 overflow-y-auto">
-                      <div className="bg-slate-800/30 p-4 rounded-2xl border border-slate-700 w-full flex justify-center">{renderHangman()}</div>
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 w-full flex justify-center">{renderHangman()}</div>
                       <div className="flex flex-wrap justify-center gap-2 my-2">
                           {word.split('').map((char, i) => (
-                              <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 ${guessed.has(char) || status === 'lost' ? 'border-slate-500 bg-slate-700 text-white' : 'border-slate-600 bg-slate-800/50 text-transparent'} ${status === 'lost' && !guessed.has(char) ? 'text-red-400' : ''}`}>
+                              <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 ${guessed.has(char) || status === 'lost' ? 'border-slate-500 bg-slate-800 text-white' : 'border-white/10 bg-white/5 text-transparent'} ${status === 'lost' && !guessed.has(char) ? 'text-red-400' : ''}`}>
                                   {guessed.has(char) || status !== 'playing' ? char : '_'}
                               </div>
                           ))}
@@ -386,8 +387,8 @@
                       <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
                           {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => {
                               const isGuessed = guessed.has(char); const isCorrect = word.includes(char);
-                              let btnClass = "bg-slate-700 hover:bg-slate-600 text-slate-200";
-                              if (isGuessed) btnClass = isCorrect ? "bg-green-600 text-white border-green-500" : "bg-red-600 text-white border-red-500 opacity-50";
+                              let btnClass = "bg-white/10 hover:bg-white/20 text-slate-200";
+                              if (isGuessed) btnClass = isCorrect ? "bg-green-600/80 text-white border-green-500" : "bg-red-600/80 text-white border-red-500 opacity-50";
                               return (
                                   <button key={char} onClick={() => handleGuess(char)} disabled={isGuessed || status !== 'playing'} className={`h-10 rounded-md font-bold text-sm md:text-base transition-all border-b-2 border-transparent active:border-b-0 active:translate-y-1 ${btnClass}`}>{char}</button>
                               )
@@ -396,11 +397,28 @@
                   </div>
                   {status !== 'playing' && (
                       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                          <div className="bg-slate-800 border border-slate-600 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full animate-bounce-in shadow-2xl">
-                              {status === 'won' ? <Star size={64} className="text-yellow-400 drop-shadow-lg" /> : <XCircle size={64} className="text-red-500 drop-shadow-lg" />}
-                              <h2 className="text-2xl font-bold text-center">{status === 'won' ? 'VOCÊ VENCEU!' : 'VOCÊ PERDEU!'}</h2>
-                              {status === 'lost' && <p className="text-slate-400">A palavra era: <span className="text-white font-bold">{word}</span></p>}
-                              <button onClick={(e) => startNewGame(e)} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2"><RefreshCcw size={20}/> JOGAR NOVAMENTE</button>
+                          <div className={`bg-slate-900 border border-slate-700 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl ${status === 'won' ? 'animate-bounce-in shadow-green-500/20' : 'animate-pulse shadow-red-500/20'}`}>
+                              {status === 'won' ? (
+                                <>
+                                  <Star size={64} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-bounce" />
+                                  <h2 className="text-3xl font-bold text-center text-green-400 neon-text-small">VOCÊ VENCEU!</h2>
+                                  <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-full border border-yellow-500/50">
+                                      <Coins size={20} className="text-yellow-400" />
+                                      <span className="font-bold text-yellow-400">+20 MOEDAS</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <Skull size={64} className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse" />
+                                  <h2 className="text-3xl font-bold text-center text-red-500 neon-text-small">VOCÊ PERDEU!</h2>
+                                  <p className="text-slate-400">A palavra era:</p>
+                                  <div className="text-2xl font-bold text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 tracking-widest">{word}</div>
+                                </>
+                              )}
+                              
+                              <button onClick={(e) => startNewGame(e)} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2 transform transition hover:scale-105">
+                                  <RefreshCcw size={20}/> JOGAR NOVAMENTE
+                              </button>
                           </div>
                       </div>
                   )}
@@ -1564,7 +1582,7 @@
                       />
                   );
                   case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
-                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
@@ -1597,7 +1615,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.4.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.5.0</div>
                           </div>
                       );
               }
