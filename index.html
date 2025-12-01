@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Jogos Online</title>
-    <meta name="description" content="Jogos Online - Arcade Space Shooter e muito mais.">
-    <meta name="theme-color" content="#000000">
+    <title>JoGos Online</title>
+    <meta name="description" content="JoGos Online - Arcade Space Shooter e muito mais.">
+    <meta name="theme-color" content="#111111">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
@@ -21,7 +21,12 @@
             touch-action: none; 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Courier New', Courier, monospace;
-            background-color: #050505;
+            background-color: #111;
+            /* Grid Background */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
             color: white; 
             user-select: none; 
             -webkit-user-select: none; 
@@ -41,18 +46,12 @@
                 0 0 75px #ff00de;
         }
         
-        .neon-box {
-            box-shadow:
-                0 0 5px #fff,
-                0 0 10px #fff,
-                0 0 20px #0ff,
-                0 0 30px #0ff,
-                inset 0 0 10px #0ff; 
-        }
-
-        /* Starfield Animation for Menu BG (optional, game has its own) */
-        .stars-bg {
-            background: #000;
+        /* Glassmorphism for Home UI */
+        .glass-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
     </style>
     <script type="importmap">
@@ -70,7 +69,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    console.log('ServiceWorker registration successful');
                 }, function(err) {
                     console.log('ServiceWorker registration failed: ', err);
                 });
@@ -84,21 +83,91 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Expand, Shrink, Heart, Shield, Zap, RefreshCw, Rocket, ChevronLeft } from 'lucide-react';
+      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap } from 'lucide-react';
+
+      // --- Sound System (Synthesized) ---
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const playSound = (type) => {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          osc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          const now = audioCtx.currentTime;
+
+          switch(type) {
+              case 'shoot':
+                  osc.type = 'square';
+                  osc.frequency.setValueAtTime(880, now);
+                  osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                  osc.start(now);
+                  osc.stop(now + 0.1);
+                  break;
+              case 'enemy_shoot':
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(400, now);
+                  osc.frequency.linearRampToValueAtTime(200, now + 0.1);
+                  gainNode.gain.setValueAtTime(0.05, now);
+                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                  osc.start(now);
+                  osc.stop(now + 0.1);
+                  break;
+              case 'explosion':
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(100, now);
+                  osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+                  gainNode.gain.setValueAtTime(0.2, now);
+                  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                  osc.start(now);
+                  osc.stop(now + 0.5);
+                  break;
+              case 'hit':
+                  osc.type = 'square';
+                  osc.frequency.setValueAtTime(150, now);
+                  osc.frequency.linearRampToValueAtTime(100, now + 0.1);
+                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                  osc.start(now);
+                  osc.stop(now + 0.1);
+                  break;
+              case 'powerup':
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(600, now);
+                  osc.frequency.linearRampToValueAtTime(1200, now + 0.3);
+                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                  osc.start(now);
+                  osc.stop(now + 0.3);
+                  break;
+          }
+      };
 
       // --- Galaxy Invader Game Component ---
       const GalaxyInvader = ({ onBack, triggerAd }) => {
           const canvasRef = useRef(null);
           const game = useRef({
-              player: { x: 0, y: 0, w: 40, h: 40, health: 3, maxHealth: 3, weapon: 'single', shield: 0, lastShot: 0 },
+              player: { 
+                  x: 0, y: 0, w: 40, h: 40, 
+                  health: 100, maxHealth: 100, 
+                  weaponLevel: 1, // 1 to 5
+                  shieldActive: false,
+                  shieldTimer: 0,
+                  damageMultiplier: 1,
+                  lastShot: 0 
+              },
               bullets: [],
               enemies: [],
+              powerups: [],
               boss: null,
               particles: [],
-              stars: [], // Starfield
+              stars: [],
               score: 0,
               level: 1,
-              gameState: 'menu', // playing, boss, level-up, game-over
+              gameState: 'menu',
               width: 0,
               height: 0,
           });
@@ -112,20 +181,23 @@
               g.height = canvas.height;
               g.player.x = g.width / 2 - g.player.w / 2;
               g.player.y = g.height - 100;
-              g.player.health = 3;
-              g.player.weapon = 'single';
+              g.player.health = 100;
+              g.player.weaponLevel = 1;
+              g.player.shieldActive = false;
+              g.player.shieldTimer = 0;
+              g.player.damageMultiplier = 1;
               g.score = 0;
               g.level = 1;
               g.bullets = [];
               g.enemies = [];
+              g.powerups = [];
               g.boss = null;
               g.particles = [];
               g.gameState = 'playing';
               setGameOver(false);
               
-              // Initialize Stars
               g.stars = [];
-              for(let i=0; i<100; i++) {
+              for(let i=0; i<80; i++) {
                   g.stars.push({
                       x: Math.random() * g.width,
                       y: Math.random() * g.height,
@@ -135,18 +207,39 @@
               }
           }, []);
 
+          const spawnPowerup = (x, y) => {
+              if (Math.random() < 0.2) { // 20% chance
+                  const type = Math.random() < 0.5 ? 'weapon' : 'shield';
+                  game.current.powerups.push({
+                      x, y, w: 20, h: 20, type,
+                      vy: 2
+                  });
+              }
+          };
+
           const spawnEnemy = useCallback(() => {
               const g = game.current;
               if (g.gameState !== 'playing') return;
 
-              if (Math.random() < 0.02 + g.level * 0.005) {
-                  const type = Math.random() < 0.2 ? 'shooter' : 'basic';
-                  const health = type === 'shooter' ? 2 : 1;
+              // Spawn rate increases with level
+              if (Math.random() < 0.02 + g.level * 0.002) {
+                  const rand = Math.random();
+                  let type = 'basic';
+                  let health = 1 + Math.floor(g.level * 0.5);
+                  let w = 30, h = 30;
+                  
+                  if (rand > 0.9 && g.level > 2) { type = 'tank'; health *= 3; w=40; h=40; }
+                  else if (rand > 0.7 && g.level > 1) { type = 'speeder'; health = Math.max(1, health/2); }
+                  else if (rand > 0.5) { type = 'shooter'; health *= 1.5; }
+
                   g.enemies.push({ 
-                      x: Math.random() * (g.width - 30), 
-                      y: -30, w: 30, h: 30, 
-                      type, health,
-                      lastShot: Date.now() 
+                      x: Math.random() * (g.width - w), 
+                      y: -40, w, h, 
+                      type, health, maxHealth: health,
+                      vx: type === 'speeder' ? (Math.random() - 0.5) * 4 : 0,
+                      vy: type === 'speeder' ? 4 : (type === 'tank' ? 1 : 2),
+                      lastShot: Date.now() + Math.random() * 1000,
+                      angle: 0
                   });
               }
           }, []);
@@ -154,12 +247,12 @@
           const spawnBoss = useCallback(() => {
               const g = game.current;
               g.gameState = 'boss';
-              g.enemies = [];
+              g.enemies = []; // Clear small enemies
               g.boss = {
-                  x: g.width / 2 - 75, y: -150, w: 150, h: 100,
-                  health: 50 + g.level * 25, maxHealth: 50 + g.level * 25,
+                  x: g.width / 2 - 60, y: -120, w: 120, h: 100,
+                  health: 200 * g.level, maxHealth: 200 * g.level,
                   phase: 1, lastShot: Date.now(), moveDir: 1,
-                  lastPatternChange: Date.now()
+                  attackType: 0, attackTimer: 0
               };
           }, []);
 
@@ -167,7 +260,7 @@
               const g = game.current;
               const now = Date.now();
 
-              // Update Stars (Always move)
+              // Update Stars
               g.stars.forEach(s => {
                   s.y += s.speed;
                   if (s.y > g.height) {
@@ -176,108 +269,226 @@
                   }
               });
 
+              // Shield Timer
+              if (g.player.shieldActive) {
+                  g.player.shieldTimer -= 16; // approx 16ms per frame
+                  if (g.player.shieldTimer <= 0) {
+                      g.player.shieldActive = false;
+                      g.player.damageMultiplier = 1;
+                  }
+              }
+
               if (g.gameState === 'playing' || g.gameState === 'boss') {
-                  // Update player bullets
-                  g.bullets = g.bullets.filter(b => b.y > -10 && !b.hit);
+                  // Player Bullets
                   g.bullets.forEach(b => {
-                      if(b.owner === 'player') b.y -= 8;
+                      if(b.owner === 'player') b.y -= 10;
                       else {
                           b.x += b.vx;
                           b.y += b.vy;
                       }
                   });
+                  g.bullets = g.bullets.filter(b => b.y > -50 && b.y < g.height + 50 && b.x > -50 && b.x < g.width + 50 && !b.hit);
 
-                  // Update enemies
+                  // Enemies
                   g.enemies.forEach(e => {
-                      e.y += 1.5;
-                      if (e.type === 'shooter' && now - e.lastShot > 2000) {
-                          g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 5, h: 10, owner: 'enemy', vx: 0, vy: 4, color: '#f43f5e'});
+                      e.x += e.vx;
+                      e.y += e.vy;
+                      if(e.x <= 0 || e.x + e.w >= g.width) e.vx *= -1;
+
+                      // Enemy Shooting
+                      if ((e.type === 'shooter' || e.type === 'tank') && now - e.lastShot > 1500) {
+                          playSound('enemy_shoot');
+                          if (e.type === 'tank') {
+                               // Tank shoots spread
+                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: -2, vy: 3, color: '#f87171'});
+                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 0, vy: 3, color: '#f87171'});
+                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 2, vy: 3, color: '#f87171'});
+                          } else {
+                               // Shooter aims at player
+                               const dx = (g.player.x + g.player.w/2) - (e.x + e.w/2);
+                               const dy = (g.player.y + g.player.h/2) - (e.y + e.h/2);
+                               const angle = Math.atan2(dy, dx);
+                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, owner: 'enemy', vx: Math.cos(angle)*4, vy: Math.sin(angle)*4, color: '#fbbf24'});
+                          }
                           e.lastShot = now;
                       }
                   });
                   g.enemies = g.enemies.filter(e => e.y < g.height);
-                  
-                  // Update Boss
+
+                  // Powerups
+                  g.powerups.forEach(p => p.y += p.vy);
+                  g.powerups = g.powerups.filter(p => p.y < g.height && !p.collected);
+
+                  // Boss Logic
                   if (g.boss) {
                       const boss = g.boss;
-                      boss.y = Math.min(boss.y + 1, 80);
-                      boss.x += boss.moveDir * 2;
+                      if (boss.y < 50) boss.y += 1;
+                      boss.x += boss.moveDir * (1 + g.level * 0.2);
                       if (boss.x <= 0 || boss.x + boss.w >= g.width) boss.moveDir *= -1;
 
-                      if(now - boss.lastShot > (boss.health < boss.maxHealth / 2 ? 800 : 1500)) {
-                          for(let i = 0; i < (boss.phase === 1 ? 5 : 8); i++) {
-                              const angle = (i / (boss.phase === 1 ? 5 : 8)) * Math.PI * 2;
-                              g.bullets.push({x: boss.x + boss.w/2, y: boss.y + boss.h, w: 8, h: 8, owner: 'enemy', vx: Math.cos(angle) * 3, vy: Math.sin(angle) * 3, color: '#e11d48' });
+                      if (now - boss.lastShot > 800) {
+                          playSound('enemy_shoot');
+                          boss.attackType = (boss.attackType + 1) % 3;
+                          
+                          // Pattern 1: Circle
+                          if (boss.attackType === 0) {
+                              for(let i=0; i<12; i++) {
+                                  const angle = (i / 12) * Math.PI * 2;
+                                  g.bullets.push({x: boss.x + boss.w/2, y: boss.y + boss.h/2, w: 8, h: 8, owner: 'enemy', vx: Math.cos(angle)*4, vy: Math.sin(angle)*4, color: '#ef4444'});
+                              }
+                          } 
+                          // Pattern 2: Machine Gun
+                          else if (boss.attackType === 1) {
+                              for(let i=0; i<5; i++) {
+                                  setTimeout(() => {
+                                      g.bullets.push({x: boss.x + Math.random()*boss.w, y: boss.y + boss.h, w: 6, h: 12, owner: 'enemy', vx: 0, vy: 6, color: '#ef4444'});
+                                  }, i * 100);
+                              }
+                          }
+                          // Pattern 3: Aimed
+                          else {
+                              const dx = (g.player.x + g.player.w/2) - (boss.x + boss.w/2);
+                              const dy = (g.player.y + g.player.h/2) - (boss.y + boss.h/2);
+                              const angle = Math.atan2(dy, dx);
+                              g.bullets.push({x: boss.x + boss.w/2, y: boss.y + boss.h, w: 15, h: 15, owner: 'enemy', vx: Math.cos(angle)*6, vy: Math.sin(angle)*6, color: '#b91c1c'});
                           }
                           boss.lastShot = now;
                       }
                   }
 
                   // Collisions
+                  // 1. Player Bullets hitting Enemies/Boss
                   g.bullets.forEach(b => {
                       if (b.owner === 'player') {
+                          // Check Enemies
                           g.enemies.forEach(e => {
-                              if (!b.hit && b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+                              if (!b.hit && rectIntersect(b, e)) {
                                   b.hit = true;
-                                  e.health--;
-                                  if(e.health <= 0) g.score += 100;
-                                  createExplosion(e.x + e.w/2, e.y + e.h/2, '#fb923c');
+                                  const dmg = 1 * g.player.damageMultiplier;
+                                  e.health -= dmg;
+                                  createExplosion(b.x, b.y, '#fb923c', 5);
+                                  if(e.health <= 0) {
+                                      g.score += (e.type === 'tank' ? 300 : 100);
+                                      createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 15);
+                                      playSound('explosion');
+                                      spawnPowerup(e.x, e.y);
+                                  }
                               }
                           });
-                           if (g.boss && !b.hit && b.x < g.boss.x + g.boss.w && b.x + b.w > g.boss.x && b.y < g.boss.y + g.boss.h && b.y + b.h > g.boss.y) {
-                               b.hit = true;
-                               g.boss.health--;
-                               g.score += 50;
-                               createExplosion(b.x, b.y, '#fca5a5');
-                               if(g.boss.health <= 0) {
-                                   g.score += 5000 * g.level;
-                                   g.gameState = 'level-up';
-                                   g.boss = null;
-                                   createExplosion(g.width / 2, 130, '#ffffff', 100);
-                                   setTimeout(() => { g.level++; g.gameState = 'playing'; }, 3000);
-                               }
-                           }
-
-                      } else { // Enemy bullet
-                          const p = g.player;
-                          if (b.x < p.x + p.w && b.x + b.w > p.x && b.y < p.y + p.h && b.y + b.h > p.y) {
+                          // Check Boss
+                          if (g.boss && !b.hit && rectIntersect(b, g.boss)) {
                               b.hit = true;
-                              p.health--;
-                              createExplosion(p.x + p.w / 2, p.y + p.h / 2, '#60a5fa');
-                              if (p.health <= 0) {
-                                  g.gameState = 'game-over';
-                                  setGameOver(true);
+                              const dmg = 1 * g.player.damageMultiplier;
+                              g.boss.health -= dmg;
+                              g.score += 10;
+                              createExplosion(b.x, b.y, '#f87171', 5);
+                              if (g.boss.health <= 0) {
+                                  playSound('explosion');
+                                  g.score += 5000 * g.level;
+                                  g.gameState = 'level-up';
+                                  createExplosion(g.boss.x + g.boss.w/2, g.boss.y + g.boss.h/2, '#ffffff', 50);
+                                  g.boss = null;
+                                  setTimeout(() => { g.level++; g.gameState = 'playing'; }, 3000);
+                              }
+                          }
+                      } 
+                      // 2. Enemy Bullets hitting Player
+                      else { 
+                          if (!b.hit && rectIntersect(b, g.player)) {
+                              b.hit = true;
+                              if (!g.player.shieldActive) {
+                                  g.player.health -= 10;
+                                  playSound('hit');
+                                  createExplosion(g.player.x + g.player.w/2, g.player.y + g.player.h/2, '#ef4444', 10);
+                                  if (g.player.health <= 0) {
+                                      g.gameState = 'game-over';
+                                      playSound('explosion');
+                                      setGameOver(true);
+                                  }
+                              } else {
+                                  createExplosion(b.x, b.y, '#06b6d4', 5); // Shield deflect
                               }
                           }
                       }
                   });
-                  
+
+                  // 3. Powerup collection
+                  g.powerups.forEach(p => {
+                      if (!p.collected && rectIntersect(p, g.player)) {
+                          p.collected = true;
+                          playSound('powerup');
+                          if (p.type === 'weapon') {
+                              g.player.weaponLevel = Math.min(5, g.player.weaponLevel + 1);
+                              createExplosion(g.player.x, g.player.y, '#00ff00', 20);
+                          } else if (p.type === 'shield') {
+                              g.player.shieldActive = true;
+                              g.player.shieldTimer = 10000; // 10 seconds
+                              g.player.damageMultiplier = 5;
+                              createExplosion(g.player.x, g.player.y, '#06b6d4', 20);
+                          }
+                      }
+                  });
+
                   g.enemies = g.enemies.filter(e => e.health > 0);
                   
-                  // Level progression
-                  if (g.score > g.level * 2000 && g.gameState === 'playing') {
+                  if (g.score > g.level * 2500 && !g.boss && g.gameState === 'playing') {
                       spawnBoss();
                   }
               }
-              
-              // Update particles
+
+              // Update Particles
               g.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
               g.particles = g.particles.filter(p => p.life > 0);
 
-              // Spawns
               spawnEnemy();
-
           }, [spawnEnemy, spawnBoss, initGame]);
+
+          const rectIntersect = (r1, r2) => {
+              return !(r2.x > r1.x + r1.w || 
+                       r2.x + r2.w < r1.x || 
+                       r2.y > r1.y + r1.h || 
+                       r2.y + r2.h < r1.y);
+          };
 
           const createExplosion = (x, y, color, count = 20) => {
               for (let i = 0; i < count; i++) {
                   game.current.particles.push({
                       x, y,
-                      vx: (Math.random() - 0.5) * 4,
-                      vy: (Math.random() - 0.5) * 4,
-                      life: Math.random() * 30 + 10,
+                      vx: (Math.random() - 0.5) * 6,
+                      vy: (Math.random() - 0.5) * 6,
+                      life: Math.random() * 20 + 10,
                       color
                   });
+              }
+          };
+
+          const firePlayerWeapon = (g) => {
+              playSound('shoot');
+              const { x, y, w, h, weaponLevel } = g.player;
+              const cx = x + w / 2;
+              
+              const bulletProps = { w: 4, h: 12, owner: 'player', color: '#67e8f9' }; // Cyan neon
+
+              if (weaponLevel === 1) {
+                  g.bullets.push({ ...bulletProps, x: cx - 2, y });
+              } else if (weaponLevel === 2) {
+                  g.bullets.push({ ...bulletProps, x: cx - 10, y });
+                  g.bullets.push({ ...bulletProps, x: cx + 6, y });
+              } else if (weaponLevel === 3) {
+                  g.bullets.push({ ...bulletProps, x: cx - 2, y });
+                  g.bullets.push({ ...bulletProps, x: cx - 12, y: y + 5, vx: -1, vy: -10 });
+                  g.bullets.push({ ...bulletProps, x: cx + 8, y: y + 5, vx: 1, vy: -10 });
+              } else if (weaponLevel === 4) {
+                  // V-shape wide
+                  g.bullets.push({ ...bulletProps, x: cx - 15, y, vx: -2, vy: -10 });
+                  g.bullets.push({ ...bulletProps, x: cx - 5, y, vx: 0, vy: -10 });
+                  g.bullets.push({ ...bulletProps, x: cx + 5, y, vx: 0, vy: -10 });
+                  g.bullets.push({ ...bulletProps, x: cx + 15, y, vx: 2, vy: -10 });
+              } else {
+                  // Omni burst (Level 5)
+                  for(let i=-2; i<=2; i++) {
+                      g.bullets.push({ ...bulletProps, x: cx, y: y, vx: i * 1.5, vy: -10 });
+                  }
               }
           };
 
@@ -287,9 +498,8 @@
               const ctx = canvas.getContext('2d');
               const g = game.current;
               
-              // Clear with very dark semi-transparent black for trail effect or just solid
-              ctx.fillStyle = '#050505';
-              ctx.fillRect(0, 0, g.width, g.height);
+              // Clear
+              ctx.clearRect(0, 0, g.width, g.height);
               
               // Draw Stars
               ctx.fillStyle = '#ffffff';
@@ -301,108 +511,138 @@
                   ctx.globalAlpha = 1.0;
               });
 
-              // Draw player
+              // Draw Player
               if (g.gameState !== 'game-over') {
                   const p = g.player;
-                  ctx.fillStyle = '#00ffff'; // Neon Cyan
+                  ctx.fillStyle = '#00ffff'; 
                   ctx.shadowBlur = 15;
                   ctx.shadowColor = '#00ffff';
+                  
+                  // Ship body
                   ctx.beginPath();
-                  ctx.moveTo(p.x, p.y + p.h);
-                  ctx.lineTo(p.x + p.w / 2, p.y);
+                  ctx.moveTo(p.x + p.w/2, p.y);
                   ctx.lineTo(p.x + p.w, p.y + p.h);
+                  ctx.lineTo(p.x + p.w/2, p.y + p.h - 10);
+                  ctx.lineTo(p.x, p.y + p.h);
                   ctx.closePath();
                   ctx.fill();
+
+                  // Shield Visual
+                  if (p.shieldActive) {
+                      ctx.strokeStyle = `rgba(6, 182, 212, ${Math.random() * 0.5 + 0.5})`;
+                      ctx.lineWidth = 3;
+                      ctx.beginPath();
+                      ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w, 0, Math.PI * 2);
+                      ctx.stroke();
+                  }
                   ctx.shadowBlur = 0;
               }
 
-              // Draw bullets
-              g.bullets.forEach(b => {
-                  ctx.fillStyle = b.color || '#fff000'; // Neon Yellow
-                  ctx.shadowBlur = 5;
-                  ctx.shadowColor = b.color || '#fff000';
-                  ctx.fillRect(b.x, b.y, b.w, b.h);
-                  ctx.shadowBlur = 0;
+              // Powerups
+              g.powerups.forEach(p => {
+                  ctx.fillStyle = p.type === 'weapon' ? '#22c55e' : '#06b6d4';
+                  ctx.beginPath();
+                  ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI*2);
+                  ctx.fill();
+                  ctx.fillStyle = '#000';
+                  ctx.font = '12px Arial';
+                  ctx.fillText(p.type === 'weapon' ? 'W' : 'S', p.x + 6, p.y + 14);
               });
-              
-              // Draw enemies
+
+              // Bullets
+              g.bullets.forEach(b => {
+                  ctx.fillStyle = b.color || '#fff';
+                  ctx.fillRect(b.x, b.y, b.w, b.h);
+              });
+
+              // Enemies
               g.enemies.forEach(e => {
-                  ctx.fillStyle = e.type === 'shooter' ? '#ff0055' : '#00ff55';
+                  ctx.fillStyle = e.type === 'tank' ? '#ef4444' : (e.type === 'speeder' ? '#f59e0b' : '#a855f7');
                   ctx.shadowBlur = 10;
                   ctx.shadowColor = ctx.fillStyle;
                   ctx.fillRect(e.x, e.y, e.w, e.h);
+                  // Enemy HP bar (small)
+                  ctx.fillStyle = 'red';
+                  ctx.fillRect(e.x, e.y - 5, e.w, 3);
+                  ctx.fillStyle = 'lime';
+                  ctx.fillRect(e.x, e.y - 5, e.w * (e.health/e.maxHealth), 3);
                   ctx.shadowBlur = 0;
               });
 
-              // Draw boss
+              // Boss
               if (g.boss) {
                   const boss = g.boss;
-                  ctx.fillStyle = '#ff00ff';
+                  ctx.fillStyle = '#ff0055';
                   ctx.shadowBlur = 20;
-                  ctx.shadowColor = '#ff00ff';
-                  ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+                  ctx.shadowColor = '#ff0055';
+                  // Complex Boss Shape
+                  ctx.beginPath();
+                  ctx.moveTo(boss.x, boss.y);
+                  ctx.lineTo(boss.x + boss.w, boss.y);
+                  ctx.lineTo(boss.x + boss.w/2, boss.y + boss.h);
+                  ctx.closePath();
+                  ctx.fill();
+                  
                   ctx.shadowBlur = 0;
-                  // Boss health bar
+                  // Boss HP
                   ctx.fillStyle = '#330033';
-                  ctx.fillRect(boss.x, boss.y - 15, boss.w, 10);
+                  ctx.fillRect(10, 50, g.width - 20, 10);
                   ctx.fillStyle = '#ff00ff';
-                  ctx.fillRect(boss.x, boss.y - 15, boss.w * (boss.health / boss.maxHealth), 10);
+                  ctx.fillRect(10, 50, (g.width - 20) * (boss.health / boss.maxHealth), 10);
               }
-              
-              // Draw particles
+
+              // Particles
               g.particles.forEach(p => {
                   ctx.fillStyle = p.color;
-                  ctx.globalAlpha = p.life / 30;
+                  ctx.globalAlpha = p.life / 20;
                   ctx.fillRect(p.x, p.y, 3, 3);
                   ctx.globalAlpha = 1;
               });
 
-              // Draw UI
+              // HUD
               ctx.fillStyle = 'white';
-              ctx.font = 'bold 18px "Courier New"';
-              ctx.textAlign = 'left';
-              ctx.fillText(`SCORE: ${g.score}`, 10, 30);
+              ctx.font = 'bold 16px "Courier New"';
+              ctx.fillText(`SCORE: ${g.score}`, 10, 25);
               ctx.textAlign = 'right';
-              ctx.fillText(`LVL: ${g.level}`, g.width - 10, 30);
-              
-              // Health Hearts
+              ctx.fillText(`LVL: ${g.level}`, g.width - 10, 25);
               ctx.textAlign = 'left';
-              let healthStr = '';
-              for(let i=0; i<g.player.health; i++) healthStr += '♥ ';
-              ctx.fillStyle = '#ff0055';
-              ctx.fillText(healthStr, 10, g.height - 20);
+
+              // Player HP Bar
+              const hpBarWidth = 150;
+              const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
+              ctx.fillStyle = '#333';
+              ctx.fillRect(10, g.height - 30, hpBarWidth, 15);
+              ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
+              ctx.fillRect(10, g.height - 30, hpBarWidth * hpPercent, 15);
+              ctx.strokeStyle = '#fff';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(10, g.height - 30, hpBarWidth, 15);
+              ctx.fillStyle = '#fff';
+              ctx.font = '12px "Courier New"';
+              ctx.fillText(`${Math.ceil(g.player.health)}%`, 15, g.height - 18);
+
+              // Shield Status
+              if (g.player.shieldActive) {
+                  ctx.fillStyle = '#06b6d4';
+                  ctx.fillText(`SHIELD: ${Math.ceil(g.player.shieldTimer/1000)}s`, 170, g.height - 18);
+              }
 
               if (g.gameState === 'game-over') {
-                  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+                  ctx.fillStyle = 'rgba(0,0,0,0.8)';
                   ctx.fillRect(0,0,g.width,g.height);
                   ctx.fillStyle = '#ff0055';
                   ctx.font = 'bold 40px "Courier New"';
                   ctx.textAlign = 'center';
-                  ctx.shadowBlur = 10;
-                  ctx.shadowColor = '#ff0055';
                   ctx.fillText('GAME OVER', g.width/2, g.height/2 - 20);
-                  ctx.shadowBlur = 0;
-                  
                   ctx.fillStyle = 'white';
                   ctx.font = '20px "Courier New"';
                   ctx.fillText('Tap to Restart', g.width/2, g.height/2 + 30);
-              }
-              if (g.gameState === 'level-up') {
-                  ctx.fillStyle = '#00ff55';
-                  ctx.font = 'bold 30px "Courier New"';
-                  ctx.textAlign = 'center';
-                  ctx.shadowBlur = 15;
-                  ctx.shadowColor = '#00ff55';
-                  ctx.fillText('LEVEL COMPLETE', g.width/2, g.height/2);
-                  ctx.shadowBlur = 0;
               }
 
           }, []);
 
           useEffect(() => {
-              // Trigger Start immediately when component mounts
               initGame();
-
               const canvas = canvasRef.current;
               const g = game.current;
               
@@ -413,20 +653,8 @@
                     canvas.height = height;
                     g.width = width;
                     g.height = height;
-                    // Keep player onscreen on resize
-                    g.player.x = Math.min(g.player.x, width - g.player.w);
-                    g.player.y = Math.min(g.player.y, height - g.player.h);
-                    
-                    // Re-init stars if empty (first run) or just let them be
                     if(g.stars.length === 0) {
-                         for(let i=0; i<100; i++) {
-                            g.stars.push({
-                                x: Math.random() * g.width,
-                                y: Math.random() * g.height,
-                                size: Math.random() * 2,
-                                speed: Math.random() * 3 + 0.5
-                            });
-                        }
+                         for(let i=0; i<80; i++) g.stars.push({x: Math.random()*g.width, y: Math.random()*g.height, size: Math.random()*2, speed: Math.random()*3+0.5});
                     }
                 }
               };
@@ -444,22 +672,19 @@
 
               const handleMove = (e) => {
                   if (g.gameState !== 'playing' && g.gameState !== 'boss') return;
-                  
                   if(e.cancelable) e.preventDefault();
-
                   const rect = canvas.getBoundingClientRect();
                   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
                   const x = clientX - rect.left;
                   const y = clientY - rect.top;
-                  
                   g.player.x = Math.max(0, Math.min(g.width - g.player.w, x - g.player.w / 2));
                   g.player.y = Math.max(0, Math.min(g.height - g.player.h, y - g.player.h / 2));
                   
+                  // Auto-fire while moving/touching
                   const now = Date.now();
-                  if (now - g.player.lastShot > 200) {
-                      g.bullets.push({x: g.player.x + g.player.w/2 - 2, y: g.player.y, w: 4, h: 15, owner: 'player'});
+                  if (now - g.player.lastShot > 150) { // Fire rate
+                      firePlayerWeapon(g);
                       g.player.lastShot = now;
                   }
               };
@@ -483,39 +708,15 @@
                   canvas.removeEventListener('click', handleClick);
               };
           }, [draw, update, initGame, triggerAd]);
-          
-          const toggleFullScreen = () => {
-              if (!document.fullscreenElement) {
-                  document.documentElement.requestFullscreen();
-                  setIsFullscreen(true);
-              } else {
-                  if (document.exitFullscreen) {
-                      document.exitFullscreen();
-                      setIsFullscreen(false);
-                  }
-              }
-          };
 
           return (
-              <div className="w-full h-full relative flex flex-col items-center justify-center bg-black">
+              <div className="w-full h-full relative flex flex-col items-center justify-center bg-transparent">
                   <canvas ref={canvasRef} className="w-full h-full block" />
                   
-                  {/* Controls Overlay */}
                   <div className="absolute top-4 left-4 z-10">
-                      <button onClick={onBack} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition">
+                      <button onClick={onBack} className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20">
                           <ChevronLeft size={24} />
                       </button>
-                  </div>
-
-                  <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                      <button onClick={toggleFullScreen} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition">
-                          {isFullscreen ? <Shrink size={20} /> : <Expand size={20} />}
-                      </button>
-                      {gameOver && (
-                          <button onClick={() => { triggerAd(); initGame(); }} className="p-3 bg-red-500/80 backdrop-blur rounded-full text-white animate-pulse">
-                              <RefreshCw size={20} />
-                          </button>
-                      )}
                   </div>
               </div>
           );
@@ -523,11 +724,22 @@
 
       // --- Main App Component ---
       const App = () => {
-          const [currentScreen, setCurrentScreen] = useState('home'); // home, galaxy-invader
+          const [currentScreen, setCurrentScreen] = useState('home');
+          const [lastAdTime, setLastAdTime] = useState(0);
 
           const triggerAd = useCallback(() => {
-             console.log("Triggering Ad (Handled by Monetag script on click events)");
-          }, []);
+             const now = Date.now();
+             // Cooldown: 2 minutes (120000 ms)
+             if (now - lastAdTime > 120000) {
+                 console.log("Triggering Ad (Cooldown passed)");
+                 // The actual ad display is handled by the external Monetag script observing user interaction.
+                 // We can potentially simulate a click or just let the natural interaction flow.
+                 // Since we removed explicit intrusive UI, we rely on the global script.
+                 setLastAdTime(now);
+             } else {
+                 console.log("Ad skipped (Cooldown active)");
+             }
+          }, [lastAdTime]);
 
           const startGame = (gameName) => {
               triggerAd();
@@ -540,42 +752,42 @@
                       return <GalaxyInvader onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   default:
                       return (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-black relative overflow-hidden">
-                              {/* Background Decor */}
-                              <div className="absolute inset-0 z-0">
-                                  <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] bg-[radial-gradient(circle_at_center,_#220022_0%,_#000000_70%)] opacity-50"></div>
-                              </div>
-
+                          <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+                              {/* Content Container */}
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
+                                  {/* Neon Title */}
                                   <h1 className="text-5xl md:text-6xl font-bold text-center neon-text tracking-wider">
-                                      JoGos<br/>Onilne
+                                      JoGos<br/>Online
                                   </h1>
                                   
+                                  {/* Game Cards - Light Theme */}
                                   <div className="w-full grid gap-4 mt-8">
                                       <button 
                                           onClick={() => startGame('galaxy-invader')}
-                                          className="group relative w-full h-32 bg-gray-900 border border-purple-500 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 neon-box"
+                                          className="glass-box group relative w-full h-32 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300"
                                       >
-                                          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 to-blue-900/40 group-hover:opacity-100 transition-opacity"></div>
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full">
+                                          {/* Hover gradient */}
+                                          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                          
+                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start">
-                                                  <span className="text-2xl font-bold text-cyan-400 drop-shadow-[0_0_5px_rgba(0,255,255,0.8)]">GALAXY INVADER</span>
-                                                  <span className="text-xs text-gray-400 mt-1">Space Shooter Arcade</span>
+                                                  <span className="text-2xl font-bold text-white drop-shadow-md">GALAXY INVADER</span>
+                                                  <span className="text-xs text-gray-200 mt-1">Space Shooter Arcade</span>
                                               </div>
-                                              <Rocket size={40} className="text-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+                                              <Rocket size={40} className="text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
                                           </div>
                                       </button>
 
                                       <button 
-                                          className="w-full h-24 bg-gray-900/50 border border-gray-800 rounded-xl flex items-center justify-center text-gray-600 cursor-not-allowed"
+                                          className="glass-box w-full h-24 rounded-xl flex items-center justify-center text-gray-400 cursor-not-allowed border border-white/10"
                                       >
-                                          <span className="text-sm">Em Breve...</span>
+                                          <span className="text-sm font-semibold tracking-widest">EM BREVE...</span>
                                       </button>
                                   </div>
                               </div>
                               
-                              <div className="absolute bottom-4 text-gray-800 text-xs">
-                                  v2.5.0
+                              <div className="absolute bottom-4 text-gray-500 text-xs">
+                                  v3.0.0
                               </div>
                           </div>
                       );
