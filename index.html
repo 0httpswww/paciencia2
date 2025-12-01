@@ -234,7 +234,8 @@
           }
       };
 
-      const toggleFullScreen = () => {
+      const toggleFullScreen = (e) => {
+        if (e) e.stopPropagation();
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(err => {
             console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
@@ -261,7 +262,8 @@
           const [status, setStatus] = useState('playing'); 
           const [selectedOption, setSelectedOption] = useState(null);
 
-          const handleCheck = () => {
+          const handleCheck = (e) => {
+              if (e) e.stopPropagation();
               if (selectedOption === null) return;
               const lesson = lessonsData[currentLesson];
               if (selectedOption === lesson.correct) {
@@ -275,7 +277,9 @@
               }
           };
 
-          const handleNext = () => {
+          const handleNext = (e) => {
+              if (e && hearts > 0) triggerAd(e); // Can trigger ad
+              
               if (hearts <= 0) { setStatus('failed'); return; }
               if (currentLesson < lessonsData.length - 1) {
                   setCurrentLesson(p => p + 1);
@@ -283,16 +287,15 @@
                   setSelectedOption(null);
               } else {
                   setStatus('completed');
-                  triggerAd();
               }
           };
 
-          const restart = () => {
+          const restart = (e) => {
+              if(e) triggerAd(e);
               setCurrentLesson(0);
               setHearts(5);
               setStatus('playing');
               setSelectedOption(null);
-              triggerAd();
           };
 
           const lesson = lessonsData[currentLesson];
@@ -329,7 +332,7 @@
                   <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg mx-auto w-full">
                       <h2 className="text-2xl font-bold mb-8 text-center">{lesson.type === 'translate' ? 'Translate this sentence' : 'Listen and select'}</h2>
                       {lesson.type === 'listen' && (
-                          <button onClick={() => speakText(lesson.text)} className="mb-8 p-6 bg-blue-500/20 border-2 border-blue-500 rounded-2xl hover:bg-blue-500/30 transition">
+                          <button onClick={(e) => { e.stopPropagation(); speakText(lesson.text); }} className="mb-8 p-6 bg-blue-500/20 border-2 border-blue-500 rounded-2xl hover:bg-blue-500/30 transition">
                               <Volume2 size={48} className="text-blue-400" />
                           </button>
                       )}
@@ -341,7 +344,7 @@
                       )}
                       <div className="w-full grid gap-3">
                           {lesson.a.map((option, idx) => (
-                              <button key={idx} onClick={() => status === 'playing' && setSelectedOption(idx)} disabled={status !== 'playing'}
+                              <button key={idx} onClick={(e) => { e.stopPropagation(); if(status === 'playing') setSelectedOption(idx); }} disabled={status !== 'playing'}
                                   className={`p-4 rounded-xl border-2 text-left transition-all transform ${selectedOption === idx ? 'border-blue-500 bg-blue-500/20' : 'border-gray-700 hover:bg-gray-800'}`}>
                                   {option}
                               </button>
@@ -1073,7 +1076,15 @@
                   const x = clientX - rect.left; const y = clientY - rect.top;
                   g.player.x = Math.max(0, Math.min(g.width - g.player.w, x - g.player.w / 2)); g.player.y = Math.max(0, Math.min(g.height - g.player.h, y - g.player.h / 2));
               };
-              const handleClick = () => { if (g.gameState === 'game-over') { triggerAd(); initGame(); } };
+              const handleClick = (e) => { 
+                if (g.gameState === 'game-over') { 
+                  triggerAd(e); 
+                  initGame(); 
+                } else {
+                  // Prevent ad script from picking up accidental clicks during gameplay
+                  if (e && e.stopPropagation) e.stopPropagation();
+                }
+              };
               canvas.addEventListener('mousemove', handleMove); canvas.addEventListener('touchmove', handleMove, { passive: false }); canvas.addEventListener('click', handleClick);
               return () => { window.cancelAnimationFrame(animationFrameId); window.removeEventListener('resize', resizeCanvas); canvas.removeEventListener('mousemove', handleMove); canvas.removeEventListener('touchmove', handleMove); canvas.removeEventListener('click', handleClick); };
           }, [draw, update, initGame, triggerAd]);
@@ -1093,8 +1104,27 @@
       const App = () => {
           const [currentScreen, setCurrentScreen] = useState('home');
           const [lastAdTime, setLastAdTime] = useState(0);
-          const triggerAd = useCallback(() => { const now = Date.now(); if (now - lastAdTime > 120000) { setLastAdTime(now); } }, [lastAdTime]);
-          const startGame = (gameName) => { triggerAd(); setCurrentScreen(gameName); };
+          
+          // Strict 3-minute cooldown (180000ms)
+          const triggerAd = useCallback((e) => {
+             const now = Date.now();
+             if (now - lastAdTime < 180000) {
+                 // Suppress ad script if cooldown hasn't passed
+                 if (e && e.stopPropagation) {
+                   e.stopPropagation();
+                   if(e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation();
+                 }
+                 return;
+             }
+             // Allow event to bubble to document, triggering ad script
+             setLastAdTime(now);
+          }, [lastAdTime]);
+
+          const startGame = (gameName, e) => { 
+             triggerAd(e); 
+             setCurrentScreen(gameName); 
+          };
+
           const renderScreen = () => {
               switch(currentScreen) {
                   case 'galaxy-invader': return <GalaxyInvader onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
@@ -1104,13 +1134,13 @@
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
                                   <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
                                   <div className="w-full grid gap-4 mt-8">
-                                      <button onClick={() => startGame('galaxy-invader')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                      <button onClick={(e) => startGame('galaxy-invader', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span><span className="text-xs text-gray-400">Space Shooter</span></div>
                                               <Rocket size={32} className="text-purple-400" />
                                           </div>
                                       </button>
-                                      <button onClick={() => startGame('lingua-quest')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                      <button onClick={(e) => startGame('lingua-quest', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">LINGUA QUEST</span><span className="text-xs text-gray-400">Learn English</span></div>
                                               <Languages size={32} className="text-green-400" />
