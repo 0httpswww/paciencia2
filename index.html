@@ -99,7 +99,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -215,6 +215,24 @@
                     osc.start(now);
                     osc.stop(now + 1.0);
                     break;
+                case 'correct':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(900, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
+                case 'wrong':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
             }
           } catch(e) {}
       };
@@ -254,62 +272,131 @@
           { id: 'legendary', name: 'Abyssal King', price: 2000, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
       ];
 
-      // Generate a high quality pixel art sprite with dynamic colors
       const generatePlayerSprite = (palette) => {
           const canvas = document.createElement('canvas');
           const size = 32;
           canvas.width = size;
           canvas.height = size;
           const ctx = canvas.getContext('2d');
-
-          // Palette Mapping
-          const P = palette.main; 
-          const D = palette.dark; 
-          const L = palette.light;
-          const C = palette.cockpit;
-          const W = '#ffffff'; // Window Glint
-          const B = palette.engine;
-
-          // 16x16 Grid scaled to 32x32 (2px per pixel)
+          const P = palette.main; const D = palette.dark; const L = palette.light;
+          const C = palette.cockpit; const W = '#ffffff'; const B = palette.engine;
           const pixelSize = 2;
-          
-          // Sprite Matrix
-          // 0:Empty, 1:Dark, 2:Main, 3:Light, 4:Cockpit, 5:Window, 6:Engine
           const grid = [
-              "      11      ",
-              "     1221     ",
-              "     1441     ",
-              "    124521    ",
-              "    124421    ",
-              "   12233221   ",
-              "   12233221   ",
-              "  1222222221  ",
-              "  1222222221  ",
-              " 122114411221 ",
-              " 121124421121 ",
-              " 121222222121 ",
-              "12212222221221",
-              "12211666611221",
-              "111 116611 111",
-              "     1111     "
+              "      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ",
+              "   12233221   ", "   12233221   ", "  1222222221  ", "  1222222221  ", " 122114411221 ",
+              " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "
           ];
-
           const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
-
           for(let y=0; y<grid.length; y++) {
               const row = grid[y];
               for(let x=0; x<row.length; x++) {
                   const char = row[x];
-                  if(colorMap[char]) {
-                      ctx.fillStyle = colorMap[char];
-                      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                  }
+                  if(colorMap[char]) { ctx.fillStyle = colorMap[char]; ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); }
               }
           }
+          const img = new Image(); img.src = canvas.toDataURL(); return img;
+      };
+
+      // --- HANGMAN GAME ---
+      const HangmanGame = ({ onBack, triggerAd }) => {
+          const WORDS = ['JAVASCRIPT', 'REACT', 'PROGRAMADOR', 'COMPUTADOR', 'INTERNET', 'BRASIL', 'FUTEBOL', 'MUSICA', 'ESCOLA', 'FAMILIA', 'AMIGO', 'VIAGEM', 'DINHEIRO', 'TRABALHO', 'FELICIDADE', 'GALAXY', 'INVADER', 'ESTRELA', 'PLANETA', 'SATELITE', 'AMOR', 'PAZ', 'VIDA', 'SONHO', 'FUTURO'];
+          const MAX_MISTAKES = 7;
           
-          const img = new Image();
-          img.src = canvas.toDataURL();
-          return img;
+          const [word, setWord] = useState('');
+          const [guessed, setGuessed] = useState(new Set());
+          const [mistakes, setMistakes] = useState(0);
+          const [status, setStatus] = useState('playing'); 
+
+          useEffect(() => { startNewGame(); }, []);
+
+          const startNewGame = (e) => {
+              if(e) triggerAd(e);
+              const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+              setWord(randomWord);
+              setGuessed(new Set());
+              setMistakes(0);
+              setStatus('playing');
+          };
+
+          const handleGuess = (letter) => {
+              if (status !== 'playing' || guessed.has(letter)) return;
+              
+              const newGuessed = new Set(guessed);
+              newGuessed.add(letter);
+              setGuessed(newGuessed);
+
+              if (!word.includes(letter)) {
+                  const newMistakes = mistakes + 1;
+                  setMistakes(newMistakes);
+                  playSound('wrong'); 
+                  if (newMistakes >= MAX_MISTAKES) {
+                      setStatus('lost');
+                      playSound('explosion');
+                  }
+              } else {
+                  playSound('correct');
+                  const isWon = word.split('').every(l => newGuessed.has(l));
+                  if (isWon) {
+                      setStatus('won');
+                      playSound('powerup');
+                  }
+              }
+          };
+
+          const renderHangman = () => {
+              const s = "#e2e8f0"; const w = 4;
+              return (
+                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible">
+                      {mistakes >= 1 && <path d="M 20 240 L 180 240 M 60 240 L 60 20" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
+                      {mistakes >= 2 && <path d="M 60 20 L 140 20 L 140 50" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
+                      {mistakes >= 3 && <circle cx="140" cy="70" r="20" stroke={s} strokeWidth={w} fill="none" />}
+                      {mistakes >= 4 && <line x1="140" y1="90" x2="140" y2="170" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 5 && <line x1="140" y1="110" x2="110" y2="140" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 6 && <line x1="140" y1="110" x2="170" y2="140" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 7 && <path d="M 140 170 L 110 210 M 140 170 L 170 210" stroke={s} strokeWidth={w} fill="none" />}
+                  </svg>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#0f172a] flex flex-col items-center text-white relative">
+                  <div className="w-full p-4 flex items-center justify-between bg-slate-800/50 backdrop-blur-md border-b border-slate-700">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-700 transition"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold neon-text-small text-slate-200">JOGO DA FORCA</h1>
+                      <div className="w-10"></div>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-start w-full max-w-lg p-4 gap-4 overflow-y-auto">
+                      <div className="bg-slate-800/30 p-4 rounded-2xl border border-slate-700 w-full flex justify-center">{renderHangman()}</div>
+                      <div className="flex flex-wrap justify-center gap-2 my-2">
+                          {word.split('').map((char, i) => (
+                              <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 ${guessed.has(char) || status === 'lost' ? 'border-slate-500 bg-slate-700 text-white' : 'border-slate-600 bg-slate-800/50 text-transparent'} ${status === 'lost' && !guessed.has(char) ? 'text-red-400' : ''}`}>
+                                  {guessed.has(char) || status !== 'playing' ? char : '_'}
+                              </div>
+                          ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
+                          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => {
+                              const isGuessed = guessed.has(char); const isCorrect = word.includes(char);
+                              let btnClass = "bg-slate-700 hover:bg-slate-600 text-slate-200";
+                              if (isGuessed) btnClass = isCorrect ? "bg-green-600 text-white border-green-500" : "bg-red-600 text-white border-red-500 opacity-50";
+                              return (
+                                  <button key={char} onClick={() => handleGuess(char)} disabled={isGuessed || status !== 'playing'} className={`h-10 rounded-md font-bold text-sm md:text-base transition-all border-b-2 border-transparent active:border-b-0 active:translate-y-1 ${btnClass}`}>{char}</button>
+                              )
+                          })}
+                      </div>
+                  </div>
+                  {status !== 'playing' && (
+                      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                          <div className="bg-slate-800 border border-slate-600 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full animate-bounce-in shadow-2xl">
+                              {status === 'won' ? <Star size={64} className="text-yellow-400 drop-shadow-lg" /> : <XCircle size={64} className="text-red-500 drop-shadow-lg" />}
+                              <h2 className="text-2xl font-bold text-center">{status === 'won' ? 'VOCÊ VENCEU!' : 'VOCÊ PERDEU!'}</h2>
+                              {status === 'lost' && <p className="text-slate-400">A palavra era: <span className="text-white font-bold">{word}</span></p>}
+                              <button onClick={(e) => startNewGame(e)} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2"><RefreshCcw size={20}/> JOGAR NOVAMENTE</button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
       };
 
       // --- Galaxy Menu ---
@@ -1363,7 +1450,6 @@
                   triggerAd(e); 
                   initGame(); 
                 } else {
-                  // Prevent ad script from picking up accidental clicks during gameplay
                   if (e && e.stopPropagation) e.stopPropagation();
                 }
               };
@@ -1425,14 +1511,12 @@
           const triggerAd = useCallback((e) => {
              const now = Date.now();
              if (now - lastAdTime < 180000) {
-                 // Suppress ad script if cooldown hasn't passed
                  if (e && e.stopPropagation) {
                    e.stopPropagation();
                    if(e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation();
                  }
                  return;
              }
-             // Allow event to bubble to document, triggering ad script
              setLastAdTime(now);
           }, [lastAdTime]);
 
@@ -1471,6 +1555,7 @@
                       />
                   );
                   case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
@@ -1494,10 +1579,16 @@
                                               <Languages size={32} className="text-green-400" />
                                           </div>
                                       </button>
+                                      <button onClick={(e) => startGame('hangman', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
+                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div>
+                                              <Brain size={32} className="text-blue-400" />
+                                          </div>
+                                      </button>
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.3.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.4.0</div>
                           </div>
                       );
               }
