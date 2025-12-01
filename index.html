@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JoGos Online</title>
-    <meta name="description" content="JoGos Online - Arcade Space Shooter e muito mais.">
-    <meta name="theme-color" content="#111111">
+    <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
+    <meta name="theme-color" content="#050505">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
@@ -21,11 +21,11 @@
             touch-action: none; 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Courier New', Courier, monospace;
-            background-color: #111;
+            background-color: #050505;
             /* Grid Background */
             background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 40px 40px;
             color: white; 
             user-select: none; 
@@ -33,25 +33,33 @@
             overflow: hidden;
         }
 
-        /* Neon Text Effect */
-        .neon-text {
-            color: #fff;
+        /* Dark Neon Text Effect */
+        .neon-title {
+            color: #1a1a1a;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
             text-shadow: 
-                0 0 5px #fff,
-                0 0 10px #fff,
-                0 0 20px #ff00de,
-                0 0 30px #ff00de,
-                0 0 40px #ff00de,
-                0 0 55px #ff00de,
-                0 0 75px #ff00de;
+                0 0 10px rgba(0, 0, 255, 0.8),
+                0 0 20px rgba(0, 0, 255, 0.6),
+                0 0 40px rgba(138, 43, 226, 0.8),
+                0 0 80px rgba(138, 43, 226, 0.5);
+        }
+
+        .neon-text-small {
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
         }
         
-        /* Glassmorphism for Home UI */
+        /* White Glow for Menu Items */
         .glass-box {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        .glass-box:hover {
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.02);
         }
     </style>
     <script type="importmap">
@@ -81,28 +89,42 @@
     <div id="root" class="h-[100dvh] w-full overflow-hidden flex flex-col"></div>
 
     <script type="text/babel" data-type="module" data-presets="typescript,react">
-      import React, { useState, useEffect, useRef, useCallback } from 'react';
+      import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap } from 'lucide-react';
+      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap, Car, Languages, Heart, Star, CheckCircle, XCircle, Volume2 } from 'lucide-react';
 
-      // --- Sound System (Synthesized) ---
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      const playSound = (type) => {
-          if (audioCtx.state === 'suspended') audioCtx.resume();
-          const osc = audioCtx.createOscillator();
-          const gainNode = audioCtx.createGain();
+      // --- Sound System (Synthesized & Safe) ---
+      // Lazy initialization to avoid "Script error" or blocking warnings
+      let audioContext = null;
+
+      const getAudioContext = () => {
+          if (!audioContext) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (AudioCtx) {
+                  audioContext = new AudioCtx();
+              }
+          }
+          return audioContext;
+      };
+
+      const playSound = (type, pitchMod = 0) => {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
           osc.connect(gainNode);
-          gainNode.connect(audioCtx.destination);
+          gainNode.connect(ctx.destination);
 
-          const now = audioCtx.currentTime;
+          const now = ctx.currentTime;
 
           switch(type) {
               case 'shoot':
                   osc.type = 'square';
                   osc.frequency.setValueAtTime(880, now);
                   osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
-                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.setValueAtTime(0.05, now);
                   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
                   osc.start(now);
                   osc.stop(now + 0.1);
@@ -111,7 +133,7 @@
                   osc.type = 'sawtooth';
                   osc.frequency.setValueAtTime(400, now);
                   osc.frequency.linearRampToValueAtTime(200, now + 0.1);
-                  gainNode.gain.setValueAtTime(0.05, now);
+                  gainNode.gain.setValueAtTime(0.03, now);
                   gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
                   osc.start(now);
                   osc.stop(now + 0.1);
@@ -120,40 +142,549 @@
                   osc.type = 'sawtooth';
                   osc.frequency.setValueAtTime(100, now);
                   osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
-                  gainNode.gain.setValueAtTime(0.2, now);
+                  gainNode.gain.setValueAtTime(0.1, now);
                   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
                   osc.start(now);
                   osc.stop(now + 0.5);
                   break;
-              case 'hit':
-                  osc.type = 'square';
-                  osc.frequency.setValueAtTime(150, now);
-                  osc.frequency.linearRampToValueAtTime(100, now + 0.1);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+              case 'engine':
+                  // Continuous sound managed differently, this is just a burst
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(100 + pitchMod, now);
+                  gainNode.gain.setValueAtTime(0.05, now);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
                   osc.start(now);
                   osc.stop(now + 0.1);
                   break;
-              case 'powerup':
+              case 'drift':
+                  osc.type = 'triangle';
+                  osc.frequency.setValueAtTime(800, now);
+                  osc.frequency.linearRampToValueAtTime(600, now + 0.2);
+                  gainNode.gain.setValueAtTime(0.05, now);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                  osc.start(now);
+                  osc.stop(now + 0.2);
+                  break;
+              case 'correct':
                   osc.type = 'sine';
                   osc.frequency.setValueAtTime(600, now);
-                  osc.frequency.linearRampToValueAtTime(1200, now + 0.3);
+                  osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
                   gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                  osc.start(now);
+                  osc.stop(now + 0.2);
+                  break;
+              case 'wrong':
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(200, now);
+                  osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                  gainNode.gain.setValueAtTime(0.1, now);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
                   osc.start(now);
                   osc.stop(now + 0.3);
                   break;
           }
       };
 
-      // --- Galaxy Invader Game Component ---
+      const speakText = (text) => {
+          if ('speechSynthesis' in window) {
+               window.speechSynthesis.cancel();
+               const utterance = new SpeechSynthesisUtterance(text);
+               utterance.lang = 'en-US';
+               utterance.rate = 0.9;
+               window.speechSynthesis.speak(utterance);
+          }
+      };
+
+      // --- LinguaQuest (Duolingo Style) ---
+      const LinguaQuest = ({ onBack, triggerAd }) => {
+          // Move lessons outside to prevent regeneration on render
+          const lessonsData = useMemo(() => [
+              { id: 1, type: 'translate', q: 'The cat eats fish', a: ['O gato come peixe', 'O cachorro bebe agua', 'O passaro voa'], correct: 0 },
+              { id: 2, type: 'listen', q: 'Hello, how are you?', a: ['Ola, como vai voce?', 'Adeus, ate logo', 'Bom dia, amigo'], correct: 0, text: 'Hello, how are you?' },
+              { id: 3, type: 'translate', q: 'Where is the library?', a: ['Onde fica a biblioteca?', 'Onde esta o livro?', 'Eu gosto de ler'], correct: 0 },
+              { id: 4, type: 'translate', q: 'I like to play soccer', a: ['Eu gosto de jogar futebol', 'Eu gosto de comer', 'Eu nao gosto de esporte'], correct: 0 },
+              { id: 5, type: 'listen', q: 'Good morning', a: ['Bom dia', 'Boa noite', 'Boa tarde'], correct: 0, text: 'Good morning' },
+              { id: 6, type: 'translate', q: 'My car is blue', a: ['Meu carro e azul', 'Minha casa e azul', 'O ceu e azul'], correct: 0 },
+          ], []);
+
+          const [currentLesson, setCurrentLesson] = useState(0);
+          const [hearts, setHearts] = useState(5);
+          const [xp, setXp] = useState(0);
+          const [streak, setStreak] = useState(1);
+          const [status, setStatus] = useState('playing'); // playing, correct, wrong, completed, failed
+          const [selectedOption, setSelectedOption] = useState(null);
+
+          const handleCheck = () => {
+              if (selectedOption === null) return;
+              
+              const lesson = lessonsData[currentLesson];
+              if (selectedOption === lesson.correct) {
+                  setStatus('correct');
+                  playSound('correct');
+                  setXp(p => p + 10);
+              } else {
+                  setStatus('wrong');
+                  playSound('wrong');
+                  setHearts(h => h - 1);
+              }
+          };
+
+          const handleNext = () => {
+              if (hearts <= 0) {
+                  setStatus('failed');
+                  return;
+              }
+              if (currentLesson < lessonsData.length - 1) {
+                  setCurrentLesson(p => p + 1);
+                  setStatus('playing');
+                  setSelectedOption(null);
+              } else {
+                  setStatus('completed');
+                  triggerAd();
+              }
+          };
+
+          const restart = () => {
+              setCurrentLesson(0);
+              setHearts(5);
+              setStatus('playing');
+              setSelectedOption(null);
+              triggerAd();
+          };
+
+          const lesson = lessonsData[currentLesson];
+
+          if (status === 'completed') {
+              return (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] text-white p-6">
+                      <Star size={64} className="text-yellow-400 mb-4 animate-bounce" />
+                      <h2 className="text-3xl font-bold mb-2 neon-text-small">Lesson Complete!</h2>
+                      <p className="text-gray-400 mb-8">+50 XP Earned</p>
+                      <button onClick={restart} className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">
+                          Continue
+                      </button>
+                  </div>
+              );
+          }
+
+          if (status === 'failed') {
+               return (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] text-white p-6">
+                      <Heart size={64} className="text-red-500 mb-4 animate-pulse" />
+                      <h2 className="text-3xl font-bold mb-2">Out of Hearts!</h2>
+                      <p className="text-gray-400 mb-8">Don't give up, try again.</p>
+                      <button onClick={restart} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">
+                          Try Again
+                      </button>
+                  </div>
+              );
+          }
+
+          return (
+              <div className="w-full h-full flex flex-col bg-[#111] text-white">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                      <button onClick={onBack}><XCircle className="text-gray-400" /></button>
+                      <div className="flex-1 mx-4 bg-gray-700 h-3 rounded-full overflow-hidden">
+                          <div 
+                              className="bg-green-500 h-full transition-all duration-500" 
+                              style={{ width: `${((currentLesson) / lessonsData.length) * 100}%` }}
+                          ></div>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500">
+                          <Heart fill="currentColor" size={20} />
+                          <span className="font-bold">{hearts}</span>
+                      </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg mx-auto w-full">
+                      <h2 className="text-2xl font-bold mb-8 text-center">
+                          {lesson.type === 'translate' ? 'Translate this sentence' : 'Listen and select'}
+                      </h2>
+
+                      {lesson.type === 'listen' && (
+                          <button 
+                              onClick={() => speakText(lesson.text)}
+                              className="mb-8 p-6 bg-blue-500/20 border-2 border-blue-500 rounded-2xl hover:bg-blue-500/30 transition"
+                          >
+                              <Volume2 size={48} className="text-blue-400" />
+                          </button>
+                      )}
+
+                      {lesson.type === 'translate' && (
+                          <div className="mb-8 p-4 border border-gray-600 rounded-xl flex items-center gap-3">
+                              {/* Character Avatar */}
+                              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center font-bold text-2xl text-black">D</div>
+                              <div className="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700">
+                                  {lesson.q}
+                              </div>
+                          </div>
+                      )}
+
+                      <div className="w-full grid gap-3">
+                          {lesson.a.map((option, idx) => (
+                              <button
+                                  key={idx}
+                                  onClick={() => status === 'playing' && setSelectedOption(idx)}
+                                  disabled={status !== 'playing'}
+                                  className={`p-4 rounded-xl border-2 text-left transition-all transform ${
+                                      selectedOption === idx 
+                                          ? 'border-blue-500 bg-blue-500/20' 
+                                          : 'border-gray-700 hover:bg-gray-800'
+                                  }`}
+                              >
+                                  {option}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className={`p-4 border-t ${status === 'correct' ? 'bg-green-900/30 border-green-500' : (status === 'wrong' ? 'bg-red-900/30 border-red-500' : 'border-gray-800')}`}>
+                      <div className="max-w-lg mx-auto flex items-center justify-between">
+                          {status === 'correct' && (
+                              <div className="flex items-center gap-2 text-green-400 font-bold">
+                                  <CheckCircle size={32} />
+                                  <div className="flex flex-col">
+                                      <span>Correct!</span>
+                                  </div>
+                              </div>
+                          )}
+                          {status === 'wrong' && (
+                              <div className="flex items-center gap-2 text-red-400 font-bold">
+                                  <XCircle size={32} />
+                                  <div className="flex flex-col">
+                                      <span>Correct answer:</span>
+                                      <span className="text-sm font-normal text-white">{lesson.a[lesson.correct]}</span>
+                                  </div>
+                              </div>
+                          )}
+                          {status === 'playing' ? (
+                              <button 
+                                  onClick={handleCheck}
+                                  disabled={selectedOption === null}
+                                  className={`w-full py-3 rounded-xl font-bold transition ${selectedOption !== null ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-gray-700 text-gray-500'}`}
+                              >
+                                  CHECK
+                              </button>
+                          ) : (
+                              <button 
+                                  onClick={handleNext}
+                                  className={`ml-auto px-8 py-3 rounded-xl font-bold text-white transition ${status === 'correct' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
+                              >
+                                  CONTINUE
+                              </button>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          );
+      };
+
+      // --- Neon Racer Game (Top Gear Style) ---
+      const NeonRacer = ({ onBack, triggerAd }) => {
+          const canvasRef = useRef(null);
+          const requestRef = useRef();
+          
+          const gameState = useRef({
+              speed: 0,
+              maxSpeed: 250,
+              position: 0,
+              playerX: 0,
+              score: 0,
+              segments: [],
+              roadWidth: 2000,
+              segmentLength: 200,
+              trackLength: 0,
+              fov: 100,
+              cameraHeight: 1000,
+              cameraDepth: 0.84, // 1 / Math.tan((fov / 2) * Math.PI / 180)
+              colors: {
+                  light: { road: '#333', grass: '#111', rumble: '#555', lane: '#CCCCCC' },
+                  dark: { road: '#222', grass: '#050505', rumble: '#BBBBBB', lane: '#000000' } // lane hidden
+              },
+              keys: { left: false, right: false, up: false, down: false },
+              bgOffset: 0,
+              lap: 1,
+              totalLaps: 3
+          });
+
+          // Generate Track
+          useEffect(() => {
+              const g = gameState.current;
+              g.segments = [];
+              const addSegment = (curve) => {
+                  const n = g.segments.length;
+                  g.segments.push({
+                      index: n,
+                      p1: { world: { y: 0, z: n * g.segmentLength }, camera: {}, screen: {} },
+                      p2: { world: { y: 0, z: (n + 1) * g.segmentLength }, camera: {}, screen: {} },
+                      curve: curve,
+                      color: Math.floor(n / 3) % 2 ? g.colors.dark : g.colors.light
+                  });
+              };
+              
+              // Build road structure
+              for(let i=0; i<500; i++) addSegment(0); // Start straight
+              for(let i=0; i<400; i++) addSegment(i < 200 ? 2 : -2); // S curve
+              for(let i=0; i<400; i++) addSegment(i < 200 ? -2 : 2); // S curve
+              for(let i=0; i<200; i++) addSegment(0); // Straight
+              for(let i=0; i<600; i++) addSegment(i < 300 ? -3 : 3); // Hard turn
+              for(let i=0; i<200; i++) addSegment(0); // Finish straight
+
+              g.trackLength = g.segments.length * g.segmentLength;
+          }, []);
+
+          // Projection math
+          const project = (p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) => {
+              p.camera.x = (p.world.x || 0) - cameraX;
+              p.camera.y = (p.world.y || 0) - cameraY;
+              p.camera.z = (p.world.z || 0) - cameraZ; // World Z - Camera Z
+              
+              // If behind camera
+              if (p.camera.z <= 0) return;
+
+              p.screen.scale = cameraDepth / p.camera.z;
+              p.screen.x = Math.round((width / 2) + (p.screen.scale * p.camera.x * width / 2));
+              p.screen.y = Math.round((height / 2) - (p.screen.scale * p.camera.y * height / 2));
+              p.screen.w = Math.round(p.screen.scale * roadWidth * width / 2);
+          };
+
+          const renderPolygon = (ctx, x1, y1, x2, y2, x3, y3, x4, y4, color) => {
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.lineTo(x3, y3);
+              ctx.lineTo(x4, y4);
+              ctx.closePath();
+              ctx.fill();
+          };
+
+          const update = (dt) => {
+              const g = gameState.current;
+              const playerSegment = g.segments[Math.floor(g.position / g.segmentLength) % g.segments.length];
+              const speedPercent = g.speed / g.maxSpeed;
+              const dx = dt * 2 * speedPercent; 
+
+              g.position = (g.position + dt * g.speed) % g.trackLength;
+              
+              // Controls
+              if (g.keys.left) g.playerX -= dx;
+              else if (g.keys.right) g.playerX += dx;
+
+              g.playerX -= (dx * speedPercent * playerSegment.curve * 2); // Centrifugal
+
+              if (g.keys.up) g.speed += 100 * dt; // Accel
+              else if (g.keys.down) g.speed -= 300 * dt; // Brake
+              else g.speed -= 50 * dt; // Decel
+
+              g.playerX = Math.max(-2, Math.min(2, g.playerX));
+              g.speed = Math.max(0, Math.min(g.maxSpeed, g.speed));
+              
+              // Engine Sound Loop trigger
+              if (g.speed > 10 && Math.random() < 0.1) playSound('engine', g.speed / 2);
+              if (Math.abs(playerSegment.curve) > 1 && g.speed > 150 && Math.random() < 0.1) playSound('drift');
+
+              g.bgOffset = (g.bgOffset + playerSegment.curve * speedPercent) % 1000;
+          };
+
+          const draw = (ctx, width, height) => {
+              const g = gameState.current;
+              
+              // Clear
+              ctx.fillStyle = '#050505'; // Sky
+              ctx.fillRect(0, 0, width, height);
+              
+              // Draw Mountains/Sky (Simple parallax)
+              ctx.fillStyle = '#1a0b2e'; // Dark mountain
+              ctx.beginPath();
+              ctx.moveTo(0, height/2);
+              for(let i=0; i<=width; i+=50) {
+                  ctx.lineTo(i, (height/2) - 50 - Math.sin((i + g.bgOffset)/100)*30);
+              }
+              ctx.lineTo(width, height/2);
+              ctx.fill();
+
+              // Render Road
+              let baseSegment = g.segments[Math.floor(g.position / g.segmentLength) % g.segments.length];
+              let basePercent = (g.position % g.segmentLength) / g.segmentLength;
+              let playerX = g.playerX * g.roadWidth;
+              let dx = -(baseSegment.curve * basePercent);
+              let x = 0;
+              let maxY = height;
+
+              for(let n=0; n<300; n++) {
+                  let id = (baseSegment.index + n) % g.segments.length;
+                  let segment = g.segments[id];
+                  let loop = Math.floor((baseSegment.index + n) / g.segments.length);
+                  
+                  // Project P1
+                  segment.p1.world.x = x - playerX - dx;
+                  segment.p1.world.z = (n * g.segmentLength) + (loop * g.trackLength) - (g.position % g.segmentLength); // Relative Z
+                  project(segment.p1, 0, g.cameraHeight, 0, g.cameraDepth, width, height, g.roadWidth);
+
+                  // Project P2
+                  x += dx;
+                  dx += segment.curve;
+                  segment.p2.world.x = x - playerX - dx;
+                  segment.p2.world.z = ((n+1) * g.segmentLength) + (loop * g.trackLength) - (g.position % g.segmentLength);
+                  project(segment.p2, 0, g.cameraHeight, 0, g.cameraDepth, width, height, g.roadWidth);
+
+                  if (segment.p1.camera.z <= 0 || segment.p2.screen.y >= maxY || segment.p2.screen.y >= segment.p1.screen.y) continue;
+
+                  renderPolygon(ctx, 
+                      segment.p1.screen.x - segment.p1.screen.w, segment.p1.screen.y,
+                      segment.p1.screen.x + segment.p1.screen.w, segment.p1.screen.y,
+                      segment.p2.screen.x + segment.p2.screen.w, segment.p2.screen.y,
+                      segment.p2.screen.x - segment.p2.screen.w, segment.p2.screen.y,
+                      segment.color.grass
+                  );
+                  renderPolygon(ctx, 
+                      segment.p1.screen.x - segment.p1.screen.w * 0.8, segment.p1.screen.y,
+                      segment.p1.screen.x + segment.p1.screen.w * 0.8, segment.p1.screen.y,
+                      segment.p2.screen.x + segment.p2.screen.w * 0.8, segment.p2.screen.y,
+                      segment.p2.screen.x - segment.p2.screen.w * 0.8, segment.p2.screen.y,
+                      segment.color.rumble
+                  );
+                  renderPolygon(ctx, 
+                      segment.p1.screen.x - segment.p1.screen.w * 0.7, segment.p1.screen.y,
+                      segment.p1.screen.x + segment.p1.screen.w * 0.7, segment.p1.screen.y,
+                      segment.p2.screen.x + segment.p2.screen.w * 0.7, segment.p2.screen.y,
+                      segment.p2.screen.x - segment.p2.screen.w * 0.7, segment.p2.screen.y,
+                      segment.color.road
+                  );
+                  
+                  maxY = segment.p1.screen.y;
+              }
+
+              // Draw Player Car
+              const carW = width * 0.3;
+              const carH = carW * 0.5;
+              const carX = width / 2 - carW / 2;
+              const carY = height - carH - 20;
+
+              // Car Body
+              ctx.fillStyle = '#ff0055';
+              ctx.shadowColor = '#ff0055';
+              ctx.shadowBlur = 20;
+              ctx.fillRect(carX, carY + carH/2, carW, carH/2); // Bumper
+              ctx.beginPath(); // Cabin
+              ctx.moveTo(carX + carW*0.1, carY + carH/2);
+              ctx.lineTo(carX + carW*0.2, carY);
+              ctx.lineTo(carX + carW*0.8, carY);
+              ctx.lineTo(carX + carW*0.9, carY + carH/2);
+              ctx.fill();
+
+              // Tail Lights
+              ctx.fillStyle = '#ffaaaa';
+              ctx.shadowBlur = 10;
+              ctx.fillRect(carX + carW*0.1, carY + carH*0.6, carW*0.15, carH*0.15);
+              ctx.fillRect(carX + carW*0.75, carY + carH*0.6, carW*0.15, carH*0.15);
+              ctx.shadowBlur = 0;
+
+              // Dashboard
+              ctx.fillStyle = 'rgba(0,0,0,0.5)';
+              ctx.fillRect(10, 10, 120, 40);
+              ctx.fillStyle = '#0ff';
+              ctx.font = '20px Courier';
+              ctx.fillText(`${Math.floor(g.speed)} km/h`, 20, 35);
+          };
+
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              let lastTime = Date.now();
+              
+              // Handle input
+              const down = (e) => {
+                  switch(e.key) {
+                      case 'ArrowLeft': gameState.current.keys.left = true; break;
+                      case 'ArrowRight': gameState.current.keys.right = true; break;
+                      case 'ArrowUp': gameState.current.keys.up = true; break;
+                      case 'ArrowDown': gameState.current.keys.down = true; break;
+                  }
+              };
+              const up = (e) => {
+                  switch(e.key) {
+                      case 'ArrowLeft': gameState.current.keys.left = false; break;
+                      case 'ArrowRight': gameState.current.keys.right = false; break;
+                      case 'ArrowUp': gameState.current.keys.up = false; break;
+                      case 'ArrowDown': gameState.current.keys.down = false; break;
+                  }
+              };
+
+              // Touch controls
+              const tStart = (e) => {
+                  e.preventDefault();
+                  const x = e.touches[0].clientX;
+                  const w = window.innerWidth;
+                  if (x < w/3) gameState.current.keys.left = true;
+                  else if (x > w*2/3) gameState.current.keys.right = true;
+                  else gameState.current.keys.up = true;
+              };
+              const tEnd = () => {
+                   gameState.current.keys.left = false;
+                   gameState.current.keys.right = false;
+                   gameState.current.keys.up = false;
+              };
+
+              window.addEventListener('keydown', down);
+              window.addEventListener('keyup', up);
+              canvas.addEventListener('touchstart', tStart, {passive: false});
+              canvas.addEventListener('touchend', tEnd);
+
+              // Resize handler
+              const handleResize = () => {
+                 if (canvas && canvas.parentElement) {
+                     canvas.width = canvas.parentElement.clientWidth;
+                     canvas.height = canvas.parentElement.clientHeight;
+                 }
+              };
+              window.addEventListener('resize', handleResize);
+              handleResize();
+
+              const loop = () => {
+                  const now = Date.now();
+                  const dt = Math.min(1, (now - lastTime) / 1000);
+                  lastTime = now;
+                  
+                  update(dt);
+                  if (canvas) draw(canvas.getContext('2d'), canvas.width, canvas.height);
+                  requestRef.current = requestAnimationFrame(loop);
+              };
+              requestRef.current = requestAnimationFrame(loop);
+
+              return () => {
+                  window.removeEventListener('keydown', down);
+                  window.removeEventListener('keyup', up);
+                  window.removeEventListener('resize', handleResize);
+                  cancelAnimationFrame(requestRef.current);
+              };
+          }, []);
+
+          return (
+              <div className="w-full h-full relative">
+                  <canvas ref={canvasRef} className="block w-full h-full" />
+                  <div className="absolute top-4 left-4">
+                      <button onClick={onBack} className="p-3 bg-black/50 text-white rounded-full"><ChevronLeft /></button>
+                  </div>
+                  <div className="absolute bottom-10 w-full text-center text-white/50 text-sm pointer-events-none">
+                      Tap Sides to Turn • Center to Accel
+                  </div>
+              </div>
+          );
+      };
+
+      // --- Galaxy Invader Game Component (Updated) ---
       const GalaxyInvader = ({ onBack, triggerAd }) => {
           const canvasRef = useRef(null);
           const game = useRef({
               player: { 
                   x: 0, y: 0, w: 40, h: 40, 
                   health: 100, maxHealth: 100, 
-                  weaponLevel: 1, // 1 to 5
+                  weaponLevel: 1, 
                   shieldActive: false,
                   shieldTimer: 0,
                   damageMultiplier: 1,
@@ -171,7 +702,6 @@
               width: 0,
               height: 0,
           });
-          const [isFullscreen, setIsFullscreen] = useState(false);
           const [gameOver, setGameOver] = useState(false);
 
           const initGame = useCallback(() => {
@@ -185,7 +715,6 @@
               g.player.weaponLevel = 1;
               g.player.shieldActive = false;
               g.player.shieldTimer = 0;
-              g.player.damageMultiplier = 1;
               g.score = 0;
               g.level = 1;
               g.bullets = [];
@@ -208,7 +737,7 @@
           }, []);
 
           const spawnPowerup = (x, y) => {
-              if (Math.random() < 0.2) { // 20% chance
+              if (Math.random() < 0.2) { 
                   const type = Math.random() < 0.5 ? 'weapon' : 'shield';
                   game.current.powerups.push({
                       x, y, w: 20, h: 20, type,
@@ -221,25 +750,24 @@
               const g = game.current;
               if (g.gameState !== 'playing') return;
 
-              // Spawn rate increases with level
               if (Math.random() < 0.02 + g.level * 0.002) {
                   const rand = Math.random();
                   let type = 'basic';
                   let health = 1 + Math.floor(g.level * 0.5);
                   let w = 30, h = 30;
                   
-                  if (rand > 0.9 && g.level > 2) { type = 'tank'; health *= 3; w=40; h=40; }
-                  else if (rand > 0.7 && g.level > 1) { type = 'speeder'; health = Math.max(1, health/2); }
+                  if (rand > 0.9 && g.level > 2) { type = 'tank'; health *= 3; w=40; h=40; } // Square
+                  else if (rand > 0.8 && g.level > 1) { type = 'seeker'; health *= 1.5; w=25; h=25; } // Triangle
+                  else if (rand > 0.7 && g.level > 3) { type = 'ufo'; health *= 2; w=35; h=35; } // Circle
                   else if (rand > 0.5) { type = 'shooter'; health *= 1.5; }
 
                   g.enemies.push({ 
                       x: Math.random() * (g.width - w), 
                       y: -40, w, h, 
                       type, health, maxHealth: health,
-                      vx: type === 'speeder' ? (Math.random() - 0.5) * 4 : 0,
-                      vy: type === 'speeder' ? 4 : (type === 'tank' ? 1 : 2),
+                      vx: type === 'seeker' ? 0 : (type === 'ufo' ? Math.cos(Date.now()/500)*3 : 0),
+                      vy: type === 'seeker' ? 3 : (type === 'tank' ? 1 : 2),
                       lastShot: Date.now() + Math.random() * 1000,
-                      angle: 0
                   });
               }
           }, []);
@@ -247,12 +775,12 @@
           const spawnBoss = useCallback(() => {
               const g = game.current;
               g.gameState = 'boss';
-              g.enemies = []; // Clear small enemies
+              g.enemies = []; 
               g.boss = {
                   x: g.width / 2 - 60, y: -120, w: 120, h: 100,
                   health: 200 * g.level, maxHealth: 200 * g.level,
                   phase: 1, lastShot: Date.now(), moveDir: 1,
-                  attackType: 0, attackTimer: 0
+                  attackType: 0
               };
           }, []);
 
@@ -260,18 +788,13 @@
               const g = game.current;
               const now = Date.now();
 
-              // Update Stars
               g.stars.forEach(s => {
                   s.y += s.speed;
-                  if (s.y > g.height) {
-                      s.y = 0;
-                      s.x = Math.random() * g.width;
-                  }
+                  if (s.y > g.height) { s.y = 0; s.x = Math.random() * g.width; }
               });
 
-              // Shield Timer
               if (g.player.shieldActive) {
-                  g.player.shieldTimer -= 16; // approx 16ms per frame
+                  g.player.shieldTimer -= 16;
                   if (g.player.shieldTimer <= 0) {
                       g.player.shieldActive = false;
                       g.player.damageMultiplier = 1;
@@ -282,29 +805,38 @@
                   // Player Bullets
                   g.bullets.forEach(b => {
                       if(b.owner === 'player') b.y -= 10;
-                      else {
-                          b.x += b.vx;
-                          b.y += b.vy;
-                      }
+                      else { b.x += b.vx; b.y += b.vy; }
                   });
                   g.bullets = g.bullets.filter(b => b.y > -50 && b.y < g.height + 50 && b.x > -50 && b.x < g.width + 50 && !b.hit);
 
                   // Enemies
                   g.enemies.forEach(e => {
+                      // Seeker Logic
+                      if (e.type === 'seeker') {
+                          const dx = (g.player.x + g.player.w/2) - (e.x + e.w/2);
+                          e.vx = dx * 0.02;
+                      } else if (e.type === 'ufo') {
+                          e.vx = Math.sin(now / 300) * 3;
+                      }
+
                       e.x += e.vx;
                       e.y += e.vy;
-                      if(e.x <= 0 || e.x + e.w >= g.width) e.vx *= -1;
+                      
+                      if (e.type !== 'ufo' && (e.x <= 0 || e.x + e.w >= g.width)) e.vx *= -1;
 
-                      // Enemy Shooting
-                      if ((e.type === 'shooter' || e.type === 'tank') && now - e.lastShot > 1500) {
+                      // Shooting Logic
+                      if ((e.type === 'shooter' || e.type === 'tank' || e.type === 'ufo') && now - e.lastShot > 1500) {
                           playSound('enemy_shoot');
-                          if (e.type === 'tank') {
-                               // Tank shoots spread
+                          if (e.type === 'ufo') {
+                              // Spin shot
+                              for(let i=0; i<4; i++) {
+                                  const angle = (now/1000) + (i * Math.PI/2);
+                                  g.bullets.push({x: e.x+e.w/2, y: e.y+e.h/2, w: 6, h: 6, owner: 'enemy', vx: Math.cos(angle)*3, vy: Math.sin(angle)*3, color: '#a855f7'});
+                              }
+                          } else if (e.type === 'tank') {
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: -2, vy: 3, color: '#f87171'});
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 0, vy: 3, color: '#f87171'});
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 2, vy: 3, color: '#f87171'});
                           } else {
-                               // Shooter aims at player
                                const dx = (g.player.x + g.player.w/2) - (e.x + e.w/2);
                                const dy = (g.player.y + g.player.h/2) - (e.y + e.h/2);
                                const angle = Math.atan2(dy, dx);
@@ -329,114 +861,81 @@
                       if (now - boss.lastShot > 800) {
                           playSound('enemy_shoot');
                           boss.attackType = (boss.attackType + 1) % 3;
-                          
-                          // Pattern 1: Circle
                           if (boss.attackType === 0) {
                               for(let i=0; i<12; i++) {
                                   const angle = (i / 12) * Math.PI * 2;
                                   g.bullets.push({x: boss.x + boss.w/2, y: boss.y + boss.h/2, w: 8, h: 8, owner: 'enemy', vx: Math.cos(angle)*4, vy: Math.sin(angle)*4, color: '#ef4444'});
                               }
-                          } 
-                          // Pattern 2: Machine Gun
-                          else if (boss.attackType === 1) {
-                              for(let i=0; i<5; i++) {
-                                  setTimeout(() => {
-                                      g.bullets.push({x: boss.x + Math.random()*boss.w, y: boss.y + boss.h, w: 6, h: 12, owner: 'enemy', vx: 0, vy: 6, color: '#ef4444'});
-                                  }, i * 100);
-                              }
-                          }
-                          // Pattern 3: Aimed
-                          else {
-                              const dx = (g.player.x + g.player.w/2) - (boss.x + boss.w/2);
-                              const dy = (g.player.y + g.player.h/2) - (boss.y + boss.h/2);
-                              const angle = Math.atan2(dy, dx);
-                              g.bullets.push({x: boss.x + boss.w/2, y: boss.y + boss.h, w: 15, h: 15, owner: 'enemy', vx: Math.cos(angle)*6, vy: Math.sin(angle)*6, color: '#b91c1c'});
+                          } else if (boss.attackType === 1) {
+                              g.bullets.push({x: boss.x+20, y: boss.y+boss.h, w:8, h:15, owner:'enemy', vx:0, vy:5, color:'#f00'});
+                              g.bullets.push({x: boss.x+boss.w-20, y: boss.y+boss.h, w:8, h:15, owner:'enemy', vx:0, vy:5, color:'#f00'});
                           }
                           boss.lastShot = now;
                       }
                   }
 
                   // Collisions
-                  // 1. Player Bullets hitting Enemies/Boss
                   g.bullets.forEach(b => {
                       if (b.owner === 'player') {
-                          // Check Enemies
                           g.enemies.forEach(e => {
                               if (!b.hit && rectIntersect(b, e)) {
                                   b.hit = true;
-                                  const dmg = 1 * g.player.damageMultiplier;
-                                  e.health -= dmg;
-                                  createExplosion(b.x, b.y, '#fb923c', 5);
+                                  e.health -= g.player.damageMultiplier;
+                                  createExplosion(b.x, b.y, '#fb923c', 3);
                                   if(e.health <= 0) {
-                                      g.score += (e.type === 'tank' ? 300 : 100);
-                                      createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 15);
+                                      g.score += 100;
+                                      createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 10);
                                       playSound('explosion');
                                       spawnPowerup(e.x, e.y);
                                   }
                               }
                           });
-                          // Check Boss
                           if (g.boss && !b.hit && rectIntersect(b, g.boss)) {
                               b.hit = true;
-                              const dmg = 1 * g.player.damageMultiplier;
-                              g.boss.health -= dmg;
-                              g.score += 10;
+                              g.boss.health -= g.player.damageMultiplier;
                               createExplosion(b.x, b.y, '#f87171', 5);
                               if (g.boss.health <= 0) {
                                   playSound('explosion');
-                                  g.score += 5000 * g.level;
+                                  g.score += 5000;
                                   g.gameState = 'level-up';
-                                  createExplosion(g.boss.x + g.boss.w/2, g.boss.y + g.boss.h/2, '#ffffff', 50);
                                   g.boss = null;
                                   setTimeout(() => { g.level++; g.gameState = 'playing'; }, 3000);
                               }
                           }
-                      } 
-                      // 2. Enemy Bullets hitting Player
-                      else { 
+                      } else { 
                           if (!b.hit && rectIntersect(b, g.player)) {
                               b.hit = true;
                               if (!g.player.shieldActive) {
                                   g.player.health -= 10;
                                   playSound('hit');
-                                  createExplosion(g.player.x + g.player.w/2, g.player.y + g.player.h/2, '#ef4444', 10);
+                                  createExplosion(g.player.x, g.player.y, '#ef4444', 10);
                                   if (g.player.health <= 0) {
                                       g.gameState = 'game-over';
                                       playSound('explosion');
                                       setGameOver(true);
                                   }
-                              } else {
-                                  createExplosion(b.x, b.y, '#06b6d4', 5); // Shield deflect
                               }
                           }
                       }
                   });
 
-                  // 3. Powerup collection
                   g.powerups.forEach(p => {
                       if (!p.collected && rectIntersect(p, g.player)) {
                           p.collected = true;
                           playSound('powerup');
-                          if (p.type === 'weapon') {
-                              g.player.weaponLevel = Math.min(5, g.player.weaponLevel + 1);
-                              createExplosion(g.player.x, g.player.y, '#00ff00', 20);
-                          } else if (p.type === 'shield') {
+                          if (p.type === 'weapon') g.player.weaponLevel = Math.min(5, g.player.weaponLevel + 1);
+                          else if (p.type === 'shield') {
                               g.player.shieldActive = true;
-                              g.player.shieldTimer = 10000; // 10 seconds
+                              g.player.shieldTimer = 10000;
                               g.player.damageMultiplier = 5;
-                              createExplosion(g.player.x, g.player.y, '#06b6d4', 20);
                           }
                       }
                   });
 
                   g.enemies = g.enemies.filter(e => e.health > 0);
-                  
-                  if (g.score > g.level * 2500 && !g.boss && g.gameState === 'playing') {
-                      spawnBoss();
-                  }
+                  if (g.score > g.level * 2500 && !g.boss && g.gameState === 'playing') spawnBoss();
               }
 
-              // Update Particles
               g.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
               g.particles = g.particles.filter(p => p.life > 0);
 
@@ -444,10 +943,7 @@
           }, [spawnEnemy, spawnBoss, initGame]);
 
           const rectIntersect = (r1, r2) => {
-              return !(r2.x > r1.x + r1.w || 
-                       r2.x + r2.w < r1.x || 
-                       r2.y > r1.y + r1.h || 
-                       r2.y + r2.h < r1.y);
+              return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
           };
 
           const createExplosion = (x, y, color, count = 20) => {
@@ -464,31 +960,18 @@
 
           const firePlayerWeapon = (g) => {
               playSound('shoot');
-              const { x, y, w, h, weaponLevel } = g.player;
+              const { x, y, w, weaponLevel } = g.player;
               const cx = x + w / 2;
-              
-              const bulletProps = { w: 4, h: 12, owner: 'player', color: '#67e8f9' }; // Cyan neon
+              const bulletProps = { w: 4, h: 12, owner: 'player', color: '#67e8f9' };
 
-              if (weaponLevel === 1) {
-                  g.bullets.push({ ...bulletProps, x: cx - 2, y });
-              } else if (weaponLevel === 2) {
+              if (weaponLevel === 1) g.bullets.push({ ...bulletProps, x: cx - 2, y });
+              else if (weaponLevel === 2) {
                   g.bullets.push({ ...bulletProps, x: cx - 10, y });
                   g.bullets.push({ ...bulletProps, x: cx + 6, y });
-              } else if (weaponLevel === 3) {
-                  g.bullets.push({ ...bulletProps, x: cx - 2, y });
-                  g.bullets.push({ ...bulletProps, x: cx - 12, y: y + 5, vx: -1, vy: -10 });
-                  g.bullets.push({ ...bulletProps, x: cx + 8, y: y + 5, vx: 1, vy: -10 });
-              } else if (weaponLevel === 4) {
-                  // V-shape wide
-                  g.bullets.push({ ...bulletProps, x: cx - 15, y, vx: -2, vy: -10 });
-                  g.bullets.push({ ...bulletProps, x: cx - 5, y, vx: 0, vy: -10 });
-                  g.bullets.push({ ...bulletProps, x: cx + 5, y, vx: 0, vy: -10 });
-                  g.bullets.push({ ...bulletProps, x: cx + 15, y, vx: 2, vy: -10 });
-              } else {
-                  // Omni burst (Level 5)
-                  for(let i=-2; i<=2; i++) {
-                      g.bullets.push({ ...bulletProps, x: cx, y: y, vx: i * 1.5, vy: -10 });
-                  }
+              } else if (weaponLevel >= 3) {
+                   g.bullets.push({ ...bulletProps, x: cx - 2, y });
+                   g.bullets.push({ ...bulletProps, x: cx - 15, y: y+5, vx: -1, vy: -10 });
+                   g.bullets.push({ ...bulletProps, x: cx + 11, y: y+5, vx: 1, vy: -10 });
               }
           };
 
@@ -498,10 +981,8 @@
               const ctx = canvas.getContext('2d');
               const g = game.current;
               
-              // Clear
               ctx.clearRect(0, 0, g.width, g.height);
               
-              // Draw Stars
               ctx.fillStyle = '#ffffff';
               g.stars.forEach(s => {
                   ctx.globalAlpha = Math.random() * 0.5 + 0.3;
@@ -511,14 +992,11 @@
                   ctx.globalAlpha = 1.0;
               });
 
-              // Draw Player
               if (g.gameState !== 'game-over') {
                   const p = g.player;
                   ctx.fillStyle = '#00ffff'; 
                   ctx.shadowBlur = 15;
                   ctx.shadowColor = '#00ffff';
-                  
-                  // Ship body
                   ctx.beginPath();
                   ctx.moveTo(p.x + p.w/2, p.y);
                   ctx.lineTo(p.x + p.w, p.y + p.h);
@@ -526,8 +1004,6 @@
                   ctx.lineTo(p.x, p.y + p.h);
                   ctx.closePath();
                   ctx.fill();
-
-                  // Shield Visual
                   if (p.shieldActive) {
                       ctx.strokeStyle = `rgba(6, 182, 212, ${Math.random() * 0.5 + 0.5})`;
                       ctx.lineWidth = 3;
@@ -538,7 +1014,6 @@
                   ctx.shadowBlur = 0;
               }
 
-              // Powerups
               g.powerups.forEach(p => {
                   ctx.fillStyle = p.type === 'weapon' ? '#22c55e' : '#06b6d4';
                   ctx.beginPath();
@@ -549,19 +1024,38 @@
                   ctx.fillText(p.type === 'weapon' ? 'W' : 'S', p.x + 6, p.y + 14);
               });
 
-              // Bullets
               g.bullets.forEach(b => {
                   ctx.fillStyle = b.color || '#fff';
                   ctx.fillRect(b.x, b.y, b.w, b.h);
               });
 
-              // Enemies
               g.enemies.forEach(e => {
-                  ctx.fillStyle = e.type === 'tank' ? '#ef4444' : (e.type === 'speeder' ? '#f59e0b' : '#a855f7');
+                  ctx.fillStyle = e.type === 'tank' ? '#ef4444' : (e.type === 'seeker' ? '#f59e0b' : (e.type === 'ufo' ? '#ec4899' : '#a855f7'));
                   ctx.shadowBlur = 10;
                   ctx.shadowColor = ctx.fillStyle;
-                  ctx.fillRect(e.x, e.y, e.w, e.h);
-                  // Enemy HP bar (small)
+                  
+                  if (e.type === 'seeker') {
+                      // Triangle
+                      ctx.beginPath();
+                      ctx.moveTo(e.x + e.w/2, e.y + e.h); // Point down
+                      ctx.lineTo(e.x, e.y);
+                      ctx.lineTo(e.x + e.w, e.y);
+                      ctx.closePath();
+                      ctx.fill();
+                  } else if (e.type === 'ufo') {
+                      // Circle
+                      ctx.beginPath();
+                      ctx.ellipse(e.x + e.w/2, e.y + e.h/2, e.w/2, e.h/4, 0, 0, Math.PI*2);
+                      ctx.fill();
+                      ctx.fillStyle = '#fff';
+                      ctx.beginPath();
+                      ctx.arc(e.x + e.w/2, e.y + e.h/4, e.w/4, 0, Math.PI*2);
+                      ctx.fill();
+                  } else {
+                      ctx.fillRect(e.x, e.y, e.w, e.h);
+                  }
+                  
+                  // HP Bar
                   ctx.fillStyle = 'red';
                   ctx.fillRect(e.x, e.y - 5, e.w, 3);
                   ctx.fillStyle = 'lime';
@@ -569,29 +1063,24 @@
                   ctx.shadowBlur = 0;
               });
 
-              // Boss
               if (g.boss) {
                   const boss = g.boss;
                   ctx.fillStyle = '#ff0055';
                   ctx.shadowBlur = 20;
                   ctx.shadowColor = '#ff0055';
-                  // Complex Boss Shape
                   ctx.beginPath();
                   ctx.moveTo(boss.x, boss.y);
                   ctx.lineTo(boss.x + boss.w, boss.y);
                   ctx.lineTo(boss.x + boss.w/2, boss.y + boss.h);
                   ctx.closePath();
                   ctx.fill();
-                  
                   ctx.shadowBlur = 0;
-                  // Boss HP
                   ctx.fillStyle = '#330033';
                   ctx.fillRect(10, 50, g.width - 20, 10);
                   ctx.fillStyle = '#ff00ff';
                   ctx.fillRect(10, 50, (g.width - 20) * (boss.health / boss.maxHealth), 10);
               }
 
-              // Particles
               g.particles.forEach(p => {
                   ctx.fillStyle = p.color;
                   ctx.globalAlpha = p.life / 20;
@@ -599,7 +1088,6 @@
                   ctx.globalAlpha = 1;
               });
 
-              // HUD
               ctx.fillStyle = 'white';
               ctx.font = 'bold 16px "Courier New"';
               ctx.fillText(`SCORE: ${g.score}`, 10, 25);
@@ -607,21 +1095,15 @@
               ctx.fillText(`LVL: ${g.level}`, g.width - 10, 25);
               ctx.textAlign = 'left';
 
-              // Player HP Bar
-              const hpBarWidth = 150;
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333';
-              ctx.fillRect(10, g.height - 30, hpBarWidth, 15);
+              ctx.fillRect(10, g.height - 30, 150, 15);
               ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
-              ctx.fillRect(10, g.height - 30, hpBarWidth * hpPercent, 15);
+              ctx.fillRect(10, g.height - 30, 150 * hpPercent, 15);
               ctx.strokeStyle = '#fff';
               ctx.lineWidth = 1;
-              ctx.strokeRect(10, g.height - 30, hpBarWidth, 15);
-              ctx.fillStyle = '#fff';
-              ctx.font = '12px "Courier New"';
-              ctx.fillText(`${Math.ceil(g.player.health)}%`, 15, g.height - 18);
+              ctx.strokeRect(10, g.height - 30, 150, 15);
 
-              // Shield Status
               if (g.player.shieldActive) {
                   ctx.fillStyle = '#06b6d4';
                   ctx.fillText(`SHIELD: ${Math.ceil(g.player.shieldTimer/1000)}s`, 170, g.height - 18);
@@ -648,14 +1130,10 @@
               
               const resizeCanvas = () => {
                 if(canvas && canvas.parentElement) {
-                    const { width, height } = canvas.parentElement.getBoundingClientRect();
-                    canvas.width = width;
-                    canvas.height = height;
-                    g.width = width;
-                    g.height = height;
-                    if(g.stars.length === 0) {
-                         for(let i=0; i<80; i++) g.stars.push({x: Math.random()*g.width, y: Math.random()*g.height, size: Math.random()*2, speed: Math.random()*3+0.5});
-                    }
+                    canvas.width = canvas.parentElement.clientWidth;
+                    canvas.height = canvas.parentElement.clientHeight;
+                    g.width = canvas.width;
+                    g.height = canvas.height;
                 }
               };
               
@@ -681,9 +1159,8 @@
                   g.player.x = Math.max(0, Math.min(g.width - g.player.w, x - g.player.w / 2));
                   g.player.y = Math.max(0, Math.min(g.height - g.player.h, y - g.player.h / 2));
                   
-                  // Auto-fire while moving/touching
                   const now = Date.now();
-                  if (now - g.player.lastShot > 150) { // Fire rate
+                  if (now - g.player.lastShot > 150) { 
                       firePlayerWeapon(g);
                       g.player.lastShot = now;
                   }
@@ -729,15 +1206,8 @@
 
           const triggerAd = useCallback(() => {
              const now = Date.now();
-             // Cooldown: 2 minutes (120000 ms)
              if (now - lastAdTime > 120000) {
-                 console.log("Triggering Ad (Cooldown passed)");
-                 // The actual ad display is handled by the external Monetag script observing user interaction.
-                 // We can potentially simulate a click or just let the natural interaction flow.
-                 // Since we removed explicit intrusive UI, we rely on the global script.
                  setLastAdTime(now);
-             } else {
-                 console.log("Ad skipped (Cooldown active)");
              }
           }, [lastAdTime]);
 
@@ -750,44 +1220,62 @@
               switch(currentScreen) {
                   case 'galaxy-invader':
                       return <GalaxyInvader onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'neon-racer':
+                      return <NeonRacer onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'lingua-quest':
+                      return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   default:
                       return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
-                              {/* Content Container */}
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
-                                  {/* Neon Title */}
-                                  <h1 className="text-5xl md:text-6xl font-bold text-center neon-text tracking-wider">
+                                  <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">
                                       JoGos<br/>Online
                                   </h1>
                                   
-                                  {/* Game Cards - Light Theme */}
                                   <div className="w-full grid gap-4 mt-8">
                                       <button 
                                           onClick={() => startGame('galaxy-invader')}
-                                          className="glass-box group relative w-full h-32 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300"
+                                          className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"
                                       >
-                                          {/* Hover gradient */}
-                                          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                          
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start">
-                                                  <span className="text-2xl font-bold text-white drop-shadow-md">GALAXY INVADER</span>
-                                                  <span className="text-xs text-gray-200 mt-1">Space Shooter Arcade</span>
+                                                  <span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span>
+                                                  <span className="text-xs text-gray-400">Space Shooter</span>
                                               </div>
-                                              <Rocket size={40} className="text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+                                              <Rocket size={32} className="text-purple-400" />
                                           </div>
                                       </button>
 
                                       <button 
-                                          className="glass-box w-full h-24 rounded-xl flex items-center justify-center text-gray-400 cursor-not-allowed border border-white/10"
+                                          onClick={() => startGame('neon-racer')}
+                                          className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"
                                       >
-                                          <span className="text-sm font-semibold tracking-widest">EM BREVE...</span>
+                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
+                                              <div className="flex flex-col items-start">
+                                                  <span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON RACER</span>
+                                                  <span className="text-xs text-gray-400">High Speed Racing</span>
+                                              </div>
+                                              <Car size={32} className="text-pink-400" />
+                                          </div>
+                                      </button>
+
+                                      <button 
+                                          onClick={() => startGame('lingua-quest')}
+                                          className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"
+                                      >
+                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
+                                              <div className="flex flex-col items-start">
+                                                  <span className="text-xl font-bold text-white drop-shadow-md neon-text-small">LINGUA QUEST</span>
+                                                  <span className="text-xs text-gray-400">Learn English</span>
+                                              </div>
+                                              <Languages size={32} className="text-green-400" />
+                                          </div>
                                       </button>
                                   </div>
                               </div>
                               
-                              <div className="absolute bottom-4 text-gray-500 text-xs">
-                                  v3.0.0
+                              <div className="absolute bottom-4 text-gray-700 text-xs">
+                                  v4.1.0
                               </div>
                           </div>
                       );
