@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JoGos Online</title>
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
-    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" content="#111111">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
@@ -21,7 +21,7 @@
             touch-action: none; 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Courier New', Courier, monospace;
-            background-color: #050505;
+            background-color: #111;
             /* Grid Background */
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
@@ -64,6 +64,12 @@
             border-color: rgba(255, 255, 255, 0.4);
             transform: scale(1.02);
         }
+
+        /* Racing Font */
+        .racing-font {
+            font-family: 'Arial Black', sans-serif;
+            font-style: italic;
+        }
     </style>
     <script type="importmap">
     {
@@ -94,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap, Car, Languages, Heart, Star, CheckCircle, XCircle, Volume2 } from 'lucide-react';
+      import { Expand, Shrink, RefreshCw, Rocket, ChevronLeft, Shield, Zap, Car, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Fuel, ShoppingCart, Play, ArrowRight, Trophy, Pause, Settings, Info, Gauge, Maximize } from 'lucide-react';
 
       // --- Sound System (Synthesized & Safe) ---
       let audioContext = null;
@@ -160,17 +166,37 @@
                   break;
               case 'engine':
                   osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(100 + pitchMod, now);
+                  // Simulate engine RPM
+                  const freq = Math.max(60, 60 + pitchMod * 150); 
+                  osc.frequency.setValueAtTime(freq, now);
                   gainNode.gain.setValueAtTime(0.05, now);
                   gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
                   osc.start(now);
                   osc.stop(now + 0.1);
                   break;
-              case 'drift':
-                  osc.type = 'triangle';
-                  osc.frequency.setValueAtTime(800, now);
-                  osc.frequency.linearRampToValueAtTime(600, now + 0.2);
+              case 'nitro':
+                  osc.type = 'square';
+                  osc.frequency.setValueAtTime(200, now);
+                  osc.frequency.linearRampToValueAtTime(800, now + 1.0);
                   gainNode.gain.setValueAtTime(0.05, now);
+                  gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
+                  osc.start(now);
+                  osc.stop(now + 1.0);
+                  break;
+              case 'crash':
+                  osc.type = 'sawtooth';
+                  osc.frequency.setValueAtTime(100, now);
+                  osc.frequency.exponentialRampToValueAtTime(10, now + 0.3);
+                  gainNode.gain.setValueAtTime(0.2, now);
+                  gainNode.gain.exponentialRampToValueAtTime(0, now + 0.3);
+                  osc.start(now);
+                  osc.stop(now + 0.3);
+                  break;
+              case 'checkpoint': 
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(600, now);
+                  osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                  gainNode.gain.setValueAtTime(0.1, now);
                   gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
                   osc.start(now);
                   osc.stop(now + 0.2);
@@ -223,6 +249,16 @@
                utterance.rate = 0.9;
                window.speechSynthesis.speak(utterance);
           }
+      };
+
+      const toggleFullScreen = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+        }
       };
 
       // --- LinguaQuest ---
@@ -344,121 +380,578 @@
           );
       };
 
-      // --- Neon Racer ---
+      // --- Neon Racer (Advanced 3D Engine) ---
+      
+      const TRACKS = [
+          { name: 'COASTAL BREEZE', length: 1600, curves: 2, hills: 2, color: { road: '#333', grass: '#0a0', rumble: '#fff', sky: '#87CEEB' } },
+          { name: 'CITY NIGHTS', length: 2000, curves: 4, hills: 1, color: { road: '#222', grass: '#111', rumble: '#f0f', sky: '#000033' } },
+          { name: 'DESERT RUN', length: 2400, curves: 3, hills: 5, color: { road: '#543', grass: '#e6c288', rumble: '#c00', sky: '#f97316' } },
+          { name: 'ALPINE PEAK', length: 3000, curves: 6, hills: 8, color: { road: '#444', grass: '#fff', rumble: '#c00', sky: '#bfdbfe' } },
+          { name: 'CANYON DRIFT', length: 2800, curves: 8, hills: 3, color: { road: '#543', grass: '#7c2d12', rumble: '#fbbf24', sky: '#60a5fa' } },
+          { name: 'CYBER CITY', length: 3200, curves: 5, hills: 2, color: { road: '#111', grass: '#000', rumble: '#0ff', sky: '#000' } },
+          { name: 'JUNGLE FEVER', length: 3400, curves: 7, hills: 4, color: { road: '#332', grass: '#064e3b', rumble: '#fff', sky: '#86efac' } },
+          { name: 'VOLCANO', length: 3600, curves: 4, hills: 10, color: { road: '#222', grass: '#450a0a', rumble: '#ef4444', sky: '#7f1d1d' } },
+          { name: 'RAINBOW ROAD', length: 4000, curves: 9, hills: 6, color: { road: '#ccf', grass: '#000', rumble: '#ff0', sky: '#1d4ed8' } },
+          { name: 'THE GAUNTLET', length: 5000, curves: 10, hills: 10, color: { road: '#000', grass: '#333', rumble: '#fff', sky: '#581c87' } },
+      ];
+
       const NeonRacer = ({ onBack, triggerAd }) => {
           const canvasRef = useRef(null);
           const requestRef = useRef();
-          const gameState = useRef({
-              speed: 0, maxSpeed: 250, position: 0, playerX: 0, score: 0, segments: [], roadWidth: 2000, segmentLength: 200, trackLength: 0, fov: 100, cameraHeight: 1000, cameraDepth: 0.84,
-              colors: { light: { road: '#333', grass: '#111', rumble: '#555', lane: '#CCCCCC' }, dark: { road: '#222', grass: '#050505', rumble: '#BBBBBB', lane: '#000000' } },
-              keys: { left: false, right: false, up: false, down: false }, bgOffset: 0, lap: 1, totalLaps: 3
+          const [view, setView] = useState('menu'); // menu, options, credits, race, pause, result, gameover
+          const [unlockedLevel, setUnlockedLevel] = useState(parseInt(localStorage.getItem('nr_unlocked') || 1));
+          const [selectedTrack, setSelectedTrack] = useState(0);
+          const [settings, setSettings] = useState({ music: true, sfx: true });
+
+          // Game State
+          const state = useRef({
+              speed: 0, maxSpeed: 220, accel: 0, 
+              position: 0, playerX: 0, playerZ: 0,
+              segments: [], trackLength: 0,
+              fuel: 100, maxFuel: 100, 
+              nitro: 3, nitroActive: false, nitroTimer: 0,
+              cars: [],
+              keyLeft: false, keyRight: false, keyUp: false, keyDown: false,
+              startTime: 0, timeRemaining: 60, totalTime: 0,
+              finished: false, failReason: null
           });
 
-          useEffect(() => {
-              const g = gameState.current;
-              g.segments = [];
-              const addSegment = (curve) => {
-                  const n = g.segments.length;
-                  g.segments.push({
+          // Persistent Save
+          useEffect(() => { localStorage.setItem('nr_unlocked', unlockedLevel); }, [unlockedLevel]);
+
+          const initTrack = (levelIndex) => {
+              const s = state.current;
+              const track = TRACKS[levelIndex];
+              
+              s.segments = [];
+              s.cars = [];
+              s.fuel = 100;
+              s.nitro = 3;
+              s.nitroActive = false;
+              s.speed = 0;
+              s.position = 0;
+              s.playerX = 0;
+              s.timeRemaining = 50 + (levelIndex * 5); // More time for longer tracks
+              s.finished = false;
+              s.failReason = null;
+              s.keyLeft = false; s.keyRight = false; s.keyUp = false; s.keyDown = false;
+              
+              const SEGMENT_LENGTH = 200;
+              const RUMBLE_LENGTH = 3;
+              
+              const addSegment = (curve, y) => {
+                  const n = s.segments.length;
+                  s.segments.push({
                       index: n,
-                      p1: { world: { y: 0, z: n * g.segmentLength }, camera: {}, screen: {} },
-                      p2: { world: { y: 0, z: (n + 1) * g.segmentLength }, camera: {}, screen: {} },
-                      curve: curve, color: Math.floor(n / 3) % 2 ? g.colors.dark : g.colors.light
+                      p1: { world: { y: getLastY(), z: n * SEGMENT_LENGTH }, camera: {}, screen: {} },
+                      p2: { world: { y: y, z: (n + 1) * SEGMENT_LENGTH }, camera: {}, screen: {} },
+                      curve: curve,
+                      color: Math.floor(n / RUMBLE_LENGTH) % 2 ? 'dark' : 'light'
                   });
               };
-              for(let i=0; i<500; i++) addSegment(0);
-              for(let i=0; i<400; i++) addSegment(i < 200 ? 2 : -2);
-              for(let i=0; i<400; i++) addSegment(i < 200 ? -2 : 2);
-              for(let i=0; i<200; i++) addSegment(0);
-              for(let i=0; i<600; i++) addSegment(i < 300 ? -3 : 3);
-              for(let i=0; i<200; i++) addSegment(0);
-              g.trackLength = g.segments.length * g.segmentLength;
-          }, []);
+              const getLastY = () => (s.segments.length === 0) ? 0 : s.segments[s.segments.length-1].p2.world.y;
 
-          const project = (p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) => {
-              p.camera.x = (p.world.x || 0) - cameraX; p.camera.y = (p.world.y || 0) - cameraY; p.camera.z = (p.world.z || 0) - cameraZ;
-              if (p.camera.z <= 0) return;
-              p.screen.scale = cameraDepth / p.camera.z;
-              p.screen.x = Math.round((width / 2) + (p.screen.scale * p.camera.x * width / 2));
-              p.screen.y = Math.round((height / 2) - (p.screen.scale * p.camera.y * height / 2));
-              p.screen.w = Math.round(p.screen.scale * roadWidth * width / 2);
+              // Build Track
+              for(let i=0; i<10; i++) addSegment(0,0); // Start line
+              
+              const difficulty = (levelIndex + 1) * 0.5;
+              const len = track.length / 2; // Number of segments roughly
+              
+              let currentH = 0;
+              for(let i=0; i<len; i++) {
+                  let curve = 0;
+                  let dH = 0;
+                  // Randomly generate curves/hills based on track stats
+                  if (Math.random() < 0.1 * track.curves) curve = (Math.random() - 0.5) * difficulty * 6;
+                  if (Math.random() < 0.1 * track.hills) dH = (Math.random() - 0.5) * difficulty * 600;
+                  
+                  // Smooth transition
+                  const steps = 10 + Math.floor(Math.random() * 20);
+                  const targetH = currentH + dH;
+                  for(let j=0; j<steps; j++) {
+                      const p = j/steps;
+                      const h = currentH + (dH * (1 - Math.cos(p*Math.PI))/2);
+                      addSegment(curve, h);
+                      
+                      // Traffic
+                      if (Math.random() < 0.05 + (levelIndex * 0.01)) {
+                          const offset = (Math.random() * 2 - 1) * 0.8;
+                          const z = (s.segments.length-1) * SEGMENT_LENGTH;
+                          const speed = 100 + Math.random() * (50 + levelIndex * 10);
+                          const type = Math.random() > 0.8 ? 'truck' : (Math.random() > 0.5 ? 'sport' : 'sedan');
+                          s.cars.push({ z, offset, speed, type, w: 0.5 }); // w is hitbox width relative to road
+                      }
+                  }
+                  currentH = targetH;
+              }
+              
+              for(let i=0; i<50; i++) addSegment(0, currentH); // Finish line straight
+              s.trackLength = s.segments.length * SEGMENT_LENGTH;
+          };
+
+          const project = (p, cameraX, cameraY, cameraZ, depth, width, height, roadWidth) => {
+              p.camera.x = (p.world.x || 0) - cameraX;
+              p.camera.y = (p.world.y || 0) - cameraY;
+              p.camera.z = (p.world.z || 0) - cameraZ;
+              p.screen.scale = depth / p.camera.z;
+              p.screen.x = Math.round((width/2) + (p.screen.scale * p.camera.x * width/2));
+              p.screen.y = Math.round((height/2) - (p.screen.scale * p.camera.y * height/2));
+              p.screen.w = Math.round(p.screen.scale * roadWidth * width/2);
           };
 
           const renderPolygon = (ctx, x1, y1, x2, y2, x3, y3, x4, y4, color) => {
-              ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath(); ctx.fill();
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4);
+              ctx.closePath();
+              ctx.fill();
+          };
+
+          // Sprite Rendering (Procedural)
+          const drawCar = (ctx, type, x, y, scale, isPlayer) => {
+              const w = 150 * scale;
+              const h = 80 * scale;
+              const cx = x - w/2;
+              const cy = y - h;
+              
+              ctx.save();
+              // Shadow
+              ctx.fillStyle = 'rgba(0,0,0,0.5)';
+              ctx.fillRect(cx + 10*scale, cy + h - 10*scale, w - 20*scale, 10*scale);
+
+              if (type === 'player') {
+                  const color = state.current.nitroActive ? '#ff0055' : '#dc2626';
+                  ctx.fillStyle = color; ctx.fillRect(cx, cy + h/2, w, h/2); // Body
+                  ctx.fillStyle = '#7f1d1d'; ctx.fillRect(cx + w*0.1, cy, w*0.8, h/2); // Top
+                  ctx.fillStyle = '#000'; ctx.fillRect(cx + w*0.15, cy + 5*scale, w*0.7, h*0.3); // Window
+                  // Lights
+                  ctx.fillStyle = '#ef4444'; 
+                  ctx.shadowBlur = 10 * scale; ctx.shadowColor = '#f00';
+                  ctx.fillRect(cx + w*0.1, cy + h*0.6, w*0.2, h*0.2);
+                  ctx.fillRect(cx + w*0.7, cy + h*0.6, w*0.2, h*0.2);
+                  if (state.current.nitroActive) {
+                      ctx.fillStyle = '#0ff'; ctx.shadowColor = '#0ff';
+                      ctx.fillRect(cx + w*0.4, cy + h*0.6, w*0.2, h*0.2); // Exhaust
+                  }
+              } else if (type === 'truck') {
+                  ctx.fillStyle = '#555'; ctx.fillRect(cx, cy, w, h);
+                  ctx.fillStyle = '#333'; ctx.fillRect(cx + 5*scale, cy + 5*scale, w - 10*scale, h*0.8); // Door
+                  ctx.fillStyle = '#facc15'; ctx.fillRect(cx + w*0.1, cy + h*0.8, w*0.2, h*0.1); // Lights
+                  ctx.fillStyle = '#facc15'; ctx.fillRect(cx + w*0.7, cy + h*0.8, w*0.2, h*0.1);
+              } else { // sedan/sport
+                  const color = type === 'sport' ? '#facc15' : '#3b82f6';
+                  ctx.fillStyle = color; ctx.fillRect(cx + w*0.1, cy + h*0.4, w*0.8, h*0.6);
+                  ctx.fillStyle = '#1e3a8a'; ctx.fillRect(cx + w*0.2, cy + h*0.1, w*0.6, h*0.3);
+                  ctx.fillStyle = '#ef4444'; ctx.fillRect(cx + w*0.15, cy + h*0.6, w*0.15, h*0.15);
+                  ctx.fillStyle = '#ef4444'; ctx.fillRect(cx + w*0.7, cy + h*0.6, w*0.15, h*0.15);
+              }
+              ctx.restore();
           };
 
           const update = (dt) => {
-              const g = gameState.current;
-              const playerSegment = g.segments[Math.floor(g.position / g.segmentLength) % g.segments.length];
-              const speedPercent = g.speed / g.maxSpeed;
-              const dx = dt * 2 * speedPercent; 
-              g.position = (g.position + dt * g.speed) % g.trackLength;
-              if (g.keys.left) g.playerX -= dx; else if (g.keys.right) g.playerX += dx;
-              g.playerX -= (dx * speedPercent * playerSegment.curve * 2);
-              if (g.keys.up) g.speed += 100 * dt; else if (g.keys.down) g.speed -= 300 * dt; else g.speed -= 50 * dt;
-              g.playerX = Math.max(-2, Math.min(2, g.playerX)); g.speed = Math.max(0, Math.min(g.maxSpeed, g.speed));
-              if (g.speed > 10 && Math.random() < 0.1) playSound('engine', g.speed / 2);
-              if (Math.abs(playerSegment.curve) > 1 && g.speed > 150 && Math.random() < 0.1) playSound('drift');
-              g.bgOffset = (g.bgOffset + playerSegment.curve * speedPercent) % 1000;
+              const s = state.current;
+              
+              if (s.finished || view !== 'race') return;
+
+              // Physics Stats
+              const maxSpeed = s.nitroActive ? s.maxSpeed * 1.5 : s.maxSpeed;
+              const accel = s.nitroActive ? 150 : 80;
+              const breaking = -200;
+              const decel = -50;
+              const offRoadDecel = -150;
+              const offRoadLimit = maxSpeed / 4;
+              
+              // Nitro Logic
+              if (s.nitroActive) {
+                  s.nitroTimer -= dt;
+                  if (s.nitroTimer <= 0) s.nitroActive = false;
+              }
+
+              // Controls
+              if (s.keyUp && s.fuel > 0) s.speed += accel * dt;
+              else if (s.keyDown) s.speed += breaking * dt;
+              else s.speed += decel * dt;
+
+              // Steering
+              let dx = dt * 1.5 * (s.speed / maxSpeed); 
+              if (s.keyLeft) s.playerX -= dx;
+              else if (s.keyRight) s.playerX += dx;
+
+              // Centrifugal Force
+              const segmentLen = 200;
+              const playerSegment = s.segments[Math.floor((s.position + 100) / segmentLen) % s.segments.length];
+              s.playerX -= (dx * s.speed/maxSpeed * playerSegment.curve * 3); // Force pushes out
+
+              // Off-road physics
+              if ((s.playerX < -1 || s.playerX > 1) && s.speed > offRoadLimit) {
+                  s.speed += offRoadDecel * dt;
+              }
+
+              // Clamp Speed
+              s.speed = Math.max(0, Math.min(s.speed, maxSpeed));
+              
+              // Move Forward
+              s.position += s.speed * dt * 2.5; // speed scale
+              
+              // Fuel
+              s.fuel -= dt * (s.speed / maxSpeed) * 3;
+              if (s.fuel <= 0) {
+                  s.fuel = 0;
+                  s.speed -= 300 * dt; // Rapid stop
+                  if (s.speed <= 10) { s.finished = true; s.failReason = 'fuel'; setView('gameover'); playSound('wrong'); }
+              }
+
+              // Time
+              s.timeRemaining -= dt;
+              if (s.timeRemaining <= 0) {
+                   s.timeRemaining = 0;
+                   s.finished = true; s.failReason = 'time'; setView('gameover'); playSound('wrong');
+              }
+
+              // Finish Line
+              if (s.position >= s.trackLength) {
+                  s.finished = true;
+                  s.position = s.trackLength;
+                  s.speed = 0;
+                  playSound('correct');
+                  if (selectedTrack + 1 >= unlockedLevel) setUnlockedLevel(u => Math.min(10, u + 1));
+                  setView('result');
+              }
+
+              // Traffic Logic
+              for(let i=0; i<s.cars.length; i++) {
+                  const car = s.cars[i];
+                  // Move car
+                  const carSegIdx = Math.floor(car.z / segmentLen);
+                  const carSeg = s.segments[carSegIdx % s.segments.length];
+                  
+                  car.z += car.speed * dt * 2.5;
+                  if (car.z >= s.trackLength) car.z -= s.trackLength; // Wrap loop
+                  
+                  // Simple AI steering
+                  if (Math.abs(car.offset) > 0.8) car.dir = -Math.sign(car.offset);
+                  else if (Math.random() < 0.01) car.dir = Math.random() > 0.5 ? 1 : -1;
+                  // car.offset += (car.dir || 0) * dt * 0.5; // Disabled for stability in this simple version
+                  
+                  // Collision
+                  // Project car relative to player
+                  let carRelZ = car.z - s.position;
+                  if (carRelZ < -500) carRelZ += s.trackLength; // wrap
+                  
+                  if (carRelZ > 0 && carRelZ < 250) { // In front and close
+                       const overlap = (car.w + 0.5) / 2; // Approximate width overlap
+                       if (Math.abs(car.offset - s.playerX) < 0.8) {
+                           s.speed *= 0.8; // Bump slows down
+                           playSound('crash');
+                           // Push player away
+                           s.playerX -= Math.sign(s.playerX - car.offset) * 0.1;
+                       }
+                  }
+              }
+              
+              // Sound loop
+              if (settings.sfx && s.speed > 20 && Math.random() < 0.1) playSound('engine', s.speed/maxSpeed);
           };
 
           const draw = (ctx, width, height) => {
-              const g = gameState.current;
-              ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, width, height);
-              ctx.fillStyle = '#1a0b2e'; ctx.beginPath(); ctx.moveTo(0, height/2);
-              for(let i=0; i<=width; i+=50) ctx.lineTo(i, (height/2) - 50 - Math.sin((i + g.bgOffset)/100)*30);
-              ctx.lineTo(width, height/2); ctx.fill();
+              const s = state.current;
+              const theme = TRACKS[selectedTrack].color;
+              const SEGMENT_LENGTH = 200;
+              const CAM_HEIGHT = 1000;
+              const ROAD_WIDTH = 2000;
+              const DRAW_DISTANCE = 300;
+              const FOV = 100;
+              const DEPTH = 1 / Math.tan((FOV/2) * Math.PI/180);
 
-              let baseSegment = g.segments[Math.floor(g.position / g.segmentLength) % g.segments.length];
-              let basePercent = (g.position % g.segmentLength) / g.segmentLength;
-              let playerX = g.playerX * g.roadWidth;
+              // Clear
+              ctx.fillStyle = theme.sky;
+              ctx.fillRect(0, 0, width, height);
+
+              // Sun/Moon
+              ctx.fillStyle = '#fff';
+              ctx.beginPath(); ctx.arc(width*0.8, height*0.2, 40, 0, Math.PI*2); ctx.fill();
+
+              // Road Rendering
+              const baseSegment = s.segments[Math.floor(s.position / SEGMENT_LENGTH) % s.segments.length];
+              const basePercent = (s.position % SEGMENT_LENGTH) / SEGMENT_LENGTH;
+              
               let dx = -(baseSegment.curve * basePercent);
-              let x = 0; let maxY = height;
+              let x = 0;
+              let maxY = height;
+              
+              const playerX = s.playerX * ROAD_WIDTH;
 
-              for(let n=0; n<300; n++) {
-                  let id = (baseSegment.index + n) % g.segments.length; let segment = g.segments[id];
-                  let loop = Math.floor((baseSegment.index + n) / g.segments.length);
-                  segment.p1.world.x = x - playerX - dx; segment.p1.world.z = (n * g.segmentLength) + (loop * g.trackLength) - (g.position % g.segmentLength);
-                  project(segment.p1, 0, g.cameraHeight, 0, g.cameraDepth, width, height, g.roadWidth);
-                  x += dx; dx += segment.curve;
-                  segment.p2.world.x = x - playerX - dx; segment.p2.world.z = ((n+1) * g.segmentLength) + (loop * g.trackLength) - (g.position % g.segmentLength);
-                  project(segment.p2, 0, g.cameraHeight, 0, g.cameraDepth, width, height, g.roadWidth);
+              for(let n=0; n<DRAW_DISTANCE; n++) {
+                  const id = (baseSegment.index + n) % s.segments.length;
+                  const segment = s.segments[id];
+                  const looped = segment.index < baseSegment.index;
+                  
+                  // Coords
+                  segment.p1.world.z = (n * SEGMENT_LENGTH) - (basePercent * SEGMENT_LENGTH);
+                  segment.p1.world.x = x - playerX - dx;
+                  
+                  segment.p2.world.z = ((n+1) * SEGMENT_LENGTH) - (basePercent * SEGMENT_LENGTH);
+                  segment.p2.world.x = x - playerX - dx - segment.curve; // simplified curve projection
 
-                  if (segment.p1.camera.z <= 0 || segment.p2.screen.y >= maxY || segment.p2.screen.y >= segment.p1.screen.y) continue;
-                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w, segment.p2.screen.y, segment.color.grass);
-                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w * 0.8, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w * 0.8, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w * 0.8, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w * 0.8, segment.p2.screen.y, segment.color.rumble);
-                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w * 0.7, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w * 0.7, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w * 0.7, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w * 0.7, segment.p2.screen.y, segment.color.road);
+                  x += dx;
+                  dx += segment.curve;
+
+                  segment.p1.world.y = segment.p1.world.y || 0;
+                  segment.p2.world.y = segment.p2.world.y || 0;
+                  
+                  // Project
+                  project(segment.p1, 0, CAM_HEIGHT, 0, DEPTH, width, height, ROAD_WIDTH);
+                  project(segment.p2, 0, CAM_HEIGHT, 0, DEPTH, width, height, ROAD_WIDTH);
+
+                  if (segment.p1.camera.z <= DEPTH || segment.p2.screen.y >= maxY || segment.p2.screen.y >= segment.p1.screen.y) continue;
+                  
+                  // Draw Ground
+                  ctx.fillStyle = theme.grass;
+                  ctx.fillRect(0, segment.p2.screen.y, width, segment.p1.screen.y - segment.p2.screen.y);
+                  
+                  // Draw Road
+                  const color = segment.color === 'light' ? 
+                      { road: theme.road, rumble: theme.rumble, lane: '#fff' } : 
+                      { road: '#444', rumble: '#c00', lane: theme.road }; // dark road segment
+
+                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w, segment.p2.screen.y, color.rumble);
+                  renderPolygon(ctx, segment.p1.screen.x - segment.p1.screen.w * 0.85, segment.p1.screen.y, segment.p1.screen.x + segment.p1.screen.w * 0.85, segment.p1.screen.y, segment.p2.screen.x + segment.p2.screen.w * 0.85, segment.p2.screen.y, segment.p2.screen.x - segment.p2.screen.w * 0.85, segment.p2.screen.y, color.road);
+                  
+                  if (segment.color === 'light') {
+                       const laneW1 = segment.p1.screen.w * 0.02;
+                       const laneW2 = segment.p2.screen.w * 0.02;
+                       renderPolygon(ctx, segment.p1.screen.x - laneW1, segment.p1.screen.y, segment.p1.screen.x + laneW1, segment.p1.screen.y, segment.p2.screen.x + laneW2, segment.p2.screen.y, segment.p2.screen.x - laneW2, segment.p2.screen.y, color.lane);
+                  }
+
                   maxY = segment.p1.screen.y;
+
+                  // Draw Traffic
+                  // In a real optimized engine, we'd spatially hash this. Simple loop for now.
+                  for(let i=0; i<s.cars.length; i++) {
+                      const car = s.cars[i];
+                      // Check if car is in this segment Z-range
+                      // Relative Z calculation
+                      let carRelZ = car.z - s.position;
+                      if (carRelZ < 0) carRelZ += s.trackLength;
+                      
+                      const segZStart = n * SEGMENT_LENGTH;
+                      const segZEnd = (n+1) * SEGMENT_LENGTH;
+                      
+                      // Loose check to draw
+                      if (carRelZ >= segZStart && carRelZ < segZEnd) {
+                           const percent = (carRelZ - segZStart) / SEGMENT_LENGTH;
+                           // Interpolate X and Y based on segment projection
+                           const spriteScale = segment.p1.screen.scale + (segment.p2.screen.scale - segment.p1.screen.scale) * percent;
+                           const spriteX = segment.p1.screen.x + (segment.p2.screen.x - segment.p1.screen.x) * percent + (spriteScale * car.offset * ROAD_WIDTH * width/2);
+                           const spriteY = segment.p1.screen.y + (segment.p2.screen.y - segment.p1.screen.y) * percent;
+                           
+                           drawCar(ctx, car.type, spriteX, spriteY, spriteScale * 25, false); // *25 is arbitrary visual scale
+                      }
+                  }
               }
 
-              const carW = width * 0.3; const carH = carW * 0.5; const carX = width / 2 - carW / 2; const carY = height - carH - 20;
-              ctx.fillStyle = '#ff0055'; ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 20; ctx.fillRect(carX, carY + carH/2, carW, carH/2);
-              ctx.beginPath(); ctx.moveTo(carX + carW*0.1, carY + carH/2); ctx.lineTo(carX + carW*0.2, carY); ctx.lineTo(carX + carW*0.8, carY); ctx.lineTo(carX + carW*0.9, carY + carH/2); ctx.fill();
-              ctx.fillStyle = '#ffaaaa'; ctx.shadowBlur = 10; ctx.fillRect(carX + carW*0.1, carY + carH*0.6, carW*0.15, carH*0.15); ctx.fillRect(carX + carW*0.75, carY + carH*0.6, carW*0.15, carH*0.15); ctx.shadowBlur = 0;
-              ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(10, 10, 120, 40); ctx.fillStyle = '#0ff'; ctx.font = '20px Courier'; ctx.fillText(`${Math.floor(g.speed)} km/h`, 20, 35);
+              // Draw Player Car
+              const carScale = 1;
+              const carX = width / 2;
+              const carY = height - 20;
+              // Bounce effect
+              const bounce = (s.speed / s.maxSpeed) * Math.random() * 2;
+              drawCar(ctx, 'player', carX, carY + bounce, carScale, true);
+              
+              // HUD
+              // Speedometer
+              ctx.beginPath();
+              ctx.arc(width - 80, height - 80, 60, Math.PI * 0.7, Math.PI * 2.3);
+              ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 10; ctx.stroke();
+              const speedAngle = Math.PI * 0.7 + (s.speed / 240) * (Math.PI * 1.6);
+              ctx.beginPath(); ctx.arc(width - 80, height - 80, 60, Math.PI * 0.7, speedAngle);
+              ctx.strokeStyle = s.nitroActive ? '#f0f' : '#0ff'; ctx.stroke();
+              ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center';
+              ctx.fillText(Math.floor(s.speed), width - 80, height - 75);
+              ctx.font = '12px Arial'; ctx.fillText('KM/H', width - 80, height - 60);
+
+              // Bars
+              const barW = 200;
+              // Fuel
+              ctx.fillStyle = '#333'; ctx.fillRect(20, 20, barW, 20);
+              ctx.fillStyle = s.fuel < 20 ? '#f00' : '#ea580c'; ctx.fillRect(20, 20, barW * (s.fuel/100), 20);
+              ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left'; ctx.fillText('FUEL', 25, 34);
+              
+              // Nitro
+              ctx.fillStyle = '#333'; ctx.fillRect(20, 50, barW, 20);
+              const nitroW = barW / 3;
+              for(let i=0; i<3; i++) {
+                   if (i < s.nitro) {
+                       ctx.fillStyle = '#d946ef'; ctx.fillRect(20 + i*nitroW + 2, 52, nitroW - 4, 16);
+                   }
+              }
+              ctx.fillStyle = '#fff'; ctx.fillText('NITRO', 25, 64);
+
+              // Time & Pos
+              ctx.font = 'bold 20px Arial';
+              ctx.fillText(`TIME: ${Math.floor(s.timeRemaining)}`, width/2 - 50, 40);
+              const progress = Math.min(100, Math.floor((s.position / s.trackLength) * 100));
+              ctx.fillText(`${progress}%`, width/2 + 50, 40);
+
+              // Pause Overlay
+              if (view === 'pause') {
+                  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                  ctx.fillRect(0,0,width,height);
+                  ctx.fillStyle = '#fff'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center';
+                  ctx.fillText('PAUSED', width/2, height/2);
+              }
           };
 
           useEffect(() => {
-              const canvas = canvasRef.current;
-              let lastTime = Date.now();
-              const down = (e) => { switch(e.key) { case 'ArrowLeft': gameState.current.keys.left = true; break; case 'ArrowRight': gameState.current.keys.right = true; break; case 'ArrowUp': gameState.current.keys.up = true; break; case 'ArrowDown': gameState.current.keys.down = true; break; } };
-              const up = (e) => { switch(e.key) { case 'ArrowLeft': gameState.current.keys.left = false; break; case 'ArrowRight': gameState.current.keys.right = false; break; case 'ArrowUp': gameState.current.keys.up = false; break; case 'ArrowDown': gameState.current.keys.down = false; break; } };
-              const tStart = (e) => { e.preventDefault(); const x = e.touches[0].clientX; const w = window.innerWidth; if (x < w/3) gameState.current.keys.left = true; else if (x > w*2/3) gameState.current.keys.right = true; else gameState.current.keys.up = true; };
-              const tEnd = () => { gameState.current.keys.left = false; gameState.current.keys.right = false; gameState.current.keys.up = false; };
-              window.addEventListener('keydown', down); window.addEventListener('keyup', up); canvas.addEventListener('touchstart', tStart, {passive: false}); canvas.addEventListener('touchend', tEnd);
-              const handleResize = () => { if (canvas && canvas.parentElement) { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; } };
-              window.addEventListener('resize', handleResize); handleResize();
-              const loop = () => { const now = Date.now(); const dt = Math.min(1, (now - lastTime) / 1000); lastTime = now; update(dt); if (canvas) draw(canvas.getContext('2d'), canvas.width, canvas.height); requestRef.current = requestAnimationFrame(loop); };
-              requestRef.current = requestAnimationFrame(loop);
-              return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('resize', handleResize); cancelAnimationFrame(requestRef.current); };
-          }, []);
+              if (view === 'race') {
+                  const canvas = canvasRef.current;
+                  initTrack(selectedTrack);
+                  
+                  let lastTime = Date.now();
+                  const loop = () => {
+                      if (view !== 'race' && view !== 'pause') return;
+                      const now = Date.now();
+                      const dt = Math.min(1, (now - lastTime) / 1000);
+                      lastTime = now;
+                      if (view === 'race') update(dt);
+                      if (canvas) draw(canvas.getContext('2d'), canvas.width, canvas.height);
+                      requestRef.current = requestAnimationFrame(loop);
+                  };
+                  requestRef.current = requestAnimationFrame(loop);
+
+                  const down = (e) => {
+                      if (view === 'pause' && e.key === 'Escape') setView('race');
+                      else if (view === 'race' && e.key === 'Escape') setView('pause');
+                      
+                      switch(e.key) { 
+                          case 'ArrowUp': state.current.keyUp = true; break; 
+                          case 'ArrowDown': state.current.keyDown = true; break; 
+                          case 'ArrowLeft': state.current.keyLeft = true; break; 
+                          case 'ArrowRight': state.current.keyRight = true; break; 
+                          case ' ': if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } break;
+                      } 
+                  };
+                  const up = (e) => {
+                      switch(e.key) { 
+                          case 'ArrowUp': state.current.keyUp = false; break; 
+                          case 'ArrowDown': state.current.keyDown = false; break; 
+                          case 'ArrowLeft': state.current.keyLeft = false; break; 
+                          case 'ArrowRight': state.current.keyRight = false; break; 
+                      } 
+                  };
+                  window.addEventListener('keydown', down); window.addEventListener('keyup', up);
+                  
+                  // Touch
+                  const tStart = (e) => {
+                      e.preventDefault();
+                      const w = window.innerWidth; const h = window.innerHeight;
+                      for(let i=0; i<e.touches.length; i++) {
+                          const t = e.touches[i];
+                          if (t.clientY > h - 100) { if (t.clientX < w/2) state.current.keyDown = true; else { if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } } }
+                          else if (t.clientX < w * 0.3) state.current.keyLeft = true;
+                          else if (t.clientX > w * 0.7) state.current.keyRight = true;
+                          else state.current.keyUp = true;
+                      }
+                  };
+                  const tEnd = (e) => { 
+                      e.preventDefault();
+                      state.current.keyUp = false; state.current.keyDown = false; state.current.keyLeft = false; state.current.keyRight = false; 
+                  };
+                  if (canvas) { canvas.addEventListener('touchstart', tStart, {passive:false}); canvas.addEventListener('touchend', tEnd, {passive:false}); }
+
+                  return () => { 
+                      cancelAnimationFrame(requestRef.current); 
+                      window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); 
+                      if (canvas) { canvas.removeEventListener('touchstart', tStart); canvas.removeEventListener('touchend', tEnd); }
+                  };
+              }
+          }, [view, selectedTrack]);
+
+          // Menus
+          if (view === 'menu') {
+              return (
+                  <div className="w-full h-full bg-gray-900 text-white flex flex-col items-center justify-center p-6 relative">
+                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
+                       <h1 className="text-5xl font-black italic text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600 mb-8 racing-font">NEON RACER</h1>
+                       <div className="flex flex-col gap-4 w-full max-w-sm z-10">
+                           <button onClick={() => setView('career')} className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 rounded-xl font-bold text-xl hover:scale-105 transition shadow-lg">CAREER MODE</button>
+                           <button onClick={() => setView('options')} className="glass-box p-4 rounded-xl font-bold hover:bg-white/10 flex items-center justify-center gap-2"><Settings size={20}/> OPTIONS</button>
+                           <button onClick={() => setView('credits')} className="glass-box p-4 rounded-xl font-bold hover:bg-white/10 flex items-center justify-center gap-2"><Info size={20}/> CREDITS</button>
+                           <button onClick={onBack} className="mt-4 text-gray-400 hover:text-white">Back to Arcade</button>
+                       </div>
+                  </div>
+              );
+          }
+          if (view === 'career') {
+              return (
+                  <div className="w-full h-full bg-black text-white p-6 overflow-y-auto">
+                      <div className="max-w-md mx-auto flex flex-col gap-4">
+                           <div className="flex items-center gap-4 mb-4"><button onClick={() => setView('menu')}><ChevronLeft/></button> <h2 className="text-2xl font-bold">SELECT TRACK</h2></div>
+                           {TRACKS.map((t, idx) => (
+                               <button key={idx} disabled={idx + 1 > unlockedLevel} onClick={() => { setSelectedTrack(idx); setView('race'); }} 
+                                   className={`p-4 rounded-xl border flex justify-between items-center transition ${idx + 1 <= unlockedLevel ? 'bg-gray-800 border-purple-500 hover:bg-gray-700' : 'bg-gray-900 border-gray-800 opacity-50'}`}>
+                                   <div className="text-left">
+                                       <div className="font-bold text-lg">{t.name}</div>
+                                       <div className="text-xs text-gray-400">{t.length}m • Hills: {t.hills} • Curves: {t.curves}</div>
+                                   </div>
+                                   {idx + 1 > unlockedLevel && <Shield size={20}/>}
+                                   {idx + 1 <= unlockedLevel && <Play size={20} fill="currentColor"/>}
+                               </button>
+                           ))}
+                      </div>
+                  </div>
+              );
+          }
+          if (view === 'result') {
+              return (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-black/90 text-white z-50">
+                      <Trophy size={80} className="text-yellow-400 mb-4 animate-bounce"/>
+                      <h1 className="text-4xl font-bold mb-2">TRACK CLEARED!</h1>
+                      <div className="text-xl text-gray-300 mb-8">Next track unlocked</div>
+                      <div className="flex gap-4">
+                          <button onClick={() => { triggerAd(); setView('career'); }} className="bg-gray-700 px-8 py-3 rounded-xl font-bold">TRACKS</button>
+                          {selectedTrack < 9 && <button onClick={() => { triggerAd(); setSelectedTrack(t => t+1); setView('race'); }} className="bg-green-600 px-8 py-3 rounded-xl font-bold">NEXT LEVEL</button>}
+                      </div>
+                  </div>
+              );
+          }
+          if (view === 'gameover') {
+              return (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-black/90 text-white z-50">
+                      <XCircle size={80} className="text-red-500 mb-4"/>
+                      <h1 className="text-4xl font-bold mb-2">GAME OVER</h1>
+                      <div className="text-xl text-red-300 mb-8 uppercase">{state.current.failReason === 'fuel' ? 'Out of Fuel' : 'Time Up'}</div>
+                      <div className="flex gap-4">
+                          <button onClick={() => { triggerAd(); setView('menu'); }} className="bg-gray-700 px-8 py-3 rounded-xl font-bold">MENU</button>
+                          <button onClick={() => { triggerAd(); setView('race'); }} className="bg-blue-600 px-8 py-3 rounded-xl font-bold">RETRY</button>
+                      </div>
+                  </div>
+              );
+          }
+          if (view === 'pause') {
+               return (
+                   <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 text-white">
+                       <h2 className="text-3xl font-bold mb-8">PAUSED</h2>
+                       <button onClick={() => setView('race')} className="bg-green-600 px-8 py-3 rounded-xl font-bold mb-4 w-48">RESUME</button>
+                       <button onClick={() => setView('menu')} className="bg-red-600 px-8 py-3 rounded-xl font-bold w-48">EXIT</button>
+                   </div>
+               );
+          }
 
           return (
-              <div className="w-full h-full relative">
-                  <canvas ref={canvasRef} className="block w-full h-full" />
-                  <div className="absolute top-4 left-4"><button onClick={onBack} className="p-3 bg-black/50 text-white rounded-full"><ChevronLeft /></button></div>
-                  <div className="absolute bottom-10 w-full text-center text-white/50 text-sm pointer-events-none">Tap Sides to Turn • Center to Accel</div>
+              <div className="w-full h-full bg-black relative">
+                  <canvas ref={canvasRef} className="w-full h-full block" />
+                  {view === 'race' && (
+                       <div className="absolute bottom-6 right-6 lg:hidden">
+                           <button className="w-20 h-20 bg-purple-500/50 rounded-full border-4 border-purple-400 flex items-center justify-center active:bg-purple-500"
+                               onTouchStart={(e) => { e.preventDefault(); if(state.current.nitro > 0 && !state.current.nitroActive) { state.current.nitro--; state.current.nitroActive = true; state.current.nitroTimer = 3; playSound('nitro'); } }}>
+                               <Rocket fill="white" size={32}/>
+                           </button>
+                       </div>
+                  )}
+                  {view === 'race' && (
+                       <button onClick={() => setView('pause')} className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white"><Pause/></button>
+                  )}
               </div>
           );
       };
@@ -524,16 +1017,6 @@
               if (Math.random() < 0.02 + g.level * 0.005) {
                   const rand = Math.random();
                   let type = 'drone'; 
-                  
-                  // Logic based on Level:
-                  // L1: Drone only
-                  // L2: Drone, Snake
-                  // L3: Drone, Snake, Spider
-                  // L4: Drone, Kamikaze, Hive
-                  // L5: Elite (Tower), Satellite
-                  // L6: Elite, Cube
-                  // L7: Specter
-                  // L8+: All + scaling
                   
                   if (g.level >= 6 && rand > 0.96) type = 'cube';
                   else if (g.level >= 4 && rand > 0.92) type = 'hive';
@@ -777,7 +1260,6 @@
                           }
                           e.y += e.vy;
                       } else {
-                          // Standard movement (Drone, Tower, Satellite, Specter)
                           e.y += e.vy;
                       }
 
@@ -788,29 +1270,24 @@
                           } else if (e.type === 'snake') {
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 10, h: 10, owner: 'enemy', vx: 0, vy: 3, color: '#0ff'});
                           } else if (e.type === 'tower') {
-                               // Continuous Laser
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 2, h: 15, owner: 'enemy', vx: 0, vy: 10, color: '#ff0'});
                           } else if (e.type === 'spider') {
-                               // Exploding shot
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 0, vy: 4, color: '#0f0', behavior: 'split'});
                           } else if (e.type === 'satellite') {
-                               // 8-way shot
                                for(let i=0; i<8; i++) {
                                    const a = (i/8)*Math.PI*2 + e.tick;
                                    g.bullets.push({x: e.x + e.w/2, y: e.y + e.h/2, w: 4, h: 4, owner: 'enemy', vx: Math.cos(a)*3, vy: Math.sin(a)*3, color: '#aaf'});
                                }
                           } else if (e.type === 'specter') {
-                               // Plasma burst
                                for(let i=0; i<3; i++) {
                                    g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, owner: 'enemy', vx: (Math.random()-0.5)*4, vy: 3, color: '#f0f'});
                                }
                           } else if (e.type === 'disc') {
-                               // Circular pattern
                                const a = Math.sin(e.tick)*2;
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, owner: 'enemy', vx: Math.sin(a)*2, vy: 3, color: '#f0f'});
                           }
                           
-                          if (e.type !== 'kamikaze') e.lastShot = now; // Kamikaze doesn't shoot
+                          if (e.type !== 'kamikaze') e.lastShot = now; 
                       }
                   });
                   g.enemies = g.enemies.filter(e => e.y < g.height + 50 && e.health > 0);
@@ -828,7 +1305,7 @@
                                   e.health -= (b.dmg || 1) * p.damageMultiplier;
                                   createExplosion(b.x, b.y, '#fb923c', 3);
                                   if(e.health <= 0) {
-                                      const earnedPoints = (e.points || 100) * g.level; // Scale points with level
+                                      const earnedPoints = (e.points || 100) * g.level; 
                                       g.score += earnedPoints;
                                       g.levelScore += earnedPoints;
                                       createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 10);
@@ -855,13 +1332,12 @@
                                   g.score += bossPoints;
                                   g.gameState = 'level-up';
                                   g.boss = null;
-                                  g.bullets = []; // Clear bullets
+                                  g.bullets = []; 
                                   
                                   // Level Up
                                   setTimeout(() => { 
                                       g.level++; 
-                                      g.levelScore = 0; // Reset level score counter
-                                      // Calculate new Boss Target: 5000 * (3^(level-1))
+                                      g.levelScore = 0; 
                                       g.bossTarget = 5000 * Math.pow(3, g.level - 1);
                                       g.gameState = 'playing'; 
                                   }, 3000);
@@ -960,7 +1436,9 @@
               const ctx = canvas.getContext('2d');
               const g = game.current;
               
-              ctx.clearRect(0, 0, g.width, g.height);
+              // Clear with solid black to hide background grid
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, 0, g.width, g.height);
               
               ctx.fillStyle = '#ffffff';
               g.stars.forEach(s => { ctx.globalAlpha = Math.random() * 0.5 + 0.3; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0; });
@@ -1148,7 +1626,10 @@
           return (
               <div className="w-full h-full relative flex flex-col items-center justify-center bg-transparent">
                   <canvas ref={canvasRef} className="w-full h-full block" />
-                  <div className="absolute top-4 left-4 z-10"><button onClick={onBack} className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20"><ChevronLeft size={24} /></button></div>
+                  <div className="absolute top-4 left-4 z-10 flex gap-4">
+                    <button onClick={onBack} className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20"><ChevronLeft size={24} /></button>
+                  </div>
+                  <button onClick={toggleFullScreen} className="absolute top-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20"><Maximize size={24} /></button>
               </div>
           );
       };
@@ -1189,7 +1670,8 @@
                                       </button>
                                   </div>
                               </div>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.5</div>
+                              <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.6</div>
                           </div>
                       );
               }
