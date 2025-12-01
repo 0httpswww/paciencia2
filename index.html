@@ -648,21 +648,28 @@
 
                   // Base stats scaling with level
                   const speedMult = 1 + (g.level * 0.1);
+                  // Scale enemy health exponentially to match player damage scaling
+                  const healthMult = Math.pow(2.5, g.level - 1);
+                  const baseHp = 50 * healthMult;
                   
                   switch(type) {
-                      case 'drone': w=30; h=30; health=2*g.level; vy=4 * speedMult; points=100; break;
-                      case 'snake': w=25; h=25; health=3*g.level; vy=2 * speedMult; points=150; e.trail = []; break;
-                      case 'tower': w=40; h=40; health=5*g.level; vy=0.5 * speedMult; points=200; e.angle = 0; break;
-                      case 'spider': w=35; h=35; health=3*g.level; vy=2 * speedMult; points=150; e.baseX = e.x; break;
-                      case 'satellite': w=35; h=35; health=6*g.level; vy=1 * speedMult; points=250; e.angle = 0; break;
-                      case 'cube': w=35; h=35; health=5*g.level; vy=1.5 * speedMult; points=300; break;
-                      case 'specter': w=30; h=30; health=2*g.level; vy=2 * speedMult; points=150; e.opacity = 0.5; break;
-                      case 'kamikaze': w=25; h=30; health=1; vy=6 * speedMult; points=50; break;
-                      case 'disc': w=40; h=20; health=4*g.level; vy=2 * speedMult; points=200; e.baseX = e.x; break;
-                      case 'hive': w=60; h=50; health=12*g.level; vy=0.5 * speedMult; points=500; e.lastSpawn = Date.now(); break;
+                      case 'drone': w=30; h=30; health=2*baseHp; vy=4 * speedMult; points=100; break;
+                      case 'snake': w=25; h=25; health=3*baseHp; vy=2 * speedMult; points=150; e.trail = []; break;
+                      case 'tower': w=40; h=40; health=5*baseHp; vy=0.5 * speedMult; points=200; e.angle = 0; break;
+                      case 'spider': w=35; h=35; health=3*baseHp; vy=2 * speedMult; points=150; e.baseX = e.x; break;
+                      case 'satellite': w=35; h=35; health=6*baseHp; vy=1 * speedMult; points=250; e.angle = 0; break;
+                      case 'cube': w=35; h=35; health=5*baseHp; vy=1.5 * speedMult; points=300; break;
+                      case 'specter': w=30; h=30; health=2*baseHp; vy=2 * speedMult; points=150; e.opacity = 0.5; break;
+                      case 'kamikaze': w=25; h=30; health=10; vy=6 * speedMult; points=50; break;
+                      case 'disc': w=40; h=20; health=4*baseHp; vy=2 * speedMult; points=200; e.baseX = e.x; break;
+                      case 'hive': w=60; h=50; health=12*baseHp; vy=0.5 * speedMult; points=500; e.lastSpawn = Date.now(); break;
                   }
 
-                  e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy; e.points = points;
+                  // Points also scale to match the massive boss target
+                  const pointsMult = Math.pow(3, g.level - 1);
+                  e.points = Math.ceil(points * pointsMult * 0.02); // Doubled score rate (was 0.01)
+
+                  e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy;
                   g.enemies.push(e);
               }
           }, []);
@@ -679,7 +686,10 @@
                   'cube', 'parasite', 'star', 'tank', 'clock'
               ];
               const type = bossTypes[(g.level - 1) % bossTypes.length];
-              let w=120, h=120, hp=200 * Math.pow(1.5, g.level); // HP scales exponentially
+              let w=120, h=120;
+              
+              // Boss HP Formula: 15,000 * 3^(level-1)
+              let hp = 15000 * Math.pow(3, g.level - 1);
 
               // Boss specific stats adjustments
               if (type === 'hydra') { w=150; h=100; hp*=1.2; }
@@ -921,13 +931,16 @@
                   // Collisions
                   g.bullets.forEach(b => {
                       if (b.owner === 'player') {
+                          // Scale damage based on player level
+                          const playerDmg = (b.dmg || 50) * Math.pow(2.5, g.level - 1) * (p.damageMultiplier || 1);
+
                           g.enemies.forEach(e => {
                               if (!b.hit && rectIntersect(b, e)) {
                                   if (b.behavior !== 'beam') b.hit = true;
-                                  e.health -= (b.dmg || 1) * p.damageMultiplier;
+                                  e.health -= playerDmg;
                                   createExplosion(b.x, b.y, '#fb923c', 3);
                                   if(e.health <= 0) {
-                                      const earnedPoints = (e.points || 100) * g.level; 
+                                      const earnedPoints = (e.points || 100); // Points are already scaled in spawnEnemy
                                       g.score += earnedPoints;
                                       g.levelScore += earnedPoints;
                                       
@@ -954,12 +967,13 @@
                           });
                           if (g.boss && !b.hit && rectIntersect(b, g.boss)) {
                               if (b.behavior !== 'beam') b.hit = true;
-                              g.boss.health -= (b.dmg || 1) * p.damageMultiplier;
+                              g.boss.health -= playerDmg;
                               createExplosion(b.x, b.y, '#f87171', 5);
                               if (g.boss.health <= 0) {
                                   playSound('explosion');
                                   // Boss Defeated Logic
-                                  const bossPoints = 5000 * g.level;
+                                  // Points for boss match the boss target to assist progression
+                                  const bossPoints = g.bossTarget;
                                   g.score += bossPoints;
                                   
                                   // Coins for boss
@@ -1070,11 +1084,12 @@
               
               if (shieldActive) {
                   playSound('laser', 0.5); 
-                  g.bullets.push({ x: cx - 6, y: y, w: 12, h: 50, owner: 'player', vy: -25, color: '#facc15', dmg: 5, behavior: 'beam', glow: true });
+                  // Shield Beam - Base damage 50
+                  g.bullets.push({ x: cx - 6, y: y, w: 12, h: 50, owner: 'player', vy: -25, color: '#facc15', dmg: 250, behavior: 'beam', glow: true });
                   const numBullets = 20;
                   for (let i = 0; i < numBullets; i++) {
                      const angle = (i / numBullets) * Math.PI * 2;
-                     g.bullets.push({ x: cx, y: y + 20, w: 6, h: 6, owner: 'player', vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, color: '#ffff00', dmg: 3 });
+                     g.bullets.push({ x: cx, y: y + 20, w: 6, h: 6, owner: 'player', vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, color: '#ffff00', dmg: 100 });
                   }
                   return;
               }
@@ -1082,18 +1097,21 @@
               g.player.shootAngle += 0.2;
               playSound('shoot');
 
+              // Base bullet damage increased to ~50 to handle new HP scaling
+              const baseDmg = 50;
+
               switch(weaponLevel) {
-                  case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: 1 }); break;
-                  case 2: g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#38bdf8', dmg: 1 }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: -3, vy: -11, color: '#38bdf8', dmg: 1 }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: 3, vy: -11, color: '#38bdf8', dmg: 1 }); break;
-                  case 3: g.bullets.push({ x: cx - 10, y, w: 8, h: 8, owner: 'player', vx: -5, vy: -10, color: '#a3e635', dmg: 1.5, behavior: 'bounce' }); g.bullets.push({ x: cx + 10, y, w: 8, h: 8, owner: 'player', vx: 5, vy: -10, color: '#a3e635', dmg: 1.5, behavior: 'bounce' }); break;
-                  case 4: g.bullets.push({ x: cx, y, w: 6, h: 15, owner: 'player', vx: 0, vy: -12, color: '#f472b6', dmg: 2, behavior: 'split', dist: 0 }); break;
-                  case 5: const offset = Math.sin(g.player.shootAngle) * 10; g.bullets.push({ x: cx + offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: 2 }); g.bullets.push({ x: cx - offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: 2 }); break;
-                  case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: 2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: 2, behavior: 'homing' }); break;
-                  case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: 1.5 }); break;
-                  case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: 2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: 2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: 3 }); break;
-                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: 1.5 }); } break;
-                  case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: 5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: 2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: 2 }); break;
-                  default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: 4 });
+                  case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: baseDmg }); break;
+                  case 2: g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: -3, vy: -11, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: 3, vy: -11, color: '#38bdf8', dmg: baseDmg }); break;
+                  case 3: g.bullets.push({ x: cx - 10, y, w: 8, h: 8, owner: 'player', vx: -5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); g.bullets.push({ x: cx + 10, y, w: 8, h: 8, owner: 'player', vx: 5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); break;
+                  case 4: g.bullets.push({ x: cx, y, w: 6, h: 15, owner: 'player', vx: 0, vy: -12, color: '#f472b6', dmg: baseDmg*2, behavior: 'split', dist: 0 }); break;
+                  case 5: const offset = Math.sin(g.player.shootAngle) * 10; g.bullets.push({ x: cx + offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); g.bullets.push({ x: cx - offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); break;
+                  case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); break;
+                  case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: baseDmg*1.5 }); break;
+                  case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: baseDmg*3 }); break;
+                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: baseDmg*1.5 }); } break;
+                  case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: baseDmg*5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); break;
+                  default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: baseDmg*4 });
               }
           };
 
