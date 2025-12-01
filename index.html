@@ -496,7 +496,10 @@
 
           const spawnPowerup = (x, y) => {
               if (Math.random() < 0.35) { 
-                  const type = Math.random() < 0.8 ? 'weapon' : 'shield';
+                  const r = Math.random();
+                  let type = 'weapon';
+                  if (r > 0.85) type = 'health';
+                  else if (r > 0.70) type = 'shield';
                   game.current.powerups.push({ x, y, w: 20, h: 20, type, vy: 2 });
               }
           };
@@ -900,6 +903,7 @@
                           playSound('powerup');
                           if (p.type === 'weapon') g.player.weaponLevel = Math.min(10, g.player.weaponLevel + 1);
                           else if (p.type === 'shield') { g.player.shieldActive = true; g.player.shieldTimer = 10000; g.player.damageMultiplier = 5; }
+                          else if (p.type === 'health') { g.player.health = Math.min(g.player.maxHealth, g.player.health + 30); createExplosion(p.x, p.y, '#ef4444', 10); }
                       }
                   });
 
@@ -944,7 +948,7 @@
                   case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: 2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: 2, behavior: 'homing' }); break;
                   case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: 1.5 }); break;
                   case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: 2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: 2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: 3 }); break;
-                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y: y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: 1.5 }); } break;
+                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: 1.5 }); } break;
                   case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: 5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: 2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: 2 }); break;
                   default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: 4 });
               }
@@ -974,8 +978,17 @@
               }
 
               g.powerups.forEach(p => {
-                  ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = p.type === 'weapon' ? '#22c55e' : '#facc15'; ctx.fillStyle = p.type === 'weapon' ? '#22c55e' : '#facc15'; ctx.beginPath(); ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI*2); ctx.fill();
-                  ctx.fillStyle = '#000'; ctx.font = 'bold 10px Arial'; ctx.fillText(p.type === 'weapon' ? 'UP' : 'SP', p.x + 4, p.y + 14); ctx.restore();
+                  ctx.save(); ctx.shadowBlur = 10; 
+                  let color = '#22c55e'; let label = 'UP';
+                  if (p.type === 'shield') { color = '#facc15'; label = 'SP'; }
+                  else if (p.type === 'health') { color = '#ef4444'; label = '❤'; }
+
+                  ctx.shadowColor = color; ctx.fillStyle = color; 
+                  ctx.beginPath(); ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI*2); ctx.fill();
+                  ctx.fillStyle = '#000'; ctx.font = 'bold 10px Arial'; 
+                  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                  ctx.fillText(label, p.x + 10, p.y + 11); 
+                  ctx.restore();
               });
 
               g.bullets.forEach(b => {
