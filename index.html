@@ -931,8 +931,10 @@
                   // Collisions
                   g.bullets.forEach(b => {
                       if (b.owner === 'player') {
-                          // Scale damage based on player level
-                          const playerDmg = (b.dmg || 50) * Math.pow(2.5, g.level - 1) * (p.damageMultiplier || 1);
+                          // Scale damage based on player level: 75 base * 2.7^(level-1)
+                          // This keeps up with the x3 boss HP scaling (15000 -> 45000 -> 135000)
+                          // while making the game slightly more challenging as levels progress.
+                          const playerDmg = (b.dmg || 75) * Math.pow(2.7, g.level - 1) * (p.damageMultiplier || 1);
 
                           g.enemies.forEach(e => {
                               if (!b.hit && rectIntersect(b, e)) {
@@ -1097,8 +1099,8 @@
               g.player.shootAngle += 0.2;
               playSound('shoot');
 
-              // Base bullet damage increased to ~50 to handle new HP scaling
-              const baseDmg = 50;
+              // Base bullet damage increased to ~75 to handle new HP scaling (15,000 HP / 75 = 200 hits for Lv1 Boss)
+              const baseDmg = 75;
 
               switch(weaponLevel) {
                   case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: baseDmg }); break;
