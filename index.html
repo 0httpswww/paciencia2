@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JoGos Online</title>
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
-    <meta name="theme-color" content="#111111">
+    <meta name="theme-color" content="#000000">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
@@ -21,11 +21,11 @@
             touch-action: none; 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Courier New', Courier, monospace;
-            background-color: #111;
-            /* Grid Background */
+            background-color: #000000;
+            /* Grid Background - Visible on Black */
             background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
             background-size: 40px 40px;
             color: white; 
             user-select: none; 
@@ -1197,6 +1197,13 @@
               if (g.gameState === 'playing' || g.gameState === 'boss') {
                   updateBoss(g);
 
+                  // Auto Fire Logic
+                  const fireRate = g.player.weaponLevel >= 8 ? 100 : 150;
+                  if (now - g.player.lastShot > fireRate) {
+                      firePlayerWeapon(g);
+                      g.player.lastShot = now;
+                  }
+
                   // Player Bullets
                   g.bullets.forEach(b => {
                       if (b.behavior === 'homing') {
@@ -1615,8 +1622,6 @@
                   const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                   const x = clientX - rect.left; const y = clientY - rect.top;
                   g.player.x = Math.max(0, Math.min(g.width - g.player.w, x - g.player.w / 2)); g.player.y = Math.max(0, Math.min(g.height - g.player.h, y - g.player.h / 2));
-                  const now = Date.now(); const fireRate = g.player.weaponLevel >= 8 ? 100 : 150;
-                  if (now - g.player.lastShot > fireRate) { firePlayerWeapon(g); g.player.lastShot = now; }
               };
               const handleClick = () => { if (g.gameState === 'game-over') { triggerAd(); initGame(); } };
               canvas.addEventListener('mousemove', handleMove); canvas.addEventListener('touchmove', handleMove, { passive: false }); canvas.addEventListener('click', handleClick);
