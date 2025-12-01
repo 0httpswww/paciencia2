@@ -469,7 +469,7 @@
           const game = useRef({
               player: { x: 0, y: 0, w: 40, h: 40, health: 100, maxHealth: 100, weaponLevel: 1, shieldActive: false, shieldTimer: 0, damageMultiplier: 1, lastShot: 0, shootAngle: 0 },
               bullets: [], enemies: [], powerups: [], boss: null, particles: [], stars: [],
-              score: 0, level: 1, nextBossThreshold: 5000, gameState: 'menu', width: 0, height: 0,
+              score: 0, level: 1, levelScore: 0, bossTarget: 5000, gameState: 'menu', width: 0, height: 0,
           });
           const [gameOver, setGameOver] = useState(false);
 
@@ -483,7 +483,10 @@
               g.player.health = 100;
               g.player.weaponLevel = 1;
               g.player.shieldActive = false;
-              g.score = 0; g.level = 1; g.nextBossThreshold = 5000;
+              g.score = 0; 
+              g.level = 1; 
+              g.levelScore = 0;
+              g.bossTarget = 5000;
               g.bullets = []; g.enemies = []; g.powerups = []; g.boss = null; g.particles = [];
               g.gameState = 'playing';
               setGameOver(false);
@@ -511,37 +514,52 @@
 
           const spawnEnemy = useCallback(() => {
               const g = game.current;
-              if (g.gameState !== 'playing' || g.boss) return;
+              // Stop normal spawn if we have reached the boss target
+              if (g.gameState !== 'playing' || g.boss || g.levelScore >= g.bossTarget) return;
 
-              if (Math.random() < 0.02 + g.level * 0.003) {
+              // Spawn rate increases slightly with level
+              if (Math.random() < 0.02 + g.level * 0.005) {
                   const rand = Math.random();
                   let type = 'drone'; 
                   
-                  if (rand > 0.96) type = 'hive';
-                  else if (rand > 0.92) type = 'cube';
-                  else if (rand > 0.88) type = 'disc';
-                  else if (rand > 0.84) type = 'specter';
-                  else if (rand > 0.75) type = 'kamikaze';
-                  else if (rand > 0.65) type = 'spider';
-                  else if (rand > 0.55) type = 'satellite';
-                  else if (rand > 0.45) type = 'tower';
-                  else if (rand > 0.30) type = 'snake';
+                  // Logic based on Level:
+                  // L1: Drone only
+                  // L2: Drone, Snake
+                  // L3: Drone, Snake, Spider
+                  // L4: Drone, Kamikaze, Hive
+                  // L5: Elite (Tower), Satellite
+                  // L6: Elite, Cube
+                  // L7: Specter
+                  // L8+: All + scaling
+                  
+                  if (g.level >= 6 && rand > 0.96) type = 'cube';
+                  else if (g.level >= 4 && rand > 0.92) type = 'hive';
+                  else if (g.level >= 8 && rand > 0.88) type = 'disc';
+                  else if (g.level >= 7 && rand > 0.84) type = 'specter';
+                  else if (g.level >= 4 && rand > 0.75) type = 'kamikaze';
+                  else if (g.level >= 3 && rand > 0.65) type = 'spider';
+                  else if (g.level >= 5 && rand > 0.55) type = 'satellite';
+                  else if (g.level >= 5 && rand > 0.45) type = 'tower';
+                  else if (g.level >= 2 && rand > 0.30) type = 'snake';
                   else type = 'drone';
 
                   let w=30, h=30, health=g.level, vx=0, vy=2, points=100;
                   const e = { type, x: Math.random() * (g.width - 40), y: -50, lastShot: Date.now() + Math.random()*1000, tick: 0, trail: [] };
 
+                  // Base stats scaling with level
+                  const speedMult = 1 + (g.level * 0.1);
+                  
                   switch(type) {
-                      case 'drone': w=30; h=30; health=2*g.level; vy=4; points=100; break;
-                      case 'snake': w=25; h=25; health=3*g.level; vy=2; points=150; e.trail = []; break;
-                      case 'tower': w=40; h=40; health=5*g.level; vy=0.5; points=200; e.angle = 0; break;
-                      case 'spider': w=35; h=35; health=3*g.level; vy=2; points=150; e.baseX = e.x; break;
-                      case 'satellite': w=35; h=35; health=6*g.level; vy=1; points=250; e.angle = 0; break;
-                      case 'cube': w=35; h=35; health=5*g.level; vy=1.5; points=300; break;
-                      case 'specter': w=30; h=30; health=2*g.level; vy=2; points=150; e.opacity = 0.5; break;
-                      case 'kamikaze': w=25; h=30; health=1; vy=6; points=50; break;
-                      case 'disc': w=40; h=20; health=4*g.level; vy=2; points=200; e.baseX = e.x; break;
-                      case 'hive': w=60; h=50; health=12*g.level; vy=0.5; points=500; e.lastSpawn = Date.now(); break;
+                      case 'drone': w=30; h=30; health=2*g.level; vy=4 * speedMult; points=100; break;
+                      case 'snake': w=25; h=25; health=3*g.level; vy=2 * speedMult; points=150; e.trail = []; break;
+                      case 'tower': w=40; h=40; health=5*g.level; vy=0.5 * speedMult; points=200; e.angle = 0; break;
+                      case 'spider': w=35; h=35; health=3*g.level; vy=2 * speedMult; points=150; e.baseX = e.x; break;
+                      case 'satellite': w=35; h=35; health=6*g.level; vy=1 * speedMult; points=250; e.angle = 0; break;
+                      case 'cube': w=35; h=35; health=5*g.level; vy=1.5 * speedMult; points=300; break;
+                      case 'specter': w=30; h=30; health=2*g.level; vy=2 * speedMult; points=150; e.opacity = 0.5; break;
+                      case 'kamikaze': w=25; h=30; health=1; vy=6 * speedMult; points=50; break;
+                      case 'disc': w=40; h=20; health=4*g.level; vy=2 * speedMult; points=200; e.baseX = e.x; break;
+                      case 'hive': w=60; h=50; health=12*g.level; vy=0.5 * speedMult; points=500; e.lastSpawn = Date.now(); break;
                   }
 
                   e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy; e.points = points;
@@ -561,9 +579,9 @@
                   'cube', 'parasite', 'star', 'tank', 'clock'
               ];
               const type = bossTypes[(g.level - 1) % bossTypes.length];
-              let w=120, h=120, hp=200 * g.level;
+              let w=120, h=120, hp=200 * Math.pow(1.5, g.level); // HP scales exponentially
 
-              // Boss specific stats
+              // Boss specific stats adjustments
               if (type === 'hydra') { w=150; h=100; hp*=1.2; }
               if (type === 'dragon') { w=80; h=200; hp*=1.1; }
               if (type === 'spider') { w=180; h=120; hp*=1.3; }
@@ -598,9 +616,7 @@
               }
 
               // Attack Logic
-              let fireRate = 800;
-              if (boss.type === 'hydra') fireRate = 600;
-              if (boss.type === 'tank') fireRate = 400;
+              let fireRate = Math.max(200, 800 - (g.level * 50)); // Fire rate increases with level
 
               if (now - boss.lastShot > fireRate) {
                   boss.attackType = (boss.attackType + 1) % 3;
@@ -809,7 +825,9 @@
                                   e.health -= (b.dmg || 1) * p.damageMultiplier;
                                   createExplosion(b.x, b.y, '#fb923c', 3);
                                   if(e.health <= 0) {
-                                      g.score += e.points || 100;
+                                      const earnedPoints = (e.points || 100) * g.level; // Scale points with level
+                                      g.score += earnedPoints;
+                                      g.levelScore += earnedPoints;
                                       createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 10);
                                       playSound('explosion');
                                       spawnPowerup(e.x, e.y);
@@ -829,11 +847,21 @@
                               createExplosion(b.x, b.y, '#f87171', 5);
                               if (g.boss.health <= 0) {
                                   playSound('explosion');
-                                  g.score += 5000;
+                                  // Boss Defeated Logic
+                                  const bossPoints = 5000 * g.level;
+                                  g.score += bossPoints;
                                   g.gameState = 'level-up';
                                   g.boss = null;
-                                  g.nextBossThreshold += 5000;
-                                  setTimeout(() => { g.level++; g.gameState = 'playing'; }, 3000);
+                                  g.bullets = []; // Clear bullets
+                                  
+                                  // Level Up
+                                  setTimeout(() => { 
+                                      g.level++; 
+                                      g.levelScore = 0; // Reset level score counter
+                                      // Calculate new Boss Target: 5000 * (3^(level-1))
+                                      g.bossTarget = 5000 * Math.pow(3, g.level - 1);
+                                      g.gameState = 'playing'; 
+                                  }, 3000);
                               }
                           }
                       } else { 
@@ -875,7 +903,10 @@
                       }
                   });
 
-                  if (g.score >= g.nextBossThreshold && !g.boss && g.gameState === 'playing') spawnBoss();
+                  // Trigger Boss Check
+                  if (g.levelScore >= g.bossTarget && !g.boss && g.gameState === 'playing') {
+                      spawnBoss();
+                  }
               }
 
               g.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
@@ -993,136 +1024,68 @@
                   const cy = boss.y + boss.h/2;
                   ctx.save(); 
                   
+                  // Boss drawing based on type (reusing previous logic)
                   if (boss.type === 'pyramid') {
-                      // 1. Pyramid Titan (Gold)
                       ctx.shadowBlur = 20; ctx.shadowColor = '#eab308'; ctx.fillStyle = '#eab308';
                       ctx.beginPath(); ctx.moveTo(cx, boss.y); ctx.lineTo(boss.x + boss.w, boss.y + boss.h); ctx.lineTo(boss.x, boss.y + boss.h); ctx.closePath(); ctx.fill();
                       ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2; ctx.stroke();
-                      // Eye
                       ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(cx, cy + 20, 15, 0, Math.PI*2); ctx.fill();
-                  } 
-                  else if (boss.type === 'hydra') {
-                      // 2. Mecha Hydra (3 Heads)
+                  } else if (boss.type === 'hydra') {
                       ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 8; ctx.lineCap = 'round';
-                      // Necks
                       ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.quadraticCurveTo(cx-30, cy, boss.x + 20, boss.y+boss.h); ctx.stroke();
                       ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.lineTo(cx, cy); ctx.stroke();
                       ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.quadraticCurveTo(cx+30, cy, boss.x + boss.w - 20, boss.y+boss.h); ctx.stroke();
-                      // Heads
                       const heads = [[boss.x + 20, '#60a5fa'], [cx, '#34d399'], [boss.x + boss.w - 20, '#f87171']];
-                      heads.forEach(h => {
-                          ctx.shadowBlur = 15; ctx.shadowColor = h[1]; ctx.fillStyle = h[1]; 
-                          ctx.beginPath(); ctx.arc(h[0], boss.y + boss.h, 15, 0, Math.PI*2); ctx.fill();
-                      });
-                  }
-                  else if (boss.type === 'orb') {
-                      // 3. Void Orb (Blue/Black)
-                      ctx.shadowBlur = 30; ctx.shadowColor = '#3b82f6'; ctx.fillStyle = '#000';
-                      ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI*2); ctx.fill();
-                      ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.stroke();
-                      // Rings
-                      ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick); 
-                      ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 4;
-                      ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, 0, 0, Math.PI*2); ctx.stroke();
-                      ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, Math.PI/2, 0, Math.PI*2); ctx.stroke();
-                      ctx.restore();
-                  }
-                  else if (boss.type === 'dragon') {
-                      // 4. CosmoTec Dragon (Red/Metallic)
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444';
-                      for(let i=0; i<5; i++) {
-                          const size = 20 - i*2;
-                          ctx.fillStyle = i===0 ? '#fecaca' : '#ef4444';
-                          ctx.beginPath(); ctx.arc(cx, boss.y + 20 + i*30, size, 0, Math.PI*2); ctx.fill();
-                      }
-                      // Wings
-                      ctx.fillStyle = '#b91c1c'; 
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x-20, boss.y+60); ctx.lineTo(boss.x, boss.y+80); ctx.fill();
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x+boss.w+20, boss.y+60); ctx.lineTo(boss.x+boss.w, boss.y+80); ctx.fill();
-                  }
-                  else if (boss.type === 'spider') {
-                      // 5. Spider Colossus (Purple/Green)
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#a855f7';
-                      // Legs
-                      ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3;
-                      for(let i=0; i<4; i++) {
-                          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x - 20, boss.y + i*30); ctx.stroke();
-                          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x + boss.w + 20, boss.y + i*30); ctx.stroke();
-                      }
-                      ctx.fillStyle = '#581c87'; ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI*2); ctx.fill();
-                      // Eyes
-                      ctx.fillStyle = '#4ade80'; ctx.beginPath(); ctx.arc(cx-10, cy+10, 5, 0, Math.PI*2); ctx.arc(cx+10, cy+10, 5, 0, Math.PI*2); ctx.fill();
-                  }
-                  else if (boss.type === 'cube') {
-                      // 6. Quantum Cube (Neon lines)
-                      ctx.shadowBlur = 20; ctx.shadowColor = '#d8b4fe'; ctx.strokeStyle = '#d8b4fe'; ctx.lineWidth = 4;
-                      ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
-                      ctx.strokeRect(boss.x, boss.y, boss.w, boss.h);
-                      // Inner lines
-                      ctx.beginPath(); ctx.moveTo(boss.x, boss.y); ctx.lineTo(boss.x+boss.w, boss.y+boss.h); ctx.stroke();
-                      ctx.beginPath(); ctx.moveTo(boss.x+boss.w, boss.y); ctx.lineTo(boss.x, boss.y+boss.h); ctx.stroke();
-                      ctx.strokeRect(boss.x + 20, boss.y + 20, boss.w - 40, boss.h - 40);
-                  }
-                  else if (boss.type === 'parasite') {
-                      // 7. Star Parasite (Organic Pink)
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#f472b6'; ctx.fillStyle = '#be185d';
-                      ctx.beginPath(); ctx.arc(cx, cy, 40 + Math.sin(boss.tick)*5, 0, Math.PI*2); ctx.fill();
-                      // Tentacles
-                      ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 4;
-                      for(let i=0; i<6; i++) {
-                           const angle = (i/6)*Math.PI*2 + boss.tick;
-                           ctx.beginPath(); ctx.moveTo(cx, cy); 
-                           ctx.quadraticCurveTo(cx + Math.cos(angle)*60, cy + Math.sin(angle)*60, cx + Math.cos(angle)*80, cy + Math.sin(angle)*80);
-                           ctx.stroke();
-                      }
-                  }
-                  else if (boss.type === 'star') {
-                      // 8. Mecha Star (5 Points)
-                      ctx.shadowBlur = 25; ctx.shadowColor = '#fbbf24'; ctx.fillStyle = '#fbbf24';
-                      ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick * 0.5);
-                      ctx.beginPath();
-                      for (let i = 0; i < 5; i++) {
-                          ctx.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * 60, -Math.sin((18 + i * 72) / 180 * Math.PI) * 60);
-                          ctx.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * 25, -Math.sin((54 + i * 72) / 180 * Math.PI) * 25);
-                      }
-                      ctx.closePath(); ctx.fill(); ctx.restore();
-                  }
-                  else if (boss.type === 'tank') {
-                      // 9. Space Tank (Blocky Grey)
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#9ca3af'; ctx.fillStyle = '#374151';
-                      ctx.fillRect(boss.x, boss.y, boss.w, boss.h); // Body
-                      ctx.fillStyle = '#1f2937'; ctx.fillRect(boss.x-10, boss.y, 20, boss.h); ctx.fillRect(boss.x+boss.w-10, boss.y, 20, boss.h); // Tracks
-                      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, boss.y+boss.h/2, 20, 0, Math.PI*2); ctx.fill(); // Core
-                      ctx.fillStyle = '#6b7280'; ctx.fillRect(cx-10, boss.y+boss.h/2, 20, 40); // Barrel
-                  }
-                  else if (boss.type === 'clock') {
-                      // 10. Apocalypse Clock (Bronze)
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#06b6d4'; ctx.fillStyle = '#1e293b';
-                      ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI*2); ctx.fill();
-                      ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 3; ctx.stroke();
-                      // Hands
-                      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
-                      ctx.save(); ctx.translate(cx, cy);
-                      ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick); ctx.lineTo(0, -40); ctx.stroke(); ctx.restore(); // Minute
-                      ctx.save(); ctx.translate(cx, cy);
-                      ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick * 0.1); ctx.lineTo(0, -25); ctx.stroke(); ctx.restore(); // Hour
-                  }
-                  else {
-                      // Fallback
+                      heads.forEach(h => { ctx.shadowBlur = 15; ctx.shadowColor = h[1]; ctx.fillStyle = h[1]; ctx.beginPath(); ctx.arc(h[0], boss.y + boss.h, 15, 0, Math.PI*2); ctx.fill(); });
+                  } else if (boss.type === 'orb') {
+                      ctx.shadowBlur = 30; ctx.shadowColor = '#3b82f6'; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.stroke();
+                      ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick); ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, 0, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, Math.PI/2, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+                  } else if (boss.type === 'dragon') {
+                      ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444'; for(let i=0; i<5; i++) { const size = 20 - i*2; ctx.fillStyle = i===0 ? '#fecaca' : '#ef4444'; ctx.beginPath(); ctx.arc(cx, boss.y + 20 + i*30, size, 0, Math.PI*2); ctx.fill(); }
+                      ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x-20, boss.y+60); ctx.lineTo(boss.x, boss.y+80); ctx.fill(); ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x+boss.w+20, boss.y+60); ctx.lineTo(boss.x+boss.w, boss.y+80); ctx.fill();
+                  } else if (boss.type === 'spider') {
+                      ctx.shadowBlur = 10; ctx.shadowColor = '#a855f7'; ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; for(let i=0; i<4; i++) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x - 20, boss.y + i*30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x + boss.w + 20, boss.y + i*30); ctx.stroke(); }
+                      ctx.fillStyle = '#581c87'; ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#4ade80'; ctx.beginPath(); ctx.arc(cx-10, cy+10, 5, 0, Math.PI*2); ctx.arc(cx+10, cy+10, 5, 0, Math.PI*2); ctx.fill();
+                  } else if (boss.type === 'cube') {
+                      ctx.shadowBlur = 20; ctx.shadowColor = '#d8b4fe'; ctx.strokeStyle = '#d8b4fe'; ctx.lineWidth = 4; ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); ctx.strokeRect(boss.x, boss.y, boss.w, boss.h); ctx.beginPath(); ctx.moveTo(boss.x, boss.y); ctx.lineTo(boss.x+boss.w, boss.y+boss.h); ctx.stroke(); ctx.beginPath(); ctx.moveTo(boss.x+boss.w, boss.y); ctx.lineTo(boss.x, boss.y+boss.h); ctx.stroke();
+                  } else if (boss.type === 'parasite') {
+                      ctx.shadowBlur = 15; ctx.shadowColor = '#f472b6'; ctx.fillStyle = '#be185d'; ctx.beginPath(); ctx.arc(cx, cy, 40 + Math.sin(boss.tick)*5, 0, Math.PI*2); ctx.fill();
+                      ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 4; for(let i=0; i<6; i++) { const angle = (i/6)*Math.PI*2 + boss.tick; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx + Math.cos(angle)*60, cy + Math.sin(angle)*60, cx + Math.cos(angle)*80, cy + Math.sin(angle)*80); ctx.stroke(); }
+                  } else if (boss.type === 'star') {
+                      ctx.shadowBlur = 25; ctx.shadowColor = '#fbbf24'; ctx.fillStyle = '#fbbf24'; ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick * 0.5); ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * 60, -Math.sin((18 + i * 72) / 180 * Math.PI) * 60); ctx.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * 25, -Math.sin((54 + i * 72) / 180 * Math.PI) * 25); } ctx.closePath(); ctx.fill(); ctx.restore();
+                  } else if (boss.type === 'tank') {
+                      ctx.shadowBlur = 10; ctx.shadowColor = '#9ca3af'; ctx.fillStyle = '#374151'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); ctx.fillStyle = '#1f2937'; ctx.fillRect(boss.x-10, boss.y, 20, boss.h); ctx.fillRect(boss.x+boss.w-10, boss.y, 20, boss.h); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, boss.y+boss.h/2, 20, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#6b7280'; ctx.fillRect(cx-10, boss.y+boss.h/2, 20, 40);
+                  } else if (boss.type === 'clock') {
+                      ctx.shadowBlur = 15; ctx.shadowColor = '#06b6d4'; ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 3; ctx.stroke();
+                      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.save(); ctx.translate(cx, cy); ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick); ctx.lineTo(0, -40); ctx.stroke(); ctx.restore(); ctx.save(); ctx.translate(cx, cy); ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick * 0.1); ctx.lineTo(0, -25); ctx.stroke(); ctx.restore();
+                  } else {
                       ctx.fillStyle = '#ff0055'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y); ctx.lineTo(boss.x + boss.w, boss.y); ctx.lineTo(boss.x + boss.w/2, boss.y + boss.h); ctx.closePath(); ctx.fill();
                   }
-
                   ctx.restore();
                   
-                  // HP Bar
-                  ctx.fillStyle = '#330033'; ctx.fillRect(10, 50, g.width - 20, 10); ctx.fillStyle = '#ff00ff'; ctx.fillRect(10, 50, (g.width - 20) * (boss.health / boss.maxHealth), 10);
+                  // Boss HP Bar
+                  ctx.fillStyle = '#330033'; ctx.fillRect(10, 80, g.width - 20, 10); ctx.fillStyle = '#ff00ff'; ctx.fillRect(10, 80, (g.width - 20) * (boss.health / boss.maxHealth), 10);
               }
 
               g.particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
 
-              ctx.fillStyle = 'white'; ctx.font = 'bold 16px "Courier New"'; ctx.fillText(`SCORE: ${g.score}`, 10, 25);
-              ctx.textAlign = 'right'; ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, g.width - 10, 25); ctx.textAlign = 'left';
+              // HUD
+              ctx.fillStyle = 'white'; 
+              ctx.font = 'bold 16px "Courier New"'; 
+              ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 10, 25);
+              ctx.textAlign = 'right'; 
+              ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, g.width - 10, 25); 
+              
+              // Level Progress Bar
+              const levelProgress = Math.min(1, g.levelScore / g.bossTarget);
+              ctx.textAlign = 'center';
+              ctx.font = '12px "Courier New"';
+              ctx.fillText(`BOSS TARGET: ${g.levelScore.toLocaleString()} / ${g.bossTarget.toLocaleString()}`, g.width/2, 45);
+              ctx.fillStyle = '#333'; ctx.fillRect(g.width/2 - 100, 50, 200, 6);
+              ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 50, 200 * levelProgress, 6);
+              ctx.textAlign = 'left';
 
+              // Player Health
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
               ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
@@ -1132,6 +1095,12 @@
               if (g.player.shieldActive) {
                   ctx.fillStyle = '#facc15'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.shadowBlur = 10; ctx.shadowColor = '#facc15';
                   ctx.fillText(`SPECIAL ACTIVE: CHAOS BLOSSOM (${Math.ceil(g.player.shieldTimer/1000)}s)`, g.width/2, g.height - 18); ctx.shadowBlur = 0; ctx.textAlign = 'left';
+              }
+
+              if (g.gameState === 'level-up') {
+                  ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0,0,g.width,g.height);
+                  ctx.fillStyle = '#0ff'; ctx.font = 'bold 30px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('LEVEL COMPLETED', g.width/2, g.height/2 - 20);
+                  ctx.fillStyle = 'white'; ctx.font = '20px "Courier New"'; ctx.fillText(`NEXT LEVEL: ${g.level + 1}`, g.width/2, g.height/2 + 30);
               }
 
               if (g.gameState === 'game-over') {
@@ -1207,7 +1176,7 @@
                                       </button>
                                   </div>
                               </div>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.4</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.5</div>
                           </div>
                       );
               }
