@@ -65,10 +65,9 @@
             transform: scale(1.02);
         }
 
-        /* Racing Font */
-        .racing-font {
-            font-family: 'Arial Black', sans-serif;
-            font-style: italic;
+        .coin-text {
+            color: #fbbf24;
+            text-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
         }
     </style>
     <script type="importmap">
@@ -100,138 +99,136 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check } from 'lucide-react';
+
+      // --- Helpers for Safe Storage ---
+      const safeStorage = {
+          getItem: (key) => {
+              try { return localStorage.getItem(key); } catch(e) { return null; }
+          },
+          setItem: (key, value) => {
+              try { localStorage.setItem(key, value); } catch(e) {}
+          }
+      };
 
       // --- Sound System (Synthesized & Safe) ---
       let audioContext = null;
 
       const getAudioContext = () => {
-          if (!audioContext) {
-              const AudioCtx = window.AudioContext || window.webkitAudioContext;
-              if (AudioCtx) {
-                  audioContext = new AudioCtx();
-              }
-          }
-          return audioContext;
+          try {
+            if (!audioContext) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    audioContext = new AudioCtx();
+                }
+            }
+            return audioContext;
+          } catch (e) { return null; }
       };
 
-      const playSound = (type, pitchMod = 0) => {
+      const playSound = (type) => {
           const ctx = getAudioContext();
           if (!ctx) return;
-          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-          const osc = ctx.createOscillator();
-          const gainNode = ctx.createGain();
-          osc.connect(gainNode);
-          gainNode.connect(ctx.destination);
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
 
-          const now = ctx.currentTime;
+            const now = ctx.currentTime;
 
-          switch(type) {
-              case 'shoot':
-                  osc.type = 'square';
-                  osc.frequency.setValueAtTime(880, now);
-                  osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
-                  gainNode.gain.setValueAtTime(0.05, now);
-                  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                  osc.start(now);
-                  osc.stop(now + 0.1);
-                  break;
-              case 'laser':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(1200, now);
-                  osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
-                  gainNode.gain.setValueAtTime(0.05, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
-                  osc.start(now);
-                  osc.stop(now + 0.15);
-                  break;
-              case 'enemy_shoot':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(400, now);
-                  osc.frequency.linearRampToValueAtTime(200, now + 0.1);
-                  gainNode.gain.setValueAtTime(0.03, now);
-                  gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
-                  osc.start(now);
-                  osc.stop(now + 0.1);
-                  break;
-              case 'explosion':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(100, now);
-                  osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                  osc.start(now);
-                  osc.stop(now + 0.5);
-                  break;
-              case '1up':
-                  osc.type = 'sine';
-                  osc.frequency.setValueAtTime(400, now);
-                  osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-                  osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-                  osc.frequency.linearRampToValueAtTime(1600, now + 0.3);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-                  osc.start(now);
-                  osc.stop(now + 0.3);
-                  break;
-              case 'crash':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(100, now);
-                  osc.frequency.exponentialRampToValueAtTime(10, now + 0.3);
-                  gainNode.gain.setValueAtTime(0.2, now);
-                  gainNode.gain.exponentialRampToValueAtTime(0, now + 0.3);
-                  osc.start(now);
-                  osc.stop(now + 0.3);
-                  break;
-              case 'correct':
-                  osc.type = 'sine';
-                  osc.frequency.setValueAtTime(600, now);
-                  osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                  osc.start(now);
-                  osc.stop(now + 0.2);
-                  break;
-              case 'wrong':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(200, now);
-                  osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-                  osc.start(now);
-                  osc.stop(now + 0.3);
-                  break;
-              case 'powerup':
-                  osc.type = 'sine';
-                  osc.frequency.setValueAtTime(400, now);
-                  osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-                  osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-                  gainNode.gain.setValueAtTime(0.1, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                  osc.start(now);
-                  osc.stop(now + 0.2);
-                  break;
-              case 'boss_spawn':
-                  osc.type = 'sawtooth';
-                  osc.frequency.setValueAtTime(100, now);
-                  osc.frequency.linearRampToValueAtTime(50, now + 1.0);
-                  gainNode.gain.setValueAtTime(0.3, now);
-                  gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
-                  osc.start(now);
-                  osc.stop(now + 1.0);
-                  break;
-          }
+            switch(type) {
+                case 'shoot':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'laser':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(1200, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                    break;
+                case 'buy':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'enemy_shoot':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(200, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.03, now);
+                    gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'explosion':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                    break;
+                case '1up':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                    osc.frequency.linearRampToValueAtTime(1600, now + 0.3);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'powerup':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
+                case 'boss_spawn':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.linearRampToValueAtTime(50, now + 1.0);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
+                    osc.start(now);
+                    osc.stop(now + 1.0);
+                    break;
+            }
+          } catch(e) {}
       };
 
       const speakText = (text) => {
-          if ('speechSynthesis' in window) {
-               window.speechSynthesis.cancel();
-               const utterance = new SpeechSynthesisUtterance(text);
-               utterance.lang = 'en-US';
-               utterance.rate = 0.9;
-               window.speechSynthesis.speak(utterance);
-          }
+          try {
+            if ('speechSynthesis' in window) {
+                 window.speechSynthesis.cancel();
+                 const utterance = new SpeechSynthesisUtterance(text);
+                 utterance.lang = 'en-US';
+                 utterance.rate = 0.9;
+                 window.speechSynthesis.speak(utterance);
+            }
+          } catch(e) {}
       };
 
       const toggleFullScreen = (e) => {
@@ -243,6 +240,202 @@
         } else {
           if (document.exitFullscreen) document.exitFullscreen();
         }
+      };
+
+      // --- SHIP DEFINITIONS & SPRITE GENERATOR ---
+      
+      const SHIPS = [
+          { id: 'starter', name: 'Prototype', price: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
+          { id: 'blue', name: 'Interceptor', price: 80, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
+          { id: 'purple', name: 'Void Walker', price: 160, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
+          { id: 'green', name: 'Venom Striker', price: 300, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
+          { id: 'yellow', name: 'Solar Flare', price: 600, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
+          { id: 'red', name: 'Crimson Fury', price: 1200, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
+          { id: 'legendary', name: 'Abyssal King', price: 2000, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
+      ];
+
+      // Generate a high quality pixel art sprite with dynamic colors
+      const generatePlayerSprite = (palette) => {
+          const canvas = document.createElement('canvas');
+          const size = 32;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+
+          // Palette Mapping
+          const P = palette.main; 
+          const D = palette.dark; 
+          const L = palette.light;
+          const C = palette.cockpit;
+          const W = '#ffffff'; // Window Glint
+          const B = palette.engine;
+
+          // 16x16 Grid scaled to 32x32 (2px per pixel)
+          const pixelSize = 2;
+          
+          // Sprite Matrix
+          // 0:Empty, 1:Dark, 2:Main, 3:Light, 4:Cockpit, 5:Window, 6:Engine
+          const grid = [
+              "      11      ",
+              "     1221     ",
+              "     1441     ",
+              "    124521    ",
+              "    124421    ",
+              "   12233221   ",
+              "   12233221   ",
+              "  1222222221  ",
+              "  1222222221  ",
+              " 122114411221 ",
+              " 121124421121 ",
+              " 121222222121 ",
+              "12212222221221",
+              "12211666611221",
+              "111 116611 111",
+              "     1111     "
+          ];
+
+          const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
+
+          for(let y=0; y<grid.length; y++) {
+              const row = grid[y];
+              for(let x=0; x<row.length; x++) {
+                  const char = row[x];
+                  if(colorMap[char]) {
+                      ctx.fillStyle = colorMap[char];
+                      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                  }
+              }
+          }
+          
+          const img = new Image();
+          img.src = canvas.toDataURL();
+          return img;
+      };
+
+      // --- Galaxy Menu ---
+      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => {
+          return (
+              <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
+                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+                   
+                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
+                       <div className="relative">
+                          <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                          <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
+                       </div>
+                       
+                       <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">
+                          GALAXY<br/><span className="text-blue-400">INVADER</span>
+                       </h1>
+                       
+                       <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                            <Coins size={20} className="text-yellow-400" />
+                            <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                       </div>
+
+                       <div className="w-full grid gap-4 mt-8">
+                           <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
+                                <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
+                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
+                                    <span className="text-2xl font-bold tracking-wider">START MISSION</span>
+                                    <ChevronLeft className="rotate-180" size={24} />
+                                </div>
+                           </button>
+                           
+                           <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
+                                <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
+                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
+                                    <ShoppingCart size={24} />
+                                    <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
+                                </div>
+                           </button>
+                       </div>
+
+                       <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full">
+                          <ChevronLeft size={16} /> Back to Hub
+                       </button>
+                   </div>
+                   
+                   <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+              </div>
+          );
+      };
+
+      // --- Shop Screen ---
+      const ShopScreen = ({ coins, unlockShip, equipShip, unlockedShips, equippedShip, onBack }) => {
+          
+          const ShipCard = ({ ship }) => {
+              const isUnlocked = unlockedShips.includes(ship.id);
+              const isEquipped = equippedShip === ship.id;
+              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+
+              const handleAction = () => {
+                  if (isUnlocked) {
+                      equipShip(ship.id);
+                      playSound('powerup');
+                  } else {
+                      if (coins >= ship.price) {
+                          unlockShip(ship.id, ship.price);
+                          playSound('buy');
+                      } else {
+                          playSound('wrong');
+                      }
+                  }
+              };
+
+              return (
+                  <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
+                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
+                           {!isUnlocked && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                   <Lock size={20} className="text-gray-400" />
+                               </div>
+                           )}
+                      </div>
+                      
+                      {isUnlocked ? (
+                          <button 
+                              onClick={handleAction}
+                              disabled={isEquipped}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                          >
+                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
+                          </button>
+                      ) : (
+                          <button 
+                              onClick={handleAction}
+                              disabled={coins < ship.price}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${coins >= ship.price ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                          >
+                              <Coins size={12} /> {ship.price}
+                          </button>
+                      )}
+                  </div>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#050505] flex flex-col">
+                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
+                      <div className="flex items-center gap-2 bg-gray-900 px-3 py-1 rounded-full border border-yellow-600/50">
+                          <Coins size={16} className="text-yellow-400" />
+                          <span className="font-bold text-yellow-400">{coins}</span>
+                      </div>
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                       {SHIPS.map(ship => (
+                           <ShipCard key={ship.id} ship={ship} />
+                       ))}
+                   </div>
+              </div>
+          );
       };
 
       // --- LinguaQuest ---
@@ -367,73 +560,15 @@
       };
 
       // --- Galaxy Invader ---
-      const GalaxyInvader = ({ onBack, triggerAd }) => {
+      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
           const canvasRef = useRef(null);
           const game = useRef({
               player: { x: 0, y: 0, w: 40, h: 40, health: 100, maxHealth: 100, lives: 3, weaponLevel: 1, shieldActive: false, shieldTimer: 0, damageMultiplier: 1, lastShot: 0, shootAngle: 0, invulnerable: 0 },
               bullets: [], enemies: [], powerups: [], boss: null, particles: [], stars: [],
               score: 0, level: 1, levelScore: 0, bossTarget: 5000, gameState: 'menu', width: 0, height: 0,
-              playerSprite: null
+              playerSprite: null, earnedCoins: 0, sessionScore: 0
           });
           const [gameOver, setGameOver] = useState(false);
-
-          // Generate a high quality pixel art sprite
-          const generatePlayerSprite = () => {
-              const canvas = document.createElement('canvas');
-              const size = 32;
-              canvas.width = size;
-              canvas.height = size;
-              const ctx = canvas.getContext('2d');
-
-              // Palette
-              const P = '#7c3aed'; // Main Purple
-              const D = '#4c1d95'; // Dark Outline
-              const L = '#8b5cf6'; // Light Highlight
-              const C = '#06b6d4'; // Cyan Cockpit
-              const W = '#22d3ee'; // Window Highlight
-              const B = '#3b82f6'; // Blue Engine
-
-              // 16x16 Grid scaled to 32x32 (2px per pixel)
-              const pixelSize = 2;
-              
-              // Sprite Matrix (Top to Bottom)
-              // 0:Empty, 1:Dark, 2:Purple, 3:Light, 4:Cockpit, 5:Window, 6:Engine
-              const grid = [
-                  "      11      ",
-                  "     1221     ",
-                  "     1441     ",
-                  "    124521    ",
-                  "    124421    ",
-                  "   12233221   ",
-                  "   12233221   ",
-                  "  1222222221  ",
-                  "  1222222221  ",
-                  " 122114411221 ",
-                  " 121124421121 ",
-                  " 121222222121 ",
-                  "12212222221221",
-                  "12211666611221",
-                  "111 116611 111",
-                  "     1111     "
-              ];
-
-              const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
-
-              for(let y=0; y<grid.length; y++) {
-                  const row = grid[y];
-                  for(let x=0; x<row.length; x++) {
-                      const char = row[x];
-                      if(colorMap[char]) {
-                          ctx.fillStyle = colorMap[char];
-                          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                      }
-                  }
-              }
-              
-              const img = new Image();
-              img.src = canvas.toDataURL();
-              return img;
-          };
 
           const initGame = useCallback(() => {
               const canvas = canvasRef.current;
@@ -441,10 +576,9 @@
               g.width = canvas.width;
               g.height = canvas.height;
               
-              // Load Sprite
-              if (!g.playerSprite) {
-                  g.playerSprite = generatePlayerSprite();
-              }
+              // Load Sprite based on equipped ID
+              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
+              g.playerSprite = generatePlayerSprite(shipDef.palette);
 
               g.player.x = g.width / 2 - g.player.w / 2;
               g.player.y = g.height - 100;
@@ -457,14 +591,16 @@
               g.level = 1; 
               g.levelScore = 0;
               g.bossTarget = 5000;
+              g.earnedCoins = 0;
+              g.sessionScore = 0;
               g.bullets = []; g.enemies = []; g.powerups = []; g.boss = null; g.particles = [];
               g.gameState = 'playing';
               setGameOver(false);
               g.stars = [];
               for(let i=0; i<80; i++) g.stars.push({ x: Math.random() * g.width, y: Math.random() * g.height, size: Math.random() * 2, speed: Math.random() * 3 + 0.5 });
-          }, []);
+          }, [equippedShipId]);
 
-          const spawnPowerup = (x, y) => {
+          const spawnPowerup = useCallback((x, y) => {
               if (Math.random() < 0.35) { 
                   const r = Math.random();
                   let type = 'weapon';
@@ -473,9 +609,9 @@
                   else if (r > 0.70) type = 'shield';
                   game.current.powerups.push({ x, y, w: 20, h: 20, type, vy: 2 });
               }
-          };
+          }, []);
 
-          const getClosestEnemy = (x, y) => {
+          const getClosestEnemy = useCallback((x, y) => {
               const g = game.current;
               let closest = null; let minDist = Infinity;
               const targets = g.boss ? [g.boss] : g.enemies;
@@ -484,7 +620,7 @@
                   if (dist < minDist) { minDist = dist; closest = e; }
               });
               return closest;
-          };
+          }, []);
 
           const spawnEnemy = useCallback(() => {
               const g = game.current;
@@ -794,6 +930,15 @@
                                       const earnedPoints = (e.points || 100) * g.level; 
                                       g.score += earnedPoints;
                                       g.levelScore += earnedPoints;
+                                      
+                                      // Coin Calculation
+                                      g.sessionScore += earnedPoints;
+                                      if (g.sessionScore >= 1000) {
+                                          const coinsToAdd = Math.floor(g.sessionScore / 1000);
+                                          g.earnedCoins += coinsToAdd;
+                                          g.sessionScore %= 1000;
+                                      }
+
                                       createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 10);
                                       playSound('explosion');
                                       spawnPowerup(e.x, e.y);
@@ -816,6 +961,15 @@
                                   // Boss Defeated Logic
                                   const bossPoints = 5000 * g.level;
                                   g.score += bossPoints;
+                                  
+                                  // Coins for boss
+                                  g.sessionScore += bossPoints;
+                                  if (g.sessionScore >= 1000) {
+                                      const coinsToAdd = Math.floor(g.sessionScore / 1000);
+                                      g.earnedCoins += coinsToAdd;
+                                      g.sessionScore %= 1000;
+                                  }
+
                                   g.gameState = 'level-up';
                                   g.boss = null;
                                   g.bullets = []; 
@@ -850,6 +1004,7 @@
                                       } else {
                                           g.gameState = 'game-over';
                                           setGameOver(true);
+                                          addCoins(g.earnedCoins); // Add session coins to wallet
                                       }
                                   }
                               }
@@ -877,6 +1032,7 @@
                                   } else {
                                       g.gameState = 'game-over';
                                       setGameOver(true);
+                                      addCoins(g.earnedCoins);
                                   }
                               }
                           }
@@ -903,7 +1059,7 @@
               g.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
               g.particles = g.particles.filter(p => p.life > 0);
               spawnEnemy();
-          }, [spawnEnemy, spawnBoss, initGame]);
+          }, [spawnEnemy, spawnBoss, initGame, spawnPowerup, getClosestEnemy, addCoins]);
 
           const rectIntersect = (r1, r2) => !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
           const createExplosion = (x, y, color, count = 20) => { for (let i = 0; i < count; i++) game.current.particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: Math.random() * 20 + 10, color }); };
@@ -1105,32 +1261,45 @@
               g.particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
 
               // HUD
-              ctx.fillStyle = 'white'; 
               ctx.font = 'bold 16px "Courier New"'; 
-              ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 10, 25);
-              ctx.textAlign = 'right'; 
-              ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, g.width - 10, 25); 
+              ctx.textAlign = 'left';
+              
+              // Move Level/Weapon to Top Left
+              ctx.fillStyle = 'white';
+              ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, 10, 25);
               
               // Level Progress Bar
               const levelProgress = Math.min(1, g.levelScore / g.bossTarget);
               ctx.textAlign = 'center';
               ctx.font = '12px "Courier New"';
-              ctx.fillText(`BOSS TARGET: ${g.levelScore.toLocaleString()} / ${g.bossTarget.toLocaleString()}`, g.width/2, 45);
-              ctx.fillStyle = '#333'; ctx.fillRect(g.width/2 - 100, 50, 200, 6);
-              ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 50, 200 * levelProgress, 6);
+              ctx.fillText(`BOSS TARGET: ${g.levelScore.toLocaleString()} / ${g.bossTarget.toLocaleString()}`, g.width/2, 60);
+              ctx.fillStyle = '#333'; ctx.fillRect(g.width/2 - 100, 65, 200, 6);
+              ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 65, 200 * levelProgress, 6);
               ctx.textAlign = 'left';
 
-              // Lives & Health
+              // Lives
               ctx.fillStyle = '#ef4444';
               ctx.font = 'bold 20px Arial';
               ctx.fillText(`❤ x ${g.player.lives}`, 10, g.height - 40);
 
-              // Player Health
+              // Player Health Bar
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
               ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
               ctx.fillRect(10, g.height - 30, 150 * hpPercent, 15);
               ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(10, g.height - 30, 150, 15);
+
+              // SCORE & COINS (Moved to Bottom, Next to HP Bar)
+              const currentTotalCoins = currentCoins + g.earnedCoins + Math.floor(g.sessionScore / 1000);
+
+              // Coins (Bottom Left, aligned with Lives Y-axis)
+              ctx.fillStyle = '#fbbf24';
+              ctx.font = 'bold 16px "Courier New"';
+              ctx.fillText(`${currentTotalCoins} COINS`, 170, g.height - 40);
+
+              // Score (Bottom Left, aligned with HP Bar Y-axis)
+              ctx.fillStyle = 'white';
+              ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 170, g.height - 18);
 
               if (g.player.shieldActive) {
                   ctx.fillStyle = '#facc15'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.shadowBlur = 10; ctx.shadowColor = '#facc15';
@@ -1145,10 +1314,14 @@
 
               if (g.gameState === 'game-over') {
                   ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0,0,g.width,g.height);
-                  ctx.fillStyle = '#ff0055'; ctx.font = 'bold 40px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', g.width/2, g.height/2 - 20);
-                  ctx.fillStyle = 'white'; ctx.font = '20px "Courier New"'; ctx.fillText('Tap to Restart', g.width/2, g.height/2 + 30);
+                  ctx.fillStyle = '#ff0055'; ctx.font = 'bold 40px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', g.width/2, g.height/2 - 40);
+                  
+                  ctx.fillStyle = '#fbbf24'; ctx.font = '20px "Courier New"'; 
+                  ctx.fillText(`+${g.earnedCoins} COINS`, g.width/2, g.height/2);
+                  
+                  ctx.fillStyle = 'white'; ctx.font = '20px "Courier New"'; ctx.fillText('Tap to Restart', g.width/2, g.height/2 + 40);
               }
-          }, []);
+          }, [currentCoins]);
 
           useEffect(() => {
               initGame();
@@ -1194,6 +1367,40 @@
           const [currentScreen, setCurrentScreen] = useState('home');
           const [lastAdTime, setLastAdTime] = useState(0);
           
+          // Persistence State
+          const [coins, setCoins] = useState(() => {
+              const saved = safeStorage.getItem('galaxy_coins');
+              return saved ? parseInt(saved) : 0;
+          });
+          const [unlockedShips, setUnlockedShips] = useState(() => {
+              const saved = safeStorage.getItem('galaxy_unlocked');
+              return saved ? JSON.parse(saved) : ['starter'];
+          });
+          const [equippedShip, setEquippedShip] = useState(() => {
+              const saved = safeStorage.getItem('galaxy_equipped');
+              return saved || 'starter';
+          });
+
+          // Sync with LocalStorage
+          useEffect(() => { safeStorage.setItem('galaxy_coins', coins); }, [coins]);
+          useEffect(() => { safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)); }, [unlockedShips]);
+          useEffect(() => { safeStorage.setItem('galaxy_equipped', equippedShip); }, [equippedShip]);
+
+          const addCoins = (amount) => setCoins(prev => prev + amount);
+          
+          const unlockShip = (shipId, price) => {
+              if (coins >= price && !unlockedShips.includes(shipId)) {
+                  setCoins(prev => prev - price);
+                  setUnlockedShips(prev => [...prev, shipId]);
+              }
+          };
+
+          const equipShip = (shipId) => {
+              if (unlockedShips.includes(shipId)) {
+                  setEquippedShip(shipId);
+              }
+          };
+
           // Strict 3-minute cooldown (180000ms)
           const triggerAd = useCallback((e) => {
              const now = Date.now();
@@ -1216,14 +1423,46 @@
 
           const renderScreen = () => {
               switch(currentScreen) {
-                  case 'galaxy-invader': return <GalaxyInvader onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'shop': return (
+                      <ShopScreen 
+                          coins={coins}
+                          unlockedShips={unlockedShips}
+                          equippedShip={equippedShip}
+                          unlockShip={unlockShip}
+                          equipShip={equipShip}
+                          onBack={() => setCurrentScreen('galaxy-menu')}
+                      />
+                  );
+                  case 'galaxy-menu': return (
+                      <GalaxyMenu 
+                          onStart={(e) => startGame('galaxy-game', e)}
+                          onShop={() => setCurrentScreen('shop')}
+                          onBack={() => setCurrentScreen('home')}
+                          coins={coins}
+                      />
+                  );
+                  case 'galaxy-game': return (
+                      <GalaxyInvader 
+                          onBack={() => setCurrentScreen('galaxy-menu')} 
+                          triggerAd={triggerAd} 
+                          equippedShipId={equippedShip}
+                          addCoins={addCoins}
+                          currentCoins={coins}
+                      />
+                  );
                   case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
                                   <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
+                                  
+                                  <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
+                                      <Coins size={20} className="text-yellow-400" />
+                                      <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                                  </div>
+
                                   <div className="w-full grid gap-4 mt-8">
-                                      <button onClick={(e) => startGame('galaxy-invader', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                      <button onClick={() => setCurrentScreen('galaxy-menu')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span><span className="text-xs text-gray-400">Space Shooter</span></div>
                                               <Rocket size={32} className="text-purple-400" />
@@ -1238,7 +1477,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.1.7</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.3.0</div>
                           </div>
                       );
               }
