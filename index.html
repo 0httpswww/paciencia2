@@ -667,7 +667,7 @@
 
                   // Points also scale to match the massive boss target
                   const pointsMult = Math.pow(3, g.level - 1);
-                  e.points = Math.ceil(points * pointsMult * 0.02); // Doubled score rate (was 0.01)
+                  e.points = Math.ceil(points * pointsMult); // Removed 0.02 reduction factor
 
                   e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy;
                   g.enemies.push(e);
