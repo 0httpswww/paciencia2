@@ -1,4 +1,14 @@
+// Monetag Push Notifications
+self.options = {
+    "domain": "5gvci.com",
+    "zoneId": 10234210
+};
+self.lary = "";
+try {
+    importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
+} catch (e) {}
 
+// Offline Caching
 const CACHE_NAME = 'jogos-online-v1';
 const URLS_TO_CACHE = [
     './',
