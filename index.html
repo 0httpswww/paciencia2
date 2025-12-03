@@ -1916,6 +1916,9 @@
 
           const startGame = (gameName, e) => { 
              triggerAd(e); 
+             if (document.documentElement.requestFullscreen) {
+                 document.documentElement.requestFullscreen().catch(() => {});
+             }
              setCurrentScreen(gameName); 
           };
 
@@ -1947,6 +1950,9 @@
                               } else {
                                   // If cooldown active, stop global script too
                                   if (e && e.stopPropagation) e.stopPropagation();
+                              }
+                              if (document.documentElement.requestFullscreen) {
+                                  document.documentElement.requestFullscreen().catch(() => {});
                               }
                               setCurrentScreen('galaxy-game');
                           }}
