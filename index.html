@@ -13,6 +13,9 @@
     <!-- Monetag Popunder Script -->
     <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     
+    <!-- Monetag Vignette Script -->
+    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -23,7 +26,6 @@
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Courier New', Courier, monospace;
             background-color: #000000;
-            /* Grid Background - Visible on Black */
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
@@ -34,15 +36,13 @@
             overflow: hidden;
         }
 
-        /* Dark Futuristic Professional Title */
         .neon-title {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             font-weight: 900;
             background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 
-                0 0 20px rgba(148, 163, 184, 0.3);
+            text-shadow: 0 0 20px rgba(148, 163, 184, 0.3);
             filter: drop-shadow(0 0 2px rgba(148, 163, 184, 0.5));
             letter-spacing: -2px;
             text-transform: uppercase;
@@ -52,7 +52,6 @@
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
         
-        /* White Glow for Menu Items */
         .glass-box {
             background: rgba(20, 20, 20, 0.6);
             backdrop-filter: blur(12px);
@@ -64,11 +63,6 @@
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.4);
             transform: scale(1.02);
-        }
-
-        .coin-text {
-            color: #fbbf24;
-            text-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
         }
 
         /* Hangman Animation */
@@ -94,14 +88,6 @@
         .farm-plot {
             box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
             transform-style: preserve-3d;
-        }
-        .float-animation {
-            animation: float 2s ease-in-out infinite;
-        }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0px); }
         }
         
         /* Farmer 3D Walking Animation */
@@ -148,25 +134,18 @@
       import { createRoot } from 'react-dom/client';
       import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp } from 'lucide-react';
 
-      // --- Helpers for Safe Storage ---
+      // --- Helpers ---
       const safeStorage = {
-          getItem: (key) => {
-              try { return localStorage.getItem(key); } catch(e) { return null; }
-          },
-          setItem: (key, value) => {
-              try { localStorage.setItem(key, value); } catch(e) {}
-          }
+          getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+          setItem: (key, value) => { try { localStorage.setItem(key, value); } catch(e) {} }
       };
 
-      // --- Sound System ---
       let audioContext = null;
       const getAudioContext = () => {
           try {
             if (!audioContext) {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    audioContext = new AudioCtx();
-                }
+                if (AudioCtx) audioContext = new AudioCtx();
             }
             return audioContext;
           } catch (e) { return null; }
@@ -184,105 +163,14 @@
             const now = ctx.currentTime;
 
             switch(type) {
-                case 'shoot':
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(880, now);
-                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.05, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                    break;
-                case 'explosion':
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(100, now);
-                    osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4);
-                    gainNode.gain.setValueAtTime(0.2, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                    osc.start(now);
-                    osc.stop(now + 0.4);
-                    break;
-                case 'powerup':
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(400, now);
-                    osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                    break;
-                 case 'boss_hit':
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.linearRampToValueAtTime(100, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                    break;
-                case 'warning':
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.linearRampToValueAtTime(100, now + 0.5);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-                    osc.start(now);
-                    osc.stop(now + 0.5);
-                    break;
-                 case 'win':
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(500, now);
-                    osc.frequency.linearRampToValueAtTime(1000, now + 0.2);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                    break;
-                 case 'lose':
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                    break;
-                case 'plant':
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                    break;
-                case 'harvest':
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                    break;
-                 case 'buy':
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                    break;
-                case 'talk':
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.05, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                    break;
+                case 'shoot': osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'explosion': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); break;
+                case 'powerup': osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'win': osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1000, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'lose': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'plant': osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'harvest': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'buy': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); break;
             }
           } catch(e) {}
       };
@@ -290,34 +178,21 @@
       const toggleFullScreen = (e) => {
         if (e) e.stopPropagation();
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(err => {
-            console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-          });
-        } else {
-          if (document.exitFullscreen) document.exitFullscreen();
-        }
+          document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else if (document.exitFullscreen) document.exitFullscreen();
       };
 
-      // --- Install Button Component ---
+      // --- Install Button ---
       const InstallButton = () => {
           const [deferredPrompt, setDeferredPrompt] = useState(null);
-          const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+          const [showIOS, setShowIOS] = useState(false);
           const [isIOS, setIsIOS] = useState(false);
           const [isStandalone, setIsStandalone] = useState(false);
 
           useEffect(() => {
-              // Check if standalone (PWA already installed)
-              const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-              setIsStandalone(isStandaloneMode);
-
-              // Check if iOS
-              const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-              setIsIOS(ios);
-
-              const handler = (e) => {
-                  e.preventDefault();
-                  setDeferredPrompt(e);
-              };
+              setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone);
+              setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
+              const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
               window.addEventListener('beforeinstallprompt', handler);
               return () => window.removeEventListener('beforeinstallprompt', handler);
           }, []);
@@ -326,53 +201,24 @@
               if (deferredPrompt) {
                   deferredPrompt.prompt();
                   const { outcome } = await deferredPrompt.userChoice;
-                  if (outcome === 'accepted') {
-                      setDeferredPrompt(null);
-                  }
-              } else if (isIOS) {
-                  setShowIOSInstructions(true);
-              }
+                  if (outcome === 'accepted') setDeferredPrompt(null);
+              } else if (isIOS) setShowIOS(true);
           };
 
-          if (isStandalone) return null; // Already installed
-
-          // Show button if android/desktop prompt is available OR if it's iOS
-          if (!deferredPrompt && !isIOS) return null; 
+          if (isStandalone || (!deferredPrompt && !isIOS)) return null; 
 
           return (
               <>
-                  <button 
-                      onClick={handleInstall}
-                      className="absolute top-4 left-4 p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-purple-400"
-                  >
+                  <button onClick={handleInstall} className="absolute top-4 left-4 p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-purple-400">
                       <Download size={16} /> INSTALAR APP
                   </button>
-                  
-                  {showIOSInstructions && (
-                      <div className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-6 text-center" onClick={() => setShowIOSInstructions(false)}>
+                  {showIOS && (
+                      <div className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-6 text-center" onClick={() => setShowIOS(false)}>
                           <div className="bg-slate-800 p-6 rounded-xl border border-white/20 max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
-                              <div className="flex justify-center mb-4 text-purple-400">
-                                  <Download size={48} />
-                              </div>
+                              <div className="flex justify-center mb-4 text-purple-400"><Download size={48} /></div>
                               <h3 className="text-xl font-bold text-white mb-4">Instalar no iOS</h3>
-                              <p className="text-gray-300 mb-6 text-sm leading-relaxed">
-                                  Para instalar este app no seu iPhone ou iPad e ter uma experiência em tela cheia:
-                              </p>
-                              <div className="flex flex-col gap-4 text-left text-sm text-gray-400 bg-slate-900/50 p-4 rounded-lg">
-                                  <div className="flex items-center gap-3">
-                                      <div className="p-2 bg-slate-700 rounded text-blue-400">
-                                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                                      </div> 
-                                      <span>1. Toque no botão <strong>Compartilhar</strong> na barra inferior do Safari.</span>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                      <div className="p-2 bg-slate-700 rounded text-white">
-                                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                                      </div> 
-                                      <span>2. Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.</span>
-                                  </div>
-                              </div>
-                              <button onClick={() => setShowIOSInstructions(false)} className="mt-6 w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-white transition">ENTENDI</button>
+                              <p className="text-gray-300 mb-6 text-sm">Toque em Compartilhar e depois em Adicionar à Tela de Início.</p>
+                              <button onClick={() => setShowIOS(false)} className="mt-6 w-full py-3 bg-purple-600 rounded-lg font-bold text-white">ENTENDI</button>
                           </div>
                       </div>
                   )}
@@ -380,7 +226,7 @@
           );
       };
 
-      // --- SHIP DEFINITIONS & SPRITE GENERATOR ---
+      // --- Data ---
       const SHIPS = [
           { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
           { id: 'blue', name: 'Interceptor', adCost: 5, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
@@ -416,542 +262,7 @@
           const img = new Image(); img.src = canvas.toDataURL(); return img;
       };
 
-      const generateEnemySprite = (type) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        
-        if (type.startsWith('boss')) {
-            // Boss Designs
-            const color = type === 'boss_red' ? '#dc2626' : (type === 'boss_blue' ? '#2563eb' : '#9333ea');
-            const secondary = type === 'boss_red' ? '#fecaca' : (type === 'boss_blue' ? '#bfdbfe' : '#e9d5ff');
-            
-            // Body
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            if (type === 'boss_red') { // Tanky
-                 ctx.fillRect(8, 16, 48, 32);
-                 ctx.fillStyle = secondary;
-                 ctx.fillRect(16, 24, 8, 8);
-                 ctx.fillRect(40, 24, 8, 8);
-            } else if (type === 'boss_blue') { // Speed
-                 ctx.moveTo(32, 4); ctx.lineTo(60, 48); ctx.lineTo(32, 38); ctx.lineTo(4, 48);
-                 ctx.fill();
-                 ctx.fillStyle = secondary;
-                 ctx.fillRect(30, 20, 4, 15);
-            } else { // Swarm
-                 ctx.arc(32, 32, 24, 0, Math.PI*2);
-                 ctx.fill();
-                 ctx.fillStyle = secondary;
-                 ctx.beginPath(); ctx.arc(32, 32, 10, 0, Math.PI*2); ctx.fill();
-            }
-        } else {
-             // Basic Enemy Shapes
-            let color = '#ef4444'; 
-            if(type === 'kamikaze') color = '#fbbf24';
-            if(type === 'heavy') color = '#22c55e';
-            if(type === 'strafer') color = '#38bdf8';
-
-            ctx.fillStyle = color;
-            
-            if (type === 'kamikaze') {
-                ctx.beginPath(); ctx.moveTo(32, 48); ctx.lineTo(16, 16); ctx.lineTo(48, 16); ctx.fill();
-            } else if (type === 'heavy') {
-                 ctx.fillRect(16, 16, 32, 32);
-            } else if (type === 'strafer') {
-                 ctx.beginPath(); ctx.moveTo(16, 32); ctx.lineTo(32, 16); ctx.lineTo(48, 32); ctx.lineTo(32, 48); ctx.fill();
-            } else {
-                 // Basic
-                 ctx.fillRect(20, 20, 24, 16);
-                 ctx.fillRect(24, 36, 16, 8);
-            }
-        }
-        
-        const img = new Image(); img.src = canvas.toDataURL(); return img;
-      };
-
-      // --- COMPONENT: Galaxy Invader ---
-      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
-          const canvasRef = useRef(null);
-          const [gameState, setGameState] = useState('playing'); // playing, gameover, boss_warning
-          const [score, setScore] = useState(0);
-          const [hp, setHp] = useState(100);
-          const [wave, setWave] = useState(1);
-          const [weaponLevel, setWeaponLevel] = useState(1);
-          
-          const shipConfig = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
-          
-          useEffect(() => {
-              const canvas = canvasRef.current;
-              const ctx = canvas.getContext('2d');
-              let animationFrameId;
-              let lastTime = 0;
-              
-              // Load Sprites
-              const playerSprite = generatePlayerSprite(shipConfig.palette);
-              const enemySprites = {
-                  basic: generateEnemySprite('basic'),
-                  kamikaze: generateEnemySprite('kamikaze'),
-                  heavy: generateEnemySprite('heavy'),
-                  strafer: generateEnemySprite('strafer'),
-                  boss_red: generateEnemySprite('boss_red'),
-                  boss_blue: generateEnemySprite('boss_blue'),
-                  boss_purple: generateEnemySprite('boss_purple')
-              };
-
-              // Game Entities
-              let player = { x: canvas.width/2, y: canvas.height - 100, w: 40, h: 40, dx: 0, dy: 0, hp: 100, maxHp: 100, weapon: 1 };
-              let bullets = [];
-              let enemies = [];
-              let particles = [];
-              let powerups = [];
-              let boss = null;
-              let stars = [];
-              
-              // Input
-              let targetX = canvas.width / 2;
-              let targetY = canvas.height - 100;
-              let isTouching = false;
-              
-              // Init Stars
-              for(let i=0; i<80; i++) {
-                  stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, speed: Math.random() * 3 + 0.5, size: Math.random() * 2 });
-              }
-
-              const spawnEnemy = () => {
-                  if (boss || gameState === 'boss_warning') return;
-                  const types = ['basic', 'basic', 'basic', 'kamikaze', 'strafer', 'heavy'];
-                  // Difficulty scaling
-                  if (Math.random() < 0.02 + (score / 15000)) {
-                      const type = types[Math.floor(Math.random() * types.length)];
-                      const size = type === 'heavy' ? 50 : 32;
-                      const hpMax = type === 'heavy' ? 8 + Math.floor(score/500) : (type === 'strafer' ? 2 : 1);
-                      enemies.push({
-                          x: Math.random() * (canvas.width - size),
-                          y: -50,
-                          w: size, h: size,
-                          type: type,
-                          hp: hpMax,
-                          speed: type === 'kamikaze' ? 6 : (type === 'heavy' ? 1 : 3),
-                          vx: type === 'kamikaze' ? (Math.random() - 0.5) * 3 : (type === 'strafer' ? 2 : 0),
-                          angle: 0
-                      });
-                  }
-              };
-
-              const spawnPowerup = (x, y) => {
-                  if(Math.random() > 0.85) { // 15% drop rate
-                       powerups.push({ x, y, w: 20, h: 20, type: Math.random() > 0.6 ? 'weapon' : 'heal' });
-                  }
-              };
-
-              const spawnBoss = (waveNum) => {
-                  const bossType = waveNum % 3 === 0 ? 'boss_purple' : (waveNum % 2 === 0 ? 'boss_blue' : 'boss_red');
-                  const bossHp = 200 + (waveNum * 100);
-                  
-                  boss = {
-                      x: canvas.width / 2 - 60,
-                      y: -120,
-                      w: 120, h: 120,
-                      hp: bossHp,
-                      maxHp: bossHp,
-                      type: bossType,
-                      phase: 'enter', 
-                      dx: bossType === 'boss_blue' ? 4 : 2,
-                      attackTimer: 0
-                  };
-                  playSound('warning');
-                  // Warning effect handled in UI
-                  setTimeout(() => { playSound('boss_spawn'); }, 2000);
-              };
-
-              // Main Loop
-              const loop = (timestamp) => {
-                  const dt = timestamp - lastTime;
-                  lastTime = timestamp;
-
-                  // Clear
-                  ctx.fillStyle = '#050505';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                  // Stars
-                  ctx.fillStyle = '#ffffff';
-                  stars.forEach(star => {
-                      star.y += star.speed + (boss ? 5 : 0); // Warp speed during boss
-                      if(star.y > canvas.height) { star.y = 0; star.x = Math.random() * canvas.width; }
-                      ctx.globalAlpha = Math.random() * 0.5 + 0.5;
-                      ctx.fillRect(star.x, star.y, star.size, star.size);
-                      ctx.globalAlpha = 1.0;
-                  });
-
-                  // Player Movement (360 degrees with smooth lerp)
-                  if (isTouching && hp > 0) {
-                      player.x += (targetX - player.x) * 0.15;
-                      player.y += (targetY - player.y) * 0.15;
-                  }
-                  
-                  // Clamp Player
-                  player.x = Math.max(player.w/2, Math.min(canvas.width - player.w/2, player.x));
-                  player.y = Math.max(player.h/2, Math.min(canvas.height - player.h/2, player.y));
-
-                  // Auto Fire
-                  if (timestamp % 12 < 1 && hp > 0) {
-                       playSound('shoot');
-                       // Weapon logic
-                       const bColor = '#38bdf8';
-                       if (player.weapon === 1) {
-                           bullets.push({ x: player.x, y: player.y - 20, w: 4, h: 12, vy: -12, color: bColor, damage: 1 });
-                       } else if (player.weapon === 2) {
-                           bullets.push({ x: player.x - 8, y: player.y - 20, w: 4, h: 12, vy: -12, color: bColor, damage: 1 });
-                           bullets.push({ x: player.x + 8, y: player.y - 20, w: 4, h: 12, vy: -12, color: bColor, damage: 1 });
-                       } else if (player.weapon >= 3) {
-                           bullets.push({ x: player.x, y: player.y - 20, w: 6, h: 15, vy: -12, color: '#facc15', damage: 2 });
-                           bullets.push({ x: player.x, y: player.y - 20, w: 4, h: 10, vy: -10, vx: -3, color: '#facc15', damage: 1 });
-                           bullets.push({ x: player.x, y: player.y - 20, w: 4, h: 10, vy: -10, vx: 3, color: '#facc15', damage: 1 });
-                       }
-                  }
-
-                  // Update Bullets
-                  for (let i = bullets.length - 1; i >= 0; i--) {
-                      let b = bullets[i];
-                      b.y += b.vy;
-                      if (b.vx) b.x += b.vx;
-                      
-                      // Draw Bullet
-                      ctx.fillStyle = b.color;
-                      ctx.shadowBlur = 5;
-                      ctx.shadowColor = b.color;
-                      ctx.fillRect(b.x - b.w/2, b.y, b.w, b.h);
-                      ctx.shadowBlur = 0;
-
-                      if (b.y < -50 || b.y > canvas.height + 50 || b.x < -50 || b.x > canvas.width + 50) {
-                          bullets.splice(i, 1);
-                          continue;
-                      }
-
-                      // Collision with Enemies
-                      if (!b.enemyBullet) {
-                          for (let j = enemies.length - 1; j >= 0; j--) {
-                              let e = enemies[j];
-                              if (Math.abs(b.x - (e.x + e.w/2)) < e.w/2 + 5 && Math.abs(b.y - (e.y + e.h/2)) < e.h/2 + 5) {
-                                  e.hp -= b.damage;
-                                  particles.push({x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: '#fff'});
-                                  bullets.splice(i, 1);
-                                  
-                                  if (e.hp <= 0) {
-                                      playSound('explosion');
-                                      spawnPowerup(e.x + e.w/2, e.y + e.h/2);
-                                      setScore(prev => prev + (e.type === 'heavy' ? 50 : 20));
-                                      addCoins(1); // 1 coin per kill
-                                      enemies.splice(j, 1);
-                                      // Explosion particles
-                                      for(let k=0; k<8; k++) particles.push({x: e.x+e.w/2, y: e.y+e.h/2, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 20, color: '#f87171'});
-                                  }
-                                  break;
-                              }
-                          }
-                          // Collision with Boss
-                          if (boss && boss.phase === 'fight') {
-                              if (Math.abs(b.x - (boss.x + boss.w/2)) < boss.w/2 && Math.abs(b.y - (boss.y + boss.h/2)) < boss.h/2) {
-                                  boss.hp -= b.damage;
-                                  playSound('boss_hit');
-                                  bullets.splice(i, 1);
-                                  if (boss.hp <= 0) {
-                                      playSound('explosion');
-                                      // Big explosion
-                                      for(let k=0; k<60; k++) particles.push({x: boss.x+boss.w/2, y: boss.y+boss.h/2, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 60, color: '#facc15'});
-                                      setScore(prev => prev + 1000 * wave);
-                                      addCoins(100); 
-                                      spawnPowerup(boss.x + boss.w/2, boss.y + boss.h/2);
-                                      boss = null;
-                                  }
-                              }
-                          }
-                      } else {
-                           // Enemy Bullet hits Player
-                           if (hp > 0 && Math.abs(b.x - player.x) < player.w/2 && Math.abs(b.y - player.y) < player.h/2) {
-                               player.hp -= 10;
-                               setHp(player.hp);
-                               bullets.splice(i, 1);
-                               playSound('explosion');
-                               for(let k=0; k<5; k++) particles.push({x: player.x, y: player.y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 20, color: '#0ea5e9'});
-                           }
-                      }
-                  }
-
-                  // Boss Logic
-                  if (boss) {
-                      boss.attackTimer++;
-                      if (boss.phase === 'enter') {
-                          boss.y += 2;
-                          if (boss.y >= 60) boss.phase = 'fight';
-                      } else {
-                          boss.x += boss.dx;
-                          if (boss.x <= 0 || boss.x + boss.w >= canvas.width) boss.dx *= -1;
-                          
-                          // Boss Attack Patterns
-                          let fireRate = 0.05;
-                          if (boss.type === 'boss_red') { // Tank - Slow Spread
-                               if (boss.attackTimer % 60 === 0) {
-                                   for(let k=-2; k<=2; k++) bullets.push({ x: boss.x + boss.w/2, y: boss.y + boss.h, w: 10, h: 10, vy: 5, vx: k*2, color: '#ef4444', enemyBullet: true });
-                               }
-                          } else if (boss.type === 'boss_blue') { // Speed - Rapid Stream
-                               if (boss.attackTimer % 10 === 0) {
-                                   bullets.push({ x: boss.x + boss.w/2, y: boss.y + boss.h, w: 6, h: 12, vy: 8, color: '#3b82f6', enemyBullet: true });
-                               }
-                          } else if (boss.type === 'boss_purple') { // Swarm - Circular Burst
-                               if (boss.attackTimer % 90 === 0) {
-                                   for(let k=0; k<12; k++) {
-                                       const angle = (k / 12) * Math.PI * 2;
-                                       bullets.push({ x: boss.x + boss.w/2, y: boss.y + boss.h/2, w: 8, h: 8, vy: Math.sin(angle)*4, vx: Math.cos(angle)*4, color: '#a855f7', enemyBullet: true });
-                                   }
-                               }
-                          }
-                      }
-                      
-                      const bossSprite = enemySprites[boss.type];
-                      if(bossSprite && bossSprite.complete) ctx.drawImage(bossSprite, boss.x, boss.y, boss.w, boss.h);
-                      else { ctx.fillStyle = 'red'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); }
-                      
-                      // Boss HP Bar
-                      const hpPercent = boss.hp / boss.maxHp;
-                      ctx.fillStyle = '#1f2937'; ctx.fillRect(boss.x, boss.y - 15, boss.w, 8);
-                      ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
-                      ctx.fillRect(boss.x, boss.y - 15, boss.w * hpPercent, 8);
-                  } else {
-                      // Spawn Boss check
-                      if (score > 0 && score > (wave * 3000) && gameState !== 'boss_warning') {
-                          setGameState('boss_warning');
-                          setTimeout(() => {
-                              setWave(prev => prev + 1);
-                              spawnBoss(wave + 1);
-                              setGameState('playing');
-                          }, 3000);
-                      } else if (gameState === 'playing') {
-                          spawnEnemy();
-                      }
-                  }
-
-                  // Update Enemies
-                  for (let i = enemies.length - 1; i >= 0; i--) {
-                      let e = enemies[i];
-                      e.y += e.speed;
-                      e.x += e.vx;
-                      
-                      // Strafer bounce
-                      if (e.type === 'strafer') {
-                          if (e.x <= 0 || e.x + e.w >= canvas.width) e.vx *= -1;
-                      }
-
-                      // Kamikaze tracking
-                      if (e.type === 'kamikaze') {
-                          if (player.x > e.x) e.x += 1.5; else e.x -= 1.5;
-                      }
-
-                      // Enemy Shoot
-                      if (e.type === 'heavy' && Math.random() < 0.015) {
-                           bullets.push({ x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, vy: 5, color: '#f87171', enemyBullet: true });
-                      }
-
-                      // Draw Enemy
-                      let sprite = enemySprites[e.type] || enemySprites.basic;
-                      if(sprite.complete) ctx.drawImage(sprite, e.x, e.y, e.w, e.h);
-                      else { ctx.fillStyle = 'red'; ctx.fillRect(e.x, e.y, e.w, e.h); }
-
-                      // Collision with Player
-                      if (hp > 0 && Math.abs(e.x - player.x) < (player.w + e.w)/2.5 && Math.abs(e.y - player.y) < (player.h + e.h)/2.5) {
-                           player.hp -= 25;
-                           setHp(player.hp);
-                           enemies.splice(i, 1);
-                           playSound('explosion');
-                           for(let k=0; k<10; k++) particles.push({x: player.x, y: player.y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 20, color: '#ef4444'});
-                      }
-
-                      if (e.y > canvas.height) enemies.splice(i, 1);
-                  }
-
-                  // Update Powerups
-                  for (let i = powerups.length - 1; i >= 0; i--) {
-                      let p = powerups[i];
-                      p.y += 2.5;
-                      
-                      ctx.save();
-                      ctx.translate(p.x, p.y);
-                      ctx.rotate(timestamp * 0.005);
-                      ctx.beginPath();
-                      ctx.rect(-8, -8, 16, 16);
-                      ctx.fillStyle = p.type === 'weapon' ? '#fbbf24' : '#22c55e';
-                      ctx.fill();
-                      ctx.strokeStyle = 'white';
-                      ctx.lineWidth = 2;
-                      ctx.stroke();
-                      ctx.restore();
-                      
-                      // Collision with Player
-                      if (Math.abs(p.x - player.x) < 35 && Math.abs(p.y - player.y) < 35) {
-                          if (p.type === 'weapon') {
-                              player.weapon = Math.min(3, player.weapon + 1);
-                              setWeaponLevel(player.weapon);
-                          } else {
-                              player.hp = Math.min(player.maxHp, player.hp + 30);
-                              setHp(player.hp);
-                          }
-                          playSound('powerup');
-                          powerups.splice(i, 1);
-                      }
-                      if (p.y > canvas.height) powerups.splice(i, 1);
-                  }
-
-                  // Draw Player
-                  if (hp > 0) {
-                      ctx.save();
-                      ctx.translate(player.x, player.y);
-                      // Tilt effect based on X movement
-                      const tilt = (player.x - targetX) * -0.05;
-                      ctx.rotate(tilt * Math.PI / 180);
-                      
-                      if(playerSprite.complete) ctx.drawImage(playerSprite, -20, -20, 40, 40);
-                      else { ctx.fillStyle = 'blue'; ctx.fillRect(-20, -20, 40, 40); }
-                      
-                      // Engine glow
-                      ctx.globalCompositeOperation = 'screen';
-                      ctx.fillStyle = '#3b82f6';
-                      ctx.beginPath();
-                      ctx.arc(0, 25, 10 + Math.random()*5, 0, Math.PI*2);
-                      ctx.fill();
-                      ctx.globalCompositeOperation = 'source-over';
-                      
-                      ctx.restore();
-                  }
-
-                  // Particles
-                  for (let i = particles.length - 1; i >= 0; i--) {
-                      let p = particles[i];
-                      p.x += p.vx; p.y += p.vy; p.life--;
-                      ctx.fillStyle = p.color;
-                      ctx.globalAlpha = p.life / 20;
-                      ctx.fillRect(p.x, p.y, 3, 3);
-                      ctx.globalAlpha = 1.0;
-                      if (p.life <= 0) particles.splice(i, 1);
-                  }
-
-                  // Game Over Check
-                  if (player.hp <= 0 && gameState !== 'gameover') {
-                      setGameState('gameover');
-                  }
-
-                  if (gameState !== 'gameover') {
-                      animationFrameId = requestAnimationFrame(loop);
-                  }
-              };
-              
-              const handleInputMove = (clientX, clientY) => {
-                  const rect = canvas.getBoundingClientRect();
-                  const scaleX = canvas.width / rect.width;
-                  const scaleY = canvas.height / rect.height;
-                  
-                  targetX = (clientX - rect.left) * scaleX;
-                  targetY = (clientY - rect.top) * scaleY - 40; // Offset above finger
-                  isTouching = true;
-              };
-
-              const handleTouchMove = (e) => {
-                  e.preventDefault();
-                  handleInputMove(e.touches[0].clientX, e.touches[0].clientY);
-              };
-
-              const handleMouseMove = (e) => {
-                  if(e.buttons === 1) handleInputMove(e.clientX, e.clientY);
-              };
-
-              const handleTouchEnd = () => { isTouching = false; };
-              const handleMouseUp = () => { isTouching = false; };
-              const handleMouseDown = (e) => { handleInputMove(e.clientX, e.clientY); };
-
-              canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-              canvas.addEventListener('touchend', handleTouchEnd);
-              canvas.addEventListener('mousemove', handleMouseMove);
-              canvas.addEventListener('mousedown', handleMouseDown);
-              canvas.addEventListener('mouseup', handleMouseUp);
-              
-              animationFrameId = requestAnimationFrame(loop);
-
-              return () => {
-                  cancelAnimationFrame(animationFrameId);
-                  canvas.removeEventListener('touchmove', handleTouchMove);
-                  canvas.removeEventListener('touchend', handleTouchEnd);
-                  canvas.removeEventListener('mousemove', handleMouseMove);
-                  canvas.removeEventListener('mousedown', handleMouseDown);
-                  canvas.removeEventListener('mouseup', handleMouseUp);
-              };
-          }, [gameState, equippedShipId]); 
-
-          const restartGame = (withAd) => {
-              if (withAd) triggerAd();
-              setScore(0);
-              setHp(100);
-              setWave(1);
-              setWeaponLevel(1);
-              setGameState('playing');
-          };
-
-          return (
-              <div className="fixed inset-0 bg-black z-50 flex flex-col">
-                  {/* HUD */}
-                  <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start pointer-events-none z-10">
-                      <div className="flex flex-col gap-1">
-                          <div className="text-yellow-400 font-bold text-xl drop-shadow-md">SCORE: {score}</div>
-                          <div className="text-gray-400 text-xs">WAVE {wave}</div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                          <button onClick={onBack} className="pointer-events-auto bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><X size={20}/></button>
-                          <div className="w-32 h-4 bg-gray-800 rounded-full border border-gray-600 overflow-hidden relative">
-                              <div className="h-full bg-red-500 transition-all duration-300" style={{width: `${Math.max(0, hp)}%`}}></div>
-                              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">HP {Math.floor(Math.max(0, hp))}%</div>
-                          </div>
-                          <div className="flex gap-1">
-                              {[1,2,3].map(l => (
-                                  <div key={l} className={`w-2 h-2 rounded-full ${weaponLevel >= l ? 'bg-blue-400' : 'bg-gray-700'}`}></div>
-                              ))}
-                          </div>
-                      </div>
-                  </div>
-
-                  {gameState === 'boss_warning' && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                          <div className="bg-red-600/20 w-full h-32 flex items-center justify-center backdrop-blur-sm border-y-4 border-red-500 animate-pulse">
-                              <h1 className="text-5xl font-bold text-red-500 tracking-[0.5em] neon-title">WARNING</h1>
-                          </div>
-                      </div>
-                  )}
-
-                  <canvas 
-                      ref={canvasRef} 
-                      width={400} 
-                      height={800} 
-                      className="w-full h-full object-cover touch-none"
-                  />
-                  
-                  {gameState === 'gameover' && (
-                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-6 z-30 animate-fade-in p-6 text-center">
-                          <Skull size={64} className="text-red-500 mb-4 animate-pulse" />
-                          <h2 className="text-4xl font-bold text-white tracking-widest text-red-500">MISSION FAILED</h2>
-                          <p className="text-2xl text-yellow-400">FINAL SCORE: {score}</p>
-                          <div className="flex flex-col w-full max-w-xs gap-3">
-                              <button onClick={() => restartGame(true)} className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
-                                  <RefreshCcw /> RESTART MISSION
-                              </button>
-                              <button onClick={onBack} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl">
-                                  RETURN TO BASE
-                              </button>
-                          </div>
-                      </div>
-                  )}
-              </div>
-          );
-      };
-
-      // --- COMPONENT: Modal ---
+      // --- Reusable Components ---
       const Modal = ({ title, onClose, children }) => (
           <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
               <div className="bg-slate-800 w-full max-w-sm rounded-2xl border-2 border-slate-600 shadow-2xl overflow-hidden flex flex-col max-h-[80%]" onClick={e => e.stopPropagation()}>
@@ -964,89 +275,31 @@
           </div>
       );
 
-      // --- COMPONENT: Galaxy Menu ---
-      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => {
-          return (
-              <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
-                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
-                   
-                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
-                       <div className="relative">
-                          <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                          <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
-                       </div>
-                       
-                       <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">
-                          GALAXY<br/><span className="text-blue-400">INVADER</span>
-                       </h1>
-                       
-                       <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
-                            <Coins size={20} className="text-yellow-400" />
-                            <span className="font-bold text-xl text-yellow-400">{coins}</span>
-                       </div>
-
-                       <div className="w-full grid gap-4 mt-8">
-                           <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
-                                <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
-                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
-                                    <span className="text-2xl font-bold tracking-wider">START MISSION</span>
-                                    <ChevronLeft className="rotate-180" size={24} />
-                                </div>
-                           </button>
-                           
-                           <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
-                                <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
-                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
-                                    <ShoppingCart size={24} />
-                                    <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
-                                </div>
-                           </button>
-                       </div>
-
-                       <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full">
-                          <ChevronLeft size={16} /> Back to Hub
-                       </button>
-                   </div>
-                   
-                   <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-              </div>
-          );
-      };
-
-      // --- COMPONENT: ShipCard ---
-      const ShipCard = ({ ship, isUnlocked, isEquipped, adProgress, handleAction }) => {
+      const ShipCard = ({ ship, unlockedShips, equippedShip, adProgress, onEquip, onWatchAd }) => {
+          const isUnlocked = unlockedShips.includes(ship.id);
+          const isEquipped = equippedShip === ship.id;
           const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+          const currentAds = adProgress[ship.id] || 0;
+          const reqAds = ship.adCost;
+
           return (
-              <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+              <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
                   <div className="text-sm font-bold text-gray-300">{ship.name}</div>
                   <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
                        <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
-                       {!isUnlocked && (
-                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                               <Lock size={20} className="text-gray-400" />
-                           </div>
-                       )}
+                       {!isUnlocked && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Lock size={20} className="text-gray-400" /></div>}
                   </div>
-                  
                   {isUnlocked ? (
-                      <button 
-                          onClick={handleAction}
-                          disabled={isEquipped}
-                          className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
-                              ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
-                      >
+                      <button onClick={() => onEquip(ship.id)} disabled={isEquipped} className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
                           {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
                       </button>
                   ) : (
                       <div className="w-full flex flex-col gap-1">
-                          <button 
-                              onClick={handleAction}
-                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white`}
-                          >
-                              <PlayCircle size={12} /> WATCH AD ({adProgress}/{ship.adCost})
+                          <button onClick={() => onWatchAd(ship.id, reqAds)} className="w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white">
+                              <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
                           </button>
                           <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                              <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (adProgress / ship.adCost) * 100)}%` }}></div>
+                              <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
                           </div>
                       </div>
                   )}
@@ -1054,773 +307,563 @@
           );
       };
 
-      // --- COMPONENT: Shop Screen ---
-      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => {
+      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => (
+          <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+               <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
+                   <div className="relative">
+                      <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                      <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
+                   </div>
+                   <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">GALAXY<br/><span className="text-blue-400">INVADER</span></h1>
+                   <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                        <Coins size={20} className="text-yellow-400" />
+                        <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                   </div>
+                   <div className="w-full grid gap-4 mt-8">
+                       <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
+                            <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
+                            <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
+                                <span className="text-2xl font-bold tracking-wider">START MISSION</span>
+                                <ChevronLeft className="rotate-180" size={24} />
+                            </div>
+                       </button>
+                       <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
+                            <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
+                            <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
+                                <ShoppingCart size={24} />
+                                <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
+                            </div>
+                       </button>
+                   </div>
+                   <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full"><ChevronLeft size={16} /> Back to Hub</button>
+               </div>
+               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+          </div>
+      );
+
+      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => (
+          <div className="w-full h-full bg-[#050505] flex flex-col">
+               <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                  <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                  <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
+                  <div className="w-10"></div>
+               </div>
+               <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                   {SHIPS.map(ship => (
+                       <ShipCard key={ship.id} ship={ship} unlockedShips={unlockedShips} equippedShip={equippedShip} adProgress={adProgress} onEquip={equipShip} onWatchAd={handleShipAdWatch} />
+                   ))}
+               </div>
+          </div>
+      );
+
+      // --- GAME 1: GALAXY INVADER (Canvas) ---
+      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
+          const canvasRef = useRef(null);
+          const [score, setScore] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [lives, setLives] = useState(3);
+          const [wave, setWave] = useState(1);
+          
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              const ctx = canvas.getContext('2d');
+              let animationFrameId;
+              let lastTime = 0;
+              
+              // Game Objects
+              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
+              const playerImg = generatePlayerSprite(shipDef.palette);
+              
+              const player = { x: canvas.width/2, y: canvas.height - 100, width: 40, height: 40, speed: 5, hp: 100, weapon: 1, lastShot: 0 };
+              const bullets = [];
+              const enemies = [];
+              const particles = [];
+              const powerups = [];
+              let boss = null;
+              
+              let touchX = null;
+              let touchY = null;
+              
+              const spawnEnemy = () => {
+                  if (boss) return;
+                  const type = Math.random();
+                  let enemy = { x: Math.random() * (canvas.width - 40), y: -50, width: 30, height: 30, hp: 1, type: 'drone', speedY: 2 + Math.random(), speedX: Math.sin(Date.now()/1000)*2 };
+                  if (wave > 1 && type > 0.7) enemy = { ...enemy, type: 'kamikaze', hp: 2, speedY: 4, color: '#f87171' };
+                  if (wave > 3 && type > 0.9) enemy = { ...enemy, type: 'heavy', hp: 5, width: 50, height: 50, speedY: 1, color: '#60a5fa' };
+                  enemies.push(enemy);
+              };
+              
+              const spawnBoss = () => {
+                  boss = { x: canvas.width/2 - 60, y: -120, width: 120, height: 100, hp: 50 * wave, maxHp: 50 * wave, phase: 0, moveDir: 1 };
+                  playSound('warning');
+              };
+
+              const update = (time) => {
+                  const deltaTime = time - lastTime;
+                  lastTime = time;
+                  
+                  // Move Player (360 degrees)
+                  if (touchX !== null) {
+                      const dx = touchX - player.x;
+                      const dy = touchY - player.y;
+                      const dist = Math.sqrt(dx*dx + dy*dy);
+                      if (dist > 5) {
+                          player.x += (dx / dist) * player.speed * 1.5;
+                          player.y += (dy / dist) * player.speed * 1.5;
+                      }
+                  }
+                  // Bounds
+                  player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+                  player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+
+                  // Auto Shoot
+                  if (time - player.lastShot > 300) {
+                      if (player.weapon >= 1) bullets.push({ x: player.x, y: player.y - 20, vy: -10, type: 'player' });
+                      if (player.weapon >= 2) {
+                          bullets.push({ x: player.x - 10, y: player.y - 10, vy: -9, vx: -1, type: 'player' });
+                          bullets.push({ x: player.x + 10, y: player.y - 10, vy: -9, vx: 1, type: 'player' });
+                      }
+                      if (player.weapon >= 3) {
+                          bullets.push({ x: player.x - 20, y: player.y, vy: -8, vx: -3, type: 'player' });
+                          bullets.push({ x: player.x + 20, y: player.y, vy: -8, vx: 3, type: 'player' });
+                      }
+                      playSound('shoot');
+                      player.lastShot = time;
+                  }
+
+                  // Enemies Spawning
+                  if (Math.random() < 0.02 + (wave * 0.005) && !boss) spawnEnemy();
+                  if (score > wave * 2000 && !boss) spawnBoss();
+
+                  // Update Bullets
+                  for (let i = bullets.length - 1; i >= 0; i--) {
+                      let b = bullets[i];
+                      b.y += b.vy;
+                      if (b.vx) b.x += b.vx;
+                      if (b.y < -20 || b.y > canvas.height + 20) bullets.splice(i, 1);
+                  }
+
+                  // Update Enemies
+                  for (let i = enemies.length - 1; i >= 0; i--) {
+                      let e = enemies[i];
+                      e.y += e.speedY;
+                      e.x += e.speedX;
+                      if (e.y > canvas.height) enemies.splice(i, 1);
+                      
+                      // Collision Player
+                      if (Math.abs(e.x - player.x) < (e.width + player.width)/2 && Math.abs(e.y - player.y) < (e.height + player.height)/2) {
+                          player.hp -= 20;
+                          enemies.splice(i, 1);
+                          playSound('explosion');
+                          if (player.hp <= 0) setGameOver(true);
+                      }
+                      
+                      // Collision Bullets
+                      for (let j = bullets.length - 1; j >= 0; j--) {
+                          let b = bullets[j];
+                          if (b.type === 'player' && Math.abs(b.x - e.x) < e.width/2 && Math.abs(b.y - e.y) < e.height/2) {
+                              e.hp--;
+                              bullets.splice(j, 1);
+                              if (e.hp <= 0) {
+                                  if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon' });
+                                  enemies.splice(i, 1);
+                                  setScore(s => s + (e.type === 'heavy' ? 50 : 10));
+                                  addCoins(1);
+                                  playSound('explosion');
+                                  break; // Enemy died
+                              }
+                          }
+                      }
+                  }
+
+                  // Update Boss
+                  if (boss) {
+                      if (boss.y < 80) boss.y += 1;
+                      boss.x += boss.moveDir * 2;
+                      if (boss.x > canvas.width - 60 || boss.x < 60) boss.moveDir *= -1;
+                      
+                      // Boss Shot
+                      if (Math.random() < 0.05) {
+                          bullets.push({ x: boss.x, y: boss.y + 50, vy: 5, type: 'enemy', color: 'red' });
+                          if (wave > 2) {
+                               bullets.push({ x: boss.x - 40, y: boss.y + 40, vy: 4, vx: -1, type: 'enemy', color: 'red' });
+                               bullets.push({ x: boss.x + 40, y: boss.y + 40, vy: 4, vx: 1, type: 'enemy', color: 'red' });
+                          }
+                      }
+
+                      // Boss Collision
+                       for (let j = bullets.length - 1; j >= 0; j--) {
+                          let b = bullets[j];
+                          if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.width/2 && Math.abs(b.y - boss.y) < boss.height/2) {
+                              boss.hp--;
+                              bullets.splice(j, 1);
+                              playSound('boss_hit');
+                              if (boss.hp <= 0) {
+                                  boss = null;
+                                  setScore(s => s + 1000);
+                                  setWave(w => w + 1);
+                                  addCoins(100);
+                                  playSound('win');
+                              }
+                          }
+                      }
+                  }
+
+                  // Player Hit by Enemy Bullets
+                  for (let i = bullets.length - 1; i >= 0; i--) {
+                      let b = bullets[i];
+                      if (b.type === 'enemy' && Math.abs(b.x - player.x) < player.width/2 && Math.abs(b.y - player.y) < player.height/2) {
+                          player.hp -= 10;
+                          bullets.splice(i, 1);
+                          playSound('explosion');
+                          if (player.hp <= 0) setGameOver(true);
+                      }
+                  }
+                  
+                  // Powerups
+                  for(let i=powerups.length-1; i>=0; i--) {
+                      let p = powerups[i];
+                      p.y += 2;
+                      if(Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) {
+                          player.weapon = Math.min(3, player.weapon + 1);
+                          powerups.splice(i, 1);
+                          playSound('powerup');
+                      }
+                  }
+
+                  // Render
+                  ctx.fillStyle = '#000000';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Starfield
+                  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                  for(let i=0; i<50; i++) ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+
+                  // Draw Player
+                  if (playerImg.complete && player.hp > 0) ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
+
+                  // Draw Enemies
+                  enemies.forEach(e => {
+                      ctx.fillStyle = e.color || '#fff';
+                      ctx.fillRect(e.x - e.width/2, e.y - e.height/2, e.width, e.height);
+                  });
+
+                  // Draw Boss
+                  if (boss) {
+                      ctx.fillStyle = 'red';
+                      ctx.fillRect(boss.x - boss.width/2, boss.y - boss.height/2, boss.width, boss.height);
+                      // Boss HP Bar
+                      ctx.fillStyle = 'gray';
+                      ctx.fillRect(boss.x - 50, boss.y - 60, 100, 5);
+                      ctx.fillStyle = 'lime';
+                      ctx.fillRect(boss.x - 50, boss.y - 60, 100 * (boss.hp / boss.maxHp), 5);
+                  }
+
+                  // Draw Bullets
+                  bullets.forEach(b => {
+                      ctx.fillStyle = b.color || 'yellow';
+                      ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
+                  });
+                  
+                  // Draw Powerups
+                  powerups.forEach(p => {
+                      ctx.fillStyle = 'cyan';
+                      ctx.beginPath();
+                      ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+                      ctx.fill();
+                  });
+                  
+                  // UI
+                  ctx.fillStyle = 'white';
+                  ctx.font = '20px Courier New';
+                  ctx.fillText(`SCORE: ${score}`, 10, 30);
+                  ctx.fillText(`WAVE: ${wave}`, 10, 50);
+                  
+                  // Player HP
+                  ctx.fillStyle = 'gray';
+                  ctx.fillRect(10, canvas.height - 20, 200, 10);
+                  ctx.fillStyle = player.hp > 30 ? 'green' : 'red';
+                  ctx.fillRect(10, canvas.height - 20, 200 * (player.hp/100), 10);
+
+                  if (!gameOver) animationFrameId = requestAnimationFrame(() => update(Date.now()));
+              };
+
+              // Resize
+              const handleResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+              window.addEventListener('resize', handleResize);
+              handleResize();
+              
+              update(Date.now());
+              
+              // Input
+              const onTouchMove = (e) => { e.preventDefault(); touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; };
+              const onMouseMove = (e) => { touchX = e.clientX; touchY = e.clientY; };
+              const onEnd = () => { touchX = null; touchY = null; };
+              
+              canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+              canvas.addEventListener('touchend', onEnd);
+              canvas.addEventListener('mousemove', onMouseMove);
+              canvas.addEventListener('mouseup', onEnd);
+              
+              return () => {
+                  window.removeEventListener('resize', handleResize);
+                  cancelAnimationFrame(animationFrameId);
+                  canvas.removeEventListener('touchmove', onTouchMove);
+              };
+          }, [equippedShipId, gameOver, wave]);
+
           return (
-              <div className="w-full h-full bg-[#050505] flex flex-col">
-                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
-                      <div className="w-10"></div>
+              <div className="relative w-full h-full bg-black">
+                  <canvas ref={canvasRef} className="block w-full h-full" />
+                  {gameOver && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
+                          <div className="bg-slate-800 p-8 rounded-2xl border-2 border-red-500 text-center animate-fade-in">
+                              <h2 className="text-4xl font-bold text-red-500 mb-4">GAME OVER</h2>
+                              <p className="text-2xl text-white mb-6">Score: {score}</p>
+                              <div className="flex flex-col gap-4">
+                                  <button onClick={() => { setGameOver(false); setScore(0); setWave(1); }} className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-white flex items-center justify-center gap-2">
+                                      <RefreshCcw /> RESTART
+                                  </button>
+                                  <button onClick={onBack} className="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-bold text-white">EXIT</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full z-40 text-white"><ChevronLeft /></button>
+              </div>
+          );
+      };
+
+      // --- GAME 2: FARM GAME (3D, Premium) ---
+      const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
+          const CROPS = {
+              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', adCost: 0 },
+              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', adCost: 0 },
+              'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, time: 20000, icon: '🥕', adCost: 1 },
+              'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, time: 45000, icon: '🍅', adCost: 2 },
+              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, time: 90000, icon: '🍓', adCost: 3 }
+          };
+
+          const [grid, setGrid] = useState(() => {
+             try { return JSON.parse(localStorage.getItem('farm_grid') || '[]'); } catch { return []; }
+          });
+          const [selectedCrop, setSelectedCrop] = useState('wheat');
+          const [now, setNow] = useState(Date.now());
+
+          useEffect(() => {
+              if (grid.length < 6) {
+                   const newGrid = [...grid];
+                   while(newGrid.length < 6) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null });
+                   setGrid(newGrid);
+              }
+              const interval = setInterval(() => setNow(Date.now()), 1000);
+              return () => clearInterval(interval);
+          }, []);
+
+          useEffect(() => safeStorage.setItem('farm_grid', JSON.stringify(grid)), [grid]);
+
+          const handlePlotClick = (index) => {
+              const plot = grid[index];
+              if (plot.crop) {
+                  const def = CROPS[plot.crop];
+                  if (!def) { // Fix for invalid crop data
+                       const newGrid = [...grid];
+                       newGrid[index] = { ...plot, crop: null, plantedAt: null };
+                       setGrid(newGrid);
+                       return;
+                  }
+                  if (now - plot.plantedAt >= def.time) {
+                      addCoins(def.reward);
+                      playSound('harvest');
+                      const newGrid = [...grid];
+                      newGrid[index] = { ...plot, crop: null, plantedAt: null };
+                      setGrid(newGrid);
+                  }
+              } else {
+                  if (coins >= CROPS[selectedCrop].cost) {
+                      addCoins(-CROPS[selectedCrop].cost);
+                      playSound('plant');
+                      const newGrid = [...grid];
+                      newGrid[index] = { ...plot, crop: selectedCrop, plantedAt: now };
+                      setGrid(newGrid);
+                  } else {
+                      playSound('lose');
+                  }
+              }
+          };
+
+          return (
+              <div className="w-full h-full bg-gradient-to-b from-sky-400 to-green-800 flex flex-col overflow-hidden relative">
+                   <div className="absolute top-0 w-full p-4 flex justify-between z-20 bg-black/20 backdrop-blur">
+                       <button onClick={onBack} className="text-white"><ChevronLeft /></button>
+                       <div className="bg-yellow-500/80 px-4 py-1 rounded-full font-bold text-white shadow-lg border border-yellow-300 flex items-center gap-2">
+                           <Coins size={16} /> {coins}
+                       </div>
                    </div>
                    
-                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
-                       {SHIPS.map(ship => (
-                           <ShipCard 
-                               key={ship.id} 
-                               ship={ship} 
-                               isUnlocked={unlockedShips.includes(ship.id)}
-                               isEquipped={equippedShip === ship.id}
-                               adProgress={adProgress[ship.id] || 0}
-                               handleAction={() => {
-                                   if (unlockedShips.includes(ship.id)) {
-                                       equipShip(ship.id);
-                                       playSound('powerup');
-                                   } else {
-                                       handleShipAdWatch(ship.id, ship.adCost);
-                                       playSound('buy');
-                                   }
-                               }}
-                           />
+                   <div className="flex-1 flex items-center justify-center farm-perspective relative">
+                       <div className="farm-grid-3d grid grid-cols-2 gap-4 p-8 bg-amber-900/40 rounded-[3rem] shadow-2xl border-4 border-amber-800/50 backdrop-blur-sm">
+                           {/* 3D Farmer */}
+                           <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-6xl farmer-anim z-30 drop-shadow-2xl pointer-events-none">👨‍🌾</div>
+                           
+                           {grid.map((plot, i) => {
+                               const def = plot.crop ? CROPS[plot.crop] : null;
+                               const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0;
+                               const isReady = progress >= 100;
+                               
+                               return (
+                                   <button key={i} onClick={() => handlePlotClick(i)} className={`w-24 h-24 rounded-2xl farm-plot transition-all duration-300 relative ${plot.crop ? 'bg-amber-800' : 'bg-green-700 hover:bg-green-600'} border-b-8 ${isReady ? 'border-yellow-600' : 'border-green-900'}`}>
+                                       {def && (
+                                           <div className={`text-4xl drop-shadow-lg ${isReady ? 'animate-bounce' : 'opacity-80'}`}>{def.icon}</div>
+                                       )}
+                                       {def && !isReady && (
+                                           <div className="absolute bottom-2 left-2 right-2 h-2 bg-black/50 rounded-full overflow-hidden">
+                                               <div className="h-full bg-green-400 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                           </div>
+                                       )}
+                                   </button>
+                               );
+                           })}
+                       </div>
+                   </div>
+                   
+                   {/* Seed Selector */}
+                   <div className="h-32 bg-white/10 backdrop-blur-md border-t border-white/20 p-4 overflow-x-auto flex gap-4 z-20 items-center">
+                       {Object.values(CROPS).map(crop => (
+                           <button key={crop.id} onClick={() => setSelectedCrop(crop.id)} className={`flex-shrink-0 w-20 h-24 rounded-xl flex flex-col items-center justify-center bg-black/40 border-2 transition-all ${selectedCrop === crop.id ? 'border-green-400 scale-105 bg-green-900/40' : 'border-transparent'}`}>
+                               <div className="text-3xl mb-1">{crop.icon}</div>
+                               <div className="text-xs font-bold text-white">{crop.name}</div>
+                               <div className="text-[10px] text-yellow-300 font-bold">{crop.cost}💰</div>
+                           </button>
                        ))}
                    </div>
               </div>
           );
       };
 
-      // --- Hangman Game ---
-      const HangmanGame = ({ onBack, addCoins, triggerAd }) => {
-          const WORD_DATA = [
-              { word: 'ABACAXI', category: 'FRUTA' }, { word: 'BANANA', category: 'FRUTA' }, { word: 'MORANGO', category: 'FRUTA' },
-              { word: 'LARANJA', category: 'FRUTA' }, { word: 'UVA', category: 'FRUTA' }, { word: 'MELANCIA', category: 'FRUTA' },
-              { word: 'ELEFANTE', category: 'ANIMAL' }, { word: 'GIRAFA', category: 'ANIMAL' }, { word: 'CACHORRO', category: 'ANIMAL' },
-              { word: 'GATO', category: 'ANIMAL' }, { word: 'LEAO', category: 'ANIMAL' }, { word: 'TIGRE', category: 'ANIMAL' },
-              { word: 'BRASIL', category: 'PAÍS' }, { word: 'JAPAO', category: 'PAÍS' }, { word: 'CANADA', category: 'PAÍS' },
-              { word: 'ALEMANHA', category: 'PAÍS' }, { word: 'FRANCA', category: 'PAÍS' }, { word: 'ITALIA', category: 'PAÍS' },
-              { word: 'FUTEBOL', category: 'ESPORTE' }, { word: 'VOLEI', category: 'ESPORTE' }, { word: 'BASQUETE', category: 'ESPORTE' },
-              { word: 'COMPUTADOR', category: 'OBJETO' }, { word: 'CELULAR', category: 'OBJETO' }, { word: 'CADEIRA', category: 'OBJETO' }
-          ];
+      // --- GAME 3: HANGMAN (With Ad Tips) ---
+      const HangmanGame = ({ onBack, triggerAd, addCoins }) => {
+          const CATEGORIES = {
+              'FRUTAS': ['BANANA', 'MAÇA', 'UVA', 'LARANJA', 'ABACAXI', 'MELANCIA', 'MORANGO'],
+              'ANIMAIS': ['GATO', 'CACHORRO', 'ELEFANTE', 'LEAO', 'TIGRE', 'GIRAFA', 'MACACO'],
+              'PAISES': ['BRASIL', 'ARGENTINA', 'JAPAO', 'ALEMANHA', 'CANADA', 'ITALIA', 'MEXICO']
+          };
           
-          const [currentData, setCurrentData] = useState(null);
+          const [category, setCategory] = useState('FRUTAS');
+          const [word, setWord] = useState('BANANA');
           const [guessed, setGuessed] = useState([]);
-          const [mistakes, setMistakes] = useState(0);
-          const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
+          const [errors, setErrors] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [won, setWon] = useState(false);
 
-          const startNewGame = useCallback(() => {
-              const random = WORD_DATA[Math.floor(Math.random() * WORD_DATA.length)];
-              setCurrentData(random);
+          useEffect(() => { resetGame(); }, []);
+          
+          const resetGame = () => {
+              const cats = Object.keys(CATEGORIES);
+              const rc = cats[Math.floor(Math.random() * cats.length)];
+              const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)];
+              setCategory(rc);
+              setWord(rw);
               setGuessed([]);
-              setMistakes(0);
-              setGameStatus('playing');
-          }, []);
-
-          useEffect(() => {
-              startNewGame();
-          }, [startNewGame]);
+              setErrors(0);
+              setGameOver(false);
+              setWon(false);
+          };
 
           const handleGuess = (letter) => {
-              if (gameStatus !== 'playing' || guessed.includes(letter)) return;
-              setGuessed(prev => [...prev, letter]);
-              
-              if (!currentData.word.includes(letter)) {
-                  const newMistakes = mistakes + 1;
-                  setMistakes(newMistakes);
-                  playSound('lose');
-                  if (newMistakes >= 6) setGameStatus('lost');
+              if (gameOver || guessed.includes(letter)) return;
+              const newGuessed = [...guessed, letter];
+              setGuessed(newGuessed);
+              if (!word.includes(letter)) {
+                  const newErrors = errors + 1;
+                  setErrors(newErrors);
+                  if (newErrors >= 6) { setGameOver(true); playSound('lose'); }
+                  else playSound('lose');
               } else {
                   playSound('correct');
-                  const isWon = currentData.word.split('').every(l => guessed.includes(l) || l === letter);
-                  if (isWon) {
-                      setGameStatus('won');
+                  if (word.split('').every(l => newGuessed.includes(l))) {
+                      setWon(true);
+                      setGameOver(true);
+                      addCoins(20);
                       playSound('win');
-                      addCoins(50);
                   }
               }
           };
-
-          const handleTip = () => {
-              if (gameStatus !== 'playing') return;
-              
-              // Open Direct Link Ad
-              window.open('https://otieu.com/4/10270523', '_blank');
-              
-              // Find unrevealed letters
-              const unrevealed = currentData.word.split('').filter(char => !guessed.includes(char));
-              if (unrevealed.length > 0) {
-                  const randomChar = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-                  setGuessed(prev => [...prev, randomChar]);
-                  // Check win condition after tip
-                  const isWon = currentData.word.split('').every(l => [...guessed, randomChar].includes(l));
-                  if (isWon) {
-                      setGameStatus('won');
-                      playSound('win');
-                      addCoins(50);
-                  }
-              }
-          };
-
-          if (!currentData) return null;
-
-          return (
-             <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden">
-                  <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition"><ChevronLeft color="white" /></button>
-                  
-                  <div className="flex flex-col items-center mb-6">
-                      <h1 className="text-2xl font-bold text-white mb-1 neon-title">FORCA</h1>
-                      <div className="bg-blue-600/20 px-4 py-1 rounded-full border border-blue-500/50 text-blue-300 text-sm font-bold tracking-widest">
-                          {currentData.category}
-                      </div>
-                  </div>
-                  
-                  <div className="mb-8 relative h-[250px] w-[200px]">
-                      {/* Character SVG with Animation */}
-                      <svg width="200" height="250" viewBox="0 0 200 250" className="stroke-white stroke-4 fill-none drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                          {/* Gallows */}
-                          <path d="M20,230 L100,230 M60,230 L60,20 L140,20 L140,40" strokeWidth="4" strokeLinecap="round" />
-                          
-                          {/* Animated Group for the Person */}
-                          <g className={mistakes > 0 ? "hangman-swing" : ""}>
-                              {mistakes >= 1 && <circle cx="140" cy="70" r="20" strokeWidth="3" />} {/* Head */}
-                              {mistakes >= 2 && <line x1="140" y1="90" x2="140" y2="150" strokeWidth="3" />} {/* Body */}
-                              {mistakes >= 3 && <line x1="140" y1="110" x2="110" y2="140" strokeWidth="3" />} {/* Left Arm */}
-                              {mistakes >= 4 && <line x1="140" y1="110" x2="170" y2="140" strokeWidth="3" />} {/* Right Arm */}
-                              {mistakes >= 5 && <line x1="140" y1="150" x2="120" y2="190" strokeWidth="3" />} {/* Left Leg */}
-                              {mistakes >= 6 && <line x1="140" y1="150" x2="160" y2="190" strokeWidth="3" />} {/* Right Leg */}
-                          </g>
-                      </svg>
-                  </div>
-
-                  <div className="flex flex-wrap justify-center gap-2 text-3xl md:text-4xl font-mono text-white mb-8 px-4">
-                      {currentData.word.split('').map((char, i) => (
-                          <span key={i} className={`border-b-4 ${gameStatus === 'lost' && !guessed.includes(char) ? 'border-red-500 text-red-500' : 'border-white'} min-w-[30px] text-center transition-colors`}>
-                              {guessed.includes(char) || gameStatus === 'lost' ? char : ''}
-                          </span>
-                      ))}
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1 md:gap-2 max-w-sm px-2">
-                      {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => (
-                          <button
-                              key={letter}
-                              onClick={() => handleGuess(letter)}
-                              disabled={guessed.includes(letter) || gameStatus !== 'playing'}
-                              className={`p-2 rounded font-bold text-sm md:text-base transition-all transform active:scale-95 ${
-                                  guessed.includes(letter) 
-                                  ? (currentData.word.includes(letter) ? 'bg-green-600' : 'bg-red-600 opacity-50') 
-                                  : 'bg-slate-700 hover:bg-blue-600'
-                              } text-white`}
-                          >
-                              {letter}
-                          </button>
-                      ))}
-                  </div>
-                  
-                  {/* Tip Button */}
-                  <div className="absolute top-4 right-4">
-                      <button 
-                          onClick={handleTip}
-                          disabled={gameStatus !== 'playing'}
-                          className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg border border-yellow-400 animate-pulse disabled:opacity-50 disabled:animate-none"
-                      >
-                          <Lightbulb size={16} /> DICA (VER AD)
-                      </button>
-                  </div>
-                  
-                  {/* Victory/Defeat Modal */}
-                  {gameStatus !== 'playing' && (
-                      <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in p-6">
-                          <div className={`p-6 rounded-2xl border-2 ${gameStatus === 'won' ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'} flex flex-col items-center gap-4 max-w-xs w-full shadow-2xl`}>
-                              {gameStatus === 'won' ? (
-                                  <>
-                                      <Star size={64} className="text-yellow-400 animate-spin-slow" />
-                                      <h2 className="text-3xl font-bold text-green-400">VITÓRIA!</h2>
-                                      <div className="text-white">Você ganhou <span className="text-yellow-400 font-bold">+50 Moedas</span></div>
-                                  </>
-                              ) : (
-                                  <>
-                                      <Skull size={64} className="text-red-500 animate-pulse" />
-                                      <h2 className="text-3xl font-bold text-red-500">DERROTA</h2>
-                                      <div className="text-gray-300">A palavra era:</div>
-                                      <div className="text-2xl font-bold text-white tracking-widest">{currentData.word}</div>
-                                  </>
-                              )}
-                              
-                              <div className="flex flex-col w-full gap-2 mt-4">
-                                  <button onClick={startNewGame} className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition">JOGAR NOVAMENTE</button>
-                                  <button onClick={onBack} className="w-full py-3 bg-black/50 text-white font-bold rounded-xl hover:bg-black/70 border border-white/10">MENU PRINCIPAL</button>
-                              </div>
-                          </div>
-                      </div>
-                  )}
-             </div>
-          );
-      };
-
-      // --- Slither Game ---
-      const SlitherGame = ({ onBack, addCoins }) => {
-          const canvasRef = useRef(null);
-          const [score, setScore] = useState(0);
-          const [gameOver, setGameOver] = useState(false);
-
-          useEffect(() => {
-              const canvas = canvasRef.current;
-              const ctx = canvas.getContext('2d');
-              let snake = [{x: 10, y: 10}];
-              let food = {x: 15, y: 15};
-              let dir = {x: 0, y: 0};
-              let speed = 150;
-              let lastTime = 0;
-              const gridSize = 20;
-              let gameRunning = true;
-
-              const loop = (timestamp) => {
-                  if (!gameRunning) return;
-                  if (timestamp - lastTime > speed) {
-                      lastTime = timestamp;
-                      
-                      const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-                      
-                      // Check collision
-                      if (head.x < 0 || head.x >= canvas.width/gridSize || head.y < 0 || head.y >= canvas.height/gridSize || snake.some(s => s.x === head.x && s.y === head.y)) {
-                          gameRunning = false;
-                          setGameOver(true);
-                          return;
-                      }
-
-                      snake.unshift(head);
-                      if (head.x === food.x && head.y === food.y) {
-                          setScore(s => s + 10);
-                          addCoins(5);
-                          playSound('powerup');
-                          food = {
-                              x: Math.floor(Math.random() * (canvas.width/gridSize)),
-                              y: Math.floor(Math.random() * (canvas.height/gridSize))
-                          };
-                      } else {
-                          snake.pop();
-                      }
-                  }
-
-                  // Draw
-                  ctx.fillStyle = '#111';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  
-                  ctx.fillStyle = 'red';
-                  ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
-
-                  ctx.fillStyle = '#0f0';
-                  snake.forEach(s => ctx.fillRect(s.x * gridSize, s.y * gridSize, gridSize - 2, gridSize - 2));
-
-                  requestAnimationFrame(loop);
-              };
-
-              // Controls
-              const handleKeyDown = (e) => {
-                  if(e.key === 'ArrowUp' && dir.y === 0) dir = {x: 0, y: -1};
-                  if(e.key === 'ArrowDown' && dir.y === 0) dir = {x: 0, y: 1};
-                  if(e.key === 'ArrowLeft' && dir.x === 0) dir = {x: -1, y: 0};
-                  if(e.key === 'ArrowRight' && dir.x === 0) dir = {x: 1, y: 0};
-              };
-              
-              // Touch controls
-              let touchStartX = 0;
-              let touchStartY = 0;
-              const handleTouchStart = (e) => {
-                  touchStartX = e.touches[0].clientX;
-                  touchStartY = e.touches[0].clientY;
-              };
-              const handleTouchEnd = (e) => {
-                  const dx = e.changedTouches[0].clientX - touchStartX;
-                  const dy = e.changedTouches[0].clientY - touchStartY;
-                  if(Math.abs(dx) > Math.abs(dy)) {
-                      if(dx > 0 && dir.x === 0) dir = {x: 1, y: 0};
-                      else if(dx < 0 && dir.x === 0) dir = {x: -1, y: 0};
-                  } else {
-                      if(dy > 0 && dir.y === 0) dir = {x: 0, y: 1};
-                      else if(dy < 0 && dir.y === 0) dir = {x: 0, y: -1};
-                  }
-              };
-
-              window.addEventListener('keydown', handleKeyDown);
-              canvas.addEventListener('touchstart', handleTouchStart);
-              canvas.addEventListener('touchend', handleTouchEnd);
-              
-              // Start automatically moving right
-              dir = {x: 1, y: 0};
-              requestAnimationFrame(loop);
-
-              return () => {
-                  gameRunning = false;
-                  window.removeEventListener('keydown', handleKeyDown);
-                  canvas.removeEventListener('touchstart', handleTouchStart);
-                  canvas.removeEventListener('touchend', handleTouchEnd);
-              };
-          }, [gameOver]);
-
-          return (
-              <div className="w-full h-full bg-black flex flex-col items-center justify-center">
-                  <div className="absolute top-0 left-0 p-4 text-white font-bold text-xl z-10">Score: {score}</div>
-                  <button onClick={onBack} className="absolute top-4 right-4 p-2 bg-white/10 rounded-full z-10 text-white"><X size={24}/></button>
-                  <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} className="block" />
-                  {gameOver && (
-                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                          <h2 className="text-4xl text-red-500 font-bold mb-4">GAME OVER</h2>
-                          <button onClick={() => setGameOver(false)} className="px-6 py-3 bg-white text-black font-bold rounded-full">RESTART</button>
-                      </div>
-                  )}
-              </div>
-          );
-      };
-
-      // --- Farm Game ("Fazendinha") ---
-      const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
-          const CROPS = {
-              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', color: '#fef08a', adCost: 0 },
-              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', color: '#facc15', adCost: 0 },
-              'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, time: 20000, icon: '🥕', color: '#fb923c', adCost: 1 },
-              'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, time: 45000, icon: '🍅', color: '#f87171', adCost: 2 },
-              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, time: 90000, icon: '🍓', color: '#fca5a5', adCost: 3 },
-              'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, time: 180000, icon: '🍇', color: '#c084fc', adCost: 5 },
-              'pineapple': { id: 'pineapple', name: 'Abacaxi', cost: 600, reward: 1600, time: 300000, icon: '🍍', color: '#fde047', adCost: 8 },
-              'watermelon': { id: 'watermelon', name: 'Melancia', cost: 1200, reward: 3500, time: 600000, icon: '🍉', color: '#86efac', adCost: 12 },
-              'pumpkin': { id: 'pumpkin', name: 'Abóbora', cost: 2500, reward: 8000, time: 1200000, icon: '🎃', color: '#fdba74', adCost: 15 },
-          };
-
-          const LAND_LEVELS = [
-              { count: 4, adCost: 0 },
-              { count: 6, adCost: 5 },
-              { count: 8, adCost: 10 },
-              { count: 12, adCost: 15 }
-          ];
-
-          const MERCHANT_QUOTES = [
-              "Hoje o dia está ótimo para plantar!",
-              "Ouvi dizer que morangos dão muito lucro.",
-              "Precisa de moedas? Continue colhendo!",
-              "O segredo é ter paciência... e adubo!",
-              "Eu compraria suas abóboras por um bom preço.",
-              "Quer expandir? Junte moedas!"
-          ];
-
-          const MISSION_TEMPLATES = [
-              { type: 'plant', target: 'any', count: 5, desc: 'Plante 5 Sementes', reward: 20 },
-              { type: 'harvest', target: 'wheat', count: 5, desc: 'Colha 5 Trigos', reward: 30 },
-              { type: 'harvest', target: 'corn', count: 3, desc: 'Colha 3 Milhos', reward: 50 },
-              { type: 'harvest', target: 'strawberry', count: 2, desc: 'Colha 2 Morangos', reward: 100 },
-              { type: 'earn', count: 50, desc: 'Lucre 50 Moedas', reward: 20 },
-              { type: 'earn', count: 200, desc: 'Lucre 200 Moedas', reward: 50 }
-          ];
-
-          // States
-          const [activeModal, setActiveModal] = useState(null);
-          const [landLevel, setLandLevel] = useState(() => {
-              const saved = safeStorage.getItem('farm_land_level');
-              return saved ? parseInt(saved) : 0;
-          });
-          const [grid, setGrid] = useState(() => {
-              const saved = safeStorage.getItem('farm_grid');
-              return saved ? JSON.parse(saved) : [];
-          });
-          const [missions, setMissions] = useState(() => {
-              const saved = safeStorage.getItem('farm_missions');
-              return saved ? JSON.parse(saved) : [];
-          });
-          const [unlockedCrops, setUnlockedCrops] = useState(() => {
-              const saved = safeStorage.getItem('farm_unlocked_crops');
-              return saved ? JSON.parse(saved) : ['wheat', 'corn'];
-          });
-          const [cropAdProgress, setCropAdProgress] = useState(() => {
-              const saved = safeStorage.getItem('farm_crop_ad_progress');
-              return saved ? JSON.parse(saved) : {};
-          });
-          const [landAdProgress, setLandAdProgress] = useState(() => {
-              const saved = safeStorage.getItem('farm_land_ad_progress');
-              return saved ? parseInt(saved) : 0;
-          });
-          const [fertilizerAdProgress, setFertilizerAdProgress] = useState(() => {
-              const saved = safeStorage.getItem('farm_fertilizer_ad_progress');
-              return saved ? parseInt(saved) : 0;
-          });
-
-          const [selectedCrop, setSelectedCrop] = useState('wheat');
-          const [now, setNow] = useState(Date.now());
-          const [farmerPos, setFarmerPos] = useState({ col: 1, row: 1 });
-          const [merchantQuote, setMerchantQuote] = useState("");
-          const [showQuote, setShowQuote] = useState(false);
-
-          // Logic
-          const generateMissions = useCallback(() => {
-              const newMissions = [];
-              for(let i=0; i<3; i++) {
-                  const template = MISSION_TEMPLATES[Math.floor(Math.random() * MISSION_TEMPLATES.length)];
-                  newMissions.push({ id: Date.now() + i, ...template, progress: 0, completed: false });
-              }
-              setMissions(newMissions);
-          }, []);
-
-          useEffect(() => { if (missions.length === 0) generateMissions(); }, [missions, generateMissions]);
-          useEffect(() => { safeStorage.setItem('farm_missions', JSON.stringify(missions)); }, [missions]);
-          useEffect(() => { safeStorage.setItem('farm_land_level', landLevel); }, [landLevel]);
-          useEffect(() => { if (grid.length > 0) safeStorage.setItem('farm_grid', JSON.stringify(grid)); }, [grid]);
-          useEffect(() => { safeStorage.setItem('farm_unlocked_crops', JSON.stringify(unlockedCrops)); }, [unlockedCrops]);
-          useEffect(() => { safeStorage.setItem('farm_crop_ad_progress', JSON.stringify(cropAdProgress)); }, [cropAdProgress]);
-          useEffect(() => { safeStorage.setItem('farm_land_ad_progress', landAdProgress); }, [landAdProgress]);
-          useEffect(() => { safeStorage.setItem('farm_fertilizer_ad_progress', fertilizerAdProgress); }, [fertilizerAdProgress]);
           
-          useEffect(() => { const interval = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(interval); }, []);
-
-          // Initialize Grid
-          useEffect(() => {
-              const targetCount = LAND_LEVELS[landLevel].count;
-              setGrid(prev => {
-                  if (prev.length === targetCount) return prev;
-                  if (prev.length < targetCount) {
-                      const newGrid = [...prev];
-                      while(newGrid.length < targetCount) newGrid.push({ id: newGrid.length, crop: null, plantedAt: null });
-                      return newGrid;
-                  }
-                  return prev.slice(0, targetCount); 
-              });
-          }, [landLevel]);
-
-          const updateMissionProgress = (type, amount, targetId = null) => {
-              setMissions(prev => prev.map(m => {
-                  if (m.completed) return m;
-                  let match = false;
-                  if (m.type === type) {
-                      if (m.target === 'any' || !m.target) match = true;
-                      else if (m.target === targetId) match = true;
-                  }
-                  if (match) return { ...m, progress: Math.min(m.goal || m.count, m.progress + amount) };
-                  return m;
-              }));
+          const handleTip = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Direct Ad Link
+              // Reward: Reveal one missing letter
+              const missing = word.split('').find(l => !guessed.includes(l));
+              if (missing) handleGuess(missing);
           };
 
-          const claimMission = (id) => {
-              const mission = missions.find(m => m.id === id);
-              if (mission && !mission.completed && mission.progress >= mission.count) {
-                  addCoins(mission.reward);
-                  playSound('powerup');
-                  const newMissions = missions.map(m => m.id === id ? { ...m, completed: true } : m);
-                  setMissions(newMissions);
-                  if (newMissions.every(m => m.completed)) {
-                      setTimeout(() => { generateMissions(); playSound('1up'); }, 1000);
-                  }
-              }
-          };
-
-          const handlePlotClick = (plot, index) => {
-              const cols = grid.length < 6 ? 2 : 3;
-              const col = (index % cols) + 1;
-              const row = Math.floor(index / cols) + 1;
-              setFarmerPos({ col, row });
-
-              if (plot.crop) {
-                  const cropDef = CROPS[plot.crop];
-                  if (!cropDef) return; // Safety check
-                  const progress = Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100);
-                  if (progress >= 100) {
-                      playSound('harvest');
-                      addCoins(cropDef.reward);
-                      updateMissionProgress('harvest', 1, plot.crop);
-                      updateMissionProgress('earn', cropDef.reward);
-                      setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: null, plantedAt: null } : p));
-                  } else { playSound('warning'); }
-              } else {
-                  if (selectedCrop && unlockedCrops.includes(selectedCrop)) {
-                      const cropDef = CROPS[selectedCrop];
-                      if (coins >= cropDef.cost) {
-                          playSound('plant');
-                          addCoins(-cropDef.cost);
-                          updateMissionProgress('plant', 1, selectedCrop);
-                          setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: selectedCrop, plantedAt: Date.now() } : p));
-                      } else { playSound('warning'); }
-                  }
-              }
-          };
-
-          const handleFertilizer = () => {
-              window.open('https://otieu.com/4/10270523', '_blank');
-              const next = fertilizerAdProgress + 1;
-              setFertilizerAdProgress(next);
-              
-              if (next >= 2) {
-                  setGrid(prev => prev.map(p => p.crop ? { ...p, plantedAt: Date.now() - CROPS[p.crop].time } : p));
-                  playSound('powerup');
-                  setFertilizerAdProgress(0); // Reset after use
-              } else {
-                  playSound('buy'); // Progress sound
-              }
-          };
-
-          const handleExpand = () => {
-              const nextLevelIndex = landLevel + 1;
-              if (nextLevelIndex < LAND_LEVELS.length) {
-                  const reqAds = LAND_LEVELS[nextLevelIndex].adCost;
-                  
-                  window.open('https://otieu.com/4/10270523', '_blank');
-                  const next = landAdProgress + 1;
-                  setLandAdProgress(next);
-                  
-                  if (next >= reqAds) {
-                      setLandLevel(nextLevelIndex);
-                      setLandAdProgress(0); // Reset for next level
-                      playSound('buy');
-                      setActiveModal(null);
-                  } else {
-                      playSound('buy');
-                  }
-              }
-          };
-
-          const handleCropAdWatch = (cropId, reqAds) => {
-              window.open('https://otieu.com/4/10270523', '_blank');
-              const current = cropAdProgress[cropId] || 0;
-              const next = current + 1;
-              setCropAdProgress(prev => ({...prev, [cropId]: next}));
-              
-              if (next >= reqAds) {
-                  if (!unlockedCrops.includes(cropId)) {
-                      setUnlockedCrops(prev => [...prev, cropId]);
-                      playSound('powerup');
-                  }
-              }
-          };
-
-          const handleMerchantClick = () => {
-              const randomQuote = MERCHANT_QUOTES[Math.floor(Math.random() * MERCHANT_QUOTES.length)];
-              setMerchantQuote(randomQuote);
-              setShowQuote(true);
-              playSound('talk');
-              setTimeout(() => setShowQuote(false), 4000);
-          };
-
-          const gridColsClass = grid.length < 6 ? 'grid-cols-2' : 'grid-cols-3';
-          const nextLand = landLevel < LAND_LEVELS.length - 1 ? LAND_LEVELS[landLevel + 1] : null;
-
+          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+          
           return (
-              <div className="w-full h-full flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-900 via-emerald-950 to-black text-white relative overflow-hidden">
-                  {/* Glass Header */}
-                  <div className="w-full p-4 flex items-center justify-between bg-white/5 backdrop-blur-xl border-b border-white/10 z-20 absolute top-0 left-0 right-0 shadow-lg">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
-                      <div className="flex flex-col items-center">
-                          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-200 drop-shadow-md flex items-center gap-2"><Sprout className="text-green-400" /> FAZENDINHA</h1>
-                          {selectedCrop && CROPS[selectedCrop] && (
-                              <div className="text-xs text-green-200 bg-white/5 px-3 py-1 rounded-full flex items-center gap-2 border border-white/5 shadow-inner">
-                                  Plantando: <span className="text-lg">{CROPS[selectedCrop].icon}</span> <span className="font-bold">{CROPS[selectedCrop].name}</span>
-                              </div>
-                          )}
-                      </div>
-                      <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-1.5 rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                          <Coins size={18} className="text-yellow-400" />
-                          <span className="font-bold text-yellow-400 text-lg">{coins}</span>
-                      </div>
+              <div className="w-full h-full bg-slate-900 text-white flex flex-col p-4 relative">
+                  <div className="flex justify-between items-center mb-6">
+                      <button onClick={onBack}><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold text-blue-400">FORCA: {category}</h1>
+                      <button onClick={handleTip} className="bg-yellow-600 px-3 py-1 rounded text-xs font-bold animate-pulse">VER AD 💡</button>
                   </div>
-
-                  {/* 3D Game Area */}
-                  <div className="flex-1 w-full flex items-center justify-center p-6 relative perspective-container overflow-hidden">
-                       <div className="farm-perspective w-full max-w-md h-full flex items-center justify-center">
-                          <div className={`grid ${gridColsClass} gap-6 p-8 rounded-[3rem] farm-grid-3d relative transition-all duration-700`}>
-                              {/* Ground Base */}
-                              <div className="absolute inset-0 bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] border-4 border-emerald-900/50 -z-10 transform translate-z-[-20px]"></div>
-
-                              {/* Merchant */}
-                              <div className="absolute -bottom-20 -right-10 z-30 flex flex-col items-end pointer-events-auto transform translate-z-[50px]">
-                                  {showQuote && (
-                                      <div className="bg-white text-black p-3 rounded-2xl rounded-br-none mb-3 shadow-2xl text-xs font-bold max-w-[140px] animate-fade-in relative border border-gray-100">
-                                          {merchantQuote}
-                                          <div className="absolute -bottom-2 right-4 w-0 h-0 border-l-8 border-l-transparent border-t-[10px] border-t-white border-r-0"></div>
-                                      </div>
-                                  )}
-                                  <button onClick={handleMerchantClick} className="text-6xl filter drop-shadow-2xl hover:scale-110 transition-transform active:scale-95 hover:-translate-y-2 duration-300">🧑‍💼</button>
-                              </div>
-
-                              {/* Farmer */}
-                              <div 
-                                  className="absolute w-24 h-24 pointer-events-none transition-all duration-700 ease-in-out z-50 flex flex-col items-center justify-center transform" 
-                                  style={{ 
-                                      gridColumn: farmerPos.col, 
-                                      gridRow: farmerPos.row,
-                                      marginTop: '-3rem',
-                                      marginLeft: '-1rem'
-                                  }}
-                              >
-                                  <div className="text-6xl filter drop-shadow-2xl farmer-anim">👨‍🌾</div>
-                                  <div className="w-10 h-3 bg-black/40 rounded-[50%] blur-sm mt-[-10px] transform rotateX(-20deg) translate-z-0"></div>
-                              </div>
-
-                              {/* Plots */}
-                              {grid.map((plot, index) => {
-                                  const cropDef = plot.crop ? CROPS[plot.crop] : null;
-                                  const progress = cropDef ? Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100) : 0;
-                                  const isReady = progress >= 100;
-                                  
-                                  return (
-                                      <button 
-                                        key={plot.id} 
-                                        onClick={() => handlePlotClick(plot, index)} 
-                                        className={`
-                                            farm-plot w-24 h-24 md:w-28 md:h-28 rounded-3xl flex flex-col items-center justify-center relative transition-all duration-300 transform 
-                                            active:scale-90 hover:scale-105
-                                            ${plot.crop 
-                                                ? (isReady 
-                                                    ? 'bg-gradient-to-br from-amber-700 to-amber-900 shadow-[0_0_30px_rgba(251,191,36,0.4)] border-2 border-yellow-500/50' 
-                                                    : 'bg-gradient-to-br from-amber-900 to-amber-950 border border-amber-900/50') 
-                                                : 'bg-gradient-to-br from-emerald-900 to-emerald-950 border border-emerald-800/30 hover:border-emerald-500/50 shadow-inner'}
-                                        `}
-                                      >
-                                          {plot.crop ? (
-                                              <>
-                                                  <div className={`text-5xl md:text-6xl drop-shadow-2xl filter ${isReady ? 'float-animation brightness-110' : 'brightness-90 scale-75'}`}>{cropDef.icon}</div>
-                                                  {!isReady && (
-                                                      <div className="absolute bottom-3 left-3 right-3 h-1.5 bg-black/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
-                                                          <div className="h-full bg-gradient-to-r from-green-500 to-emerald-300 transition-all duration-1000 shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `${progress}%` }}></div>
-                                                      </div>
-                                                  )}
-                                                  {isReady && (
-                                                      <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">READY</div>
-                                                  )}
-                                              </>
-                                          ) : <div className="w-2 h-2 bg-emerald-800/50 rounded-full"></div>}
-                                      </button>
-                                  );
-                              })}
+                  
+                  {/* Visual */}
+                  <div className="flex justify-center mb-8 h-40 relative">
+                       <svg width="200" height="160" viewBox="0 0 200 160" className="stroke-white stroke-[4px] fill-none">
+                            <line x1="20" y1="150" x2="100" y2="150" />
+                            <line x1="60" y1="150" x2="60" y2="20" />
+                            <line x1="60" y1="20" x2="140" y2="20" />
+                            <line x1="140" y1="20" x2="140" y2="40" />
+                            <g className={errors > 0 ? "hangman-swing" : ""}>
+                                {errors > 0 && <circle cx="140" cy="50" r="10" />}
+                                {errors > 1 && <line x1="140" y1="60" x2="140" y2="100" />}
+                                {errors > 2 && <line x1="140" y1="70" x2="120" y2="90" />}
+                                {errors > 3 && <line x1="140" y1="70" x2="160" y2="90" />}
+                                {errors > 4 && <line x1="140" y1="100" x2="120" y2="130" />}
+                                {errors > 5 && <line x1="140" y1="100" x2="160" y2="130" />}
+                            </g>
+                       </svg>
+                  </div>
+                  
+                  {/* Word */}
+                  <div className="flex justify-center gap-2 mb-8 flex-wrap">
+                      {word.split('').map((l, i) => (
+                          <div key={i} className="w-8 h-10 border-b-4 border-white flex items-center justify-center text-2xl font-bold">
+                              {guessed.includes(l) || gameOver ? l : ''}
                           </div>
-                      </div>
+                      ))}
                   </div>
-
-                  {/* Glass Dock Menu */}
-                  <div className="w-full bg-black/40 backdrop-blur-xl border-t border-white/10 p-4 safe-area-bottom z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                      {/* Seed Selector - Horizontal Scroll */}
-                      <div className="flex overflow-x-auto gap-3 pb-4 mb-2 scrollbar-hide px-2 snap-x">
-                          {Object.values(CROPS).map(crop => {
-                              const isUnlocked = unlockedCrops.includes(crop.id);
-                              const isSelected = selectedCrop === crop.id;
-                              const adsWatched = cropAdProgress[crop.id] || 0;
-                              
-                              return (
-                                  <button 
-                                      key={crop.id}
-                                      onClick={() => {
-                                          if (isUnlocked) {
-                                              setSelectedCrop(crop.id);
-                                          } else {
-                                              handleCropAdWatch(crop.id, crop.adCost);
-                                          }
-                                      }}
-                                      className={`
-                                          flex-shrink-0 snap-center w-24 p-3 rounded-2xl border flex flex-col items-center justify-between gap-2 transition-all duration-300 group
-                                          ${isSelected 
-                                              ? 'bg-gradient-to-b from-green-600/30 to-emerald-900/30 border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.2)] scale-105' 
-                                              : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'} 
-                                          ${!isUnlocked ? 'opacity-60 grayscale' : ''}
-                                      `}
-                                  >
-                                      <div className="text-3xl filter drop-shadow-lg group-hover:scale-110 transition-transform">{crop.icon}</div>
-                                      <div className="w-full flex flex-col items-center">
-                                          <span className="text-[10px] font-medium text-gray-300 mb-1">{crop.name}</span>
-                                          {isUnlocked ? (
-                                              <div className={`text-xs font-bold flex items-center gap-1 ${coins >= crop.cost ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                  <Coins size={10} /> {crop.cost}
-                                              </div>
-                                          ) : (
-                                              <div className="flex flex-col items-center w-full gap-1">
-                                                  <Lock size={12} className="text-blue-400" />
-                                                  <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                                      <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (adsWatched / crop.adCost) * 100)}%` }}></div>
-                                                  </div>
-                                              </div>
-                                          )}
-                                      </div>
-                                  </button>
-                              );
-                          })}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="max-w-md mx-auto flex justify-around items-center border-t border-white/10 pt-4">
-                          <button onClick={() => setActiveModal('missions')} className="flex flex-col items-center gap-1.5 p-2 text-gray-400 hover:text-yellow-400 transition-colors active:scale-95 relative group">
-                              <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-yellow-500/20 transition-colors">
-                                  <ClipboardList size={22} />
-                              </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Missões</span>
-                              {missions.some(m => !m.completed && m.progress >= m.count) && (
-                                  <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-pulse shadow-lg"></div>
-                              )}
+                  
+                  {/* Keyboard */}
+                  <div className="grid grid-cols-7 gap-2">
+                      {alphabet.map(l => (
+                          <button key={l} onClick={() => handleGuess(l)} disabled={guessed.includes(l) || gameOver} className={`h-10 rounded font-bold ${guessed.includes(l) ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+                              {l}
                           </button>
-                          
-                          <button onClick={() => setActiveModal('expand')} className="flex flex-col items-center gap-1.5 p-2 text-gray-400 hover:text-blue-400 transition-colors active:scale-95 group">
-                              <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-blue-500/20 transition-colors">
-                                  <Pickaxe size={22} />
-                              </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Expandir</span>
-                          </button>
-                          
-                          <button onClick={handleFertilizer} className="flex flex-col items-center gap-1.5 p-2 text-gray-400 hover:text-purple-400 transition-colors active:scale-95 relative group">
-                              <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-purple-500/20 transition-colors">
-                                  <Zap size={22} className="fill-current" />
-                              </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Adubo</span>
-                              <div className="absolute -top-1 right-0 bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-purple-400 shadow-lg">ADS</div>
-                          </button>
-                      </div>
+                      ))}
                   </div>
-
-                  {/* Modals */}
-                  {activeModal === 'missions' && (
-                      <Modal title="Missões Diárias" onClose={() => setActiveModal(null)}>
-                          <div className="flex flex-col gap-3">
-                              {missions.map(mission => (
-                                  <div key={mission.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center justify-between gap-3 border border-slate-600">
-                                      <div className="flex-1">
-                                          <div className="text-sm font-bold text-gray-200">{mission.desc}</div>
-                                          <div className="w-full bg-slate-900 h-2 rounded-full mt-1 overflow-hidden">
-                                              <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min(100, (mission.progress / mission.count) * 100)}%` }}></div>
-                                          </div>
-                                          <div className="text-xs text-gray-400 mt-1">{mission.progress} / {mission.count}</div>
-                                      </div>
-                                      {mission.completed ? (
-                                          <div className="text-green-400 font-bold text-xs flex flex-col items-center"><CheckCircle size={20} /><span>FEITO</span></div>
-                                      ) : (
-                                          mission.progress >= mission.count ? (
-                                              <button onClick={() => claimMission(mission.id)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-3 py-1 rounded-lg text-xs animate-bounce">COLETAR<br/>+{mission.reward} 💰</button>
-                                          ) : <div className="text-xs font-bold text-yellow-500/50 border border-yellow-500/20 px-2 py-1 rounded">+{mission.reward} 💰</div>
-                                      )}
-                                  </div>
-                              ))}
-                          </div>
-                      </Modal>
-                  )}
-
-                  {activeModal === 'expand' && (
-                      <Modal title="Expandir Terreno" onClose={() => setActiveModal(null)}>
-                          {nextLand ? (
-                              <div className="flex flex-col items-center gap-6 py-4">
-                                  <div className="text-6xl animate-bounce">🚜</div>
-                                  <div className="text-center">
-                                      <p className="text-gray-300">Aumente sua fazenda para</p>
-                                      <p className="text-2xl font-bold text-green-400">{nextLand.count} Blocos</p>
-                                  </div>
-                                  
-                                  <div className="w-full flex flex-col gap-2">
-                                      <button onClick={handleExpand} className="w-full py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30">
-                                          <span className="text-lg">EXPANDIR (VER AD)</span>
-                                          <div className="flex items-center gap-1 text-sm"><PlayCircle size={14} /> {landAdProgress}/{nextLand.adCost}</div>
-                                      </button>
-                                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-600">
-                                          <div className="h-full bg-blue-400 transition-all duration-500" style={{ width: `${Math.min(100, (landAdProgress / nextLand.adCost) * 100)}%` }}></div>
-                                      </div>
-                                  </div>
-                              </div>
-                          ) : (
-                              <div className="text-center py-10 text-gray-400">
-                                  <div className="text-4xl mb-4">🏆</div>
-                                  <p>Você atingiu o tamanho máximo da fazenda!</p>
-                              </div>
-                          )}
-                      </Modal>
+                  
+                  {gameOver && (
+                      <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 animate-fade-in">
+                          <h2 className={`text-4xl font-bold mb-4 ${won ? 'text-green-500' : 'text-red-500'}`}>{won ? 'VITÓRIA!' : 'DERROTA!'}</h2>
+                          <p className="mb-6 text-xl">A palavra era: <span className="text-yellow-400">{word}</span></p>
+                          {won && <p className="mb-6 text-yellow-300 font-bold">+20 Moedas</p>}
+                          <button onClick={resetGame} className="px-8 py-3 bg-white text-black font-bold rounded-full">JOGAR NOVAMENTE</button>
+                      </div>
                   )}
               </div>
+          );
+      };
+
+      // --- GAME 4: SLITHER (Placeholder Logic) ---
+      const SlitherGame = ({ onBack }) => {
+          return (
+             <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white">
+                  <h1 className="text-4xl font-bold text-green-500 mb-4 neon-title">NEON SLITHER</h1>
+                  <p className="mb-8">Em breve...</p>
+                  <button onClick={onBack} className="px-6 py-2 bg-gray-700 rounded-full">VOLTAR</button>
+             </div>
           );
       };
 
@@ -1828,166 +871,63 @@
       const App = () => {
           const [currentScreen, setCurrentScreen] = useState('home');
           const [lastAdTime, setLastAdTime] = useState(0);
-          
-          // Persistence State
-          const [coins, setCoins] = useState(() => {
-              const saved = safeStorage.getItem('galaxy_coins');
-              try { return saved ? parseInt(saved) || 0 : 0; } catch (e) { return 0; }
-          });
-          const [unlockedShips, setUnlockedShips] = useState(() => {
-              const saved = safeStorage.getItem('galaxy_unlocked');
-              try { return saved ? JSON.parse(saved) : ['starter']; } catch (e) { return ['starter']; }
-          });
-          const [equippedShip, setEquippedShip] = useState(() => {
-              const saved = safeStorage.getItem('galaxy_equipped');
-              return saved || 'starter';
-          });
-          const [adProgress, setAdProgress] = useState(() => {
-              const saved = safeStorage.getItem('galaxy_ad_progress');
-              try { return saved ? JSON.parse(saved) : {}; } catch (e) { return {}; }
-          });
+          const [coins, setCoins] = useState(() => { try { return parseInt(localStorage.getItem('galaxy_coins') || '0'); } catch { return 0; } });
+          const [unlockedShips, setUnlockedShips] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'); } catch { return ['starter']; } });
+          const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
+          const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
 
-          // Sync with LocalStorage
-          useEffect(() => { safeStorage.setItem('galaxy_coins', coins); }, [coins]);
-          useEffect(() => { safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)); }, [unlockedShips]);
-          useEffect(() => { safeStorage.setItem('galaxy_equipped', equippedShip); }, [equippedShip]);
-          useEffect(() => { safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)); }, [adProgress]);
+          useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]);
+          useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]);
+          useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]);
+          useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
 
-          const addCoins = (amount) => setCoins(prev => prev + amount);
-          
+          const addCoins = (amount) => setCoins(c => c + amount);
+          const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
+
           const handleShipAdWatch = (shipId, reqAds) => {
               window.open('https://otieu.com/4/10270523', '_blank');
-              const current = adProgress[shipId] || 0;
-              const next = current + 1;
-              setAdProgress(prev => ({...prev, [shipId]: next}));
-              
-              if (next >= reqAds) {
-                  if (!unlockedShips.includes(shipId)) {
-                      setUnlockedShips(prev => [...prev, shipId]);
-                      playSound('powerup'); // Unlock Sound
-                  }
+              const next = (adProgress[shipId] || 0) + 1;
+              setAdProgress(p => ({ ...p, [shipId]: next }));
+              if (next >= reqAds && !unlockedShips.includes(shipId)) {
+                  setUnlockedShips(u => [...u, shipId]);
+                  playSound('powerup');
               }
           };
 
-          const equipShip = (shipId) => {
-              if (unlockedShips.includes(shipId)) {
-                  setEquippedShip(shipId);
-              }
+          const triggerAd = (e) => {
+              if (Date.now() - lastAdTime < 180000) return;
+              setLastAdTime(Date.now());
+              window.open('https://otieu.com/4/10270523', '_blank');
           };
+          
+          const startGame = (name) => { triggerAd(); setCurrentScreen(name); };
 
-          // Strict 3-minute cooldown (180000ms)
-          const triggerAd = useCallback((e) => {
-             const now = Date.now();
-             if (now - lastAdTime < 180000) {
-                 if (e && e.stopPropagation) {
-                   e.stopPropagation();
-                   if(e.nativeEvent && e.nativeEvent.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation();
-                 }
-                 return;
-             }
-             setLastAdTime(now);
-          }, [lastAdTime]);
-
-          const startGame = (gameName, e) => { 
-             triggerAd(e); 
-             if (document.documentElement.requestFullscreen) {
-                 document.documentElement.requestFullscreen().catch(() => {});
-             }
-             setCurrentScreen(gameName); 
-          };
-
-          const renderScreen = () => {
-              switch(currentScreen) {
-                  case 'shop': return (
-                      <ShopScreen 
-                          adProgress={adProgress}
-                          handleShipAdWatch={handleShipAdWatch}
-                          unlockedShips={unlockedShips}
-                          equippedShip={equippedShip}
-                          equipShip={equipShip}
-                          onBack={() => setCurrentScreen('galaxy-menu')}
-                      />
-                  );
-                  case 'galaxy-menu': return (
-                      <GalaxyMenu 
-                          onStart={(e) => {
-                              // Direct Link Logic for Start Mission
-                              const now = Date.now();
-                              // Check 3 min cooldown
-                              if (now - lastAdTime >= 180000) {
-                                  window.open('https://otieu.com/4/10270523', '_blank');
-                                  setLastAdTime(now);
-                                  if (e && e.stopPropagation) e.stopPropagation();
-                              } else {
-                                  if (e && e.stopPropagation) e.stopPropagation();
-                              }
-                              if (document.documentElement.requestFullscreen) {
-                                  document.documentElement.requestFullscreen().catch(() => {});
-                              }
-                              setCurrentScreen('galaxy-game');
-                          }}
-                          onShop={() => setCurrentScreen('shop')}
-                          onBack={() => setCurrentScreen('home')}
-                          coins={coins}
-                      />
-                  );
-                  case 'galaxy-game': return (
-                      <GalaxyInvader 
-                          onBack={() => setCurrentScreen('galaxy-menu')} 
-                          triggerAd={triggerAd} 
-                          equippedShipId={equippedShip}
-                          addCoins={addCoins}
-                          currentCoins={coins}
-                      />
-                  );
-                  case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
-                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
-                  case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} />;
-                  default: return (
-                          <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
-                              <InstallButton />
-                              <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
-                                  <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
-                                  
-                                  <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
-                                      <Coins size={20} className="text-yellow-400" />
-                                      <span className="font-bold text-xl text-yellow-400">{coins}</span>
-                                  </div>
-
-                                  <div className="w-full grid gap-4 mt-8">
-                                      <button onClick={() => setCurrentScreen('galaxy-menu')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span><span className="text-xs text-gray-400">Space Shooter</span></div>
-                                              <Rocket size={32} className="text-purple-400" />
-                                          </div>
-                                      </button>
-                                      <button onClick={(e) => startGame('slither', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON SLITHER</span><span className="text-xs text-gray-400">Snake IO</span></div>
-                                              <Worm size={32} className="text-pink-400" />
-                                          </div>
-                                      </button>
-                                      <button onClick={(e) => startGame('farm', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">FAZENDINHA</span><span className="text-xs text-gray-400">Farm Idle</span></div>
-                                              <Sprout size={32} className="text-green-400" />
-                                          </div>
-                                      </button>
-                                      <button onClick={(e) => startGame('hangman', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
-                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div>
-                                              <Brain size={32} className="text-blue-400" />
-                                          </div>
-                                      </button>
-                                  </div>
-                              </div>
-                              <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.10.0</div>
+          switch(currentScreen) {
+              case 'galaxy-menu': return <GalaxyMenu onStart={() => startGame('galaxy-game')} onShop={() => setCurrentScreen('shop')} onBack={() => setCurrentScreen('home')} coins={coins} />;
+              case 'galaxy-game': return <GalaxyInvader onBack={() => setCurrentScreen('galaxy-menu')} triggerAd={triggerAd} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+              case 'shop': return <ShopScreen adProgress={adProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equippedShip={equippedShip} equipShip={equipShip} onBack={() => setCurrentScreen('galaxy-menu')} />;
+              case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
+              case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
+              case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} />;
+              default: return (
+                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+                      <InstallButton />
+                      <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
+                          <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
+                          <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
+                              <Coins size={20} className="text-yellow-400" />
+                              <span className="font-bold text-xl text-yellow-400">{coins}</span>
                           </div>
-                      );
-              }
-          };
-          return renderScreen();
+                          <div className="w-full grid gap-4 mt-8">
+                              <button onClick={() => setCurrentScreen('galaxy-menu')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span><span className="text-xs text-gray-400">Space Shooter</span></div><Rocket size={32} className="text-purple-400" /></div></button>
+                              <button onClick={() => startGame('slither')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON SLITHER</span><span className="text-xs text-gray-400">Snake IO</span></div><Worm size={32} className="text-pink-400" /></div></button>
+                              <button onClick={() => startGame('farm')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">FAZENDINHA</span><span className="text-xs text-gray-400">Farm Idle</span></div><Sprout size={32} className="text-green-400" /></div></button>
+                              <button onClick={() => startGame('hangman')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div><Brain size={32} className="text-blue-400" /></div></button>
+                          </div>
+                      </div>
+                  </div>
+              );
+          }
       };
 
       const root = createRoot(document.getElementById('root'));
