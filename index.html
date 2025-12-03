@@ -9,6 +9,9 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     
+    <!-- Monetag Popunder Script -->
+    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -800,10 +803,10 @@
                           <button 
                               onClick={handleHint} 
                               disabled={status !== 'playing'}
-                              className={`flex items-center gap-1 px-3 py-1 rounded-full border border-blue-500/50 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 cursor-pointer`}
+                              className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-yellow-400 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.6)] hover:shadow-[0_0_25px_rgba(234,179,8,0.8)] transition-all transform hover:scale-105"
                           >
-                              <PlayCircle size={16} />
-                              <span className="font-bold text-xs">WATCH AD</span>
+                              <Lightbulb size={20} className="fill-yellow-400 text-yellow-100 animate-pulse" />
+                              <span className="font-bold text-sm">DICA (Ver Ad)</span>
                           </button>
                       </div>
                   </div>
