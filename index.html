@@ -297,13 +297,13 @@
       // --- SHIP DEFINITIONS & SPRITE GENERATOR ---
       
       const SHIPS = [
-          { id: 'starter', name: 'Prototype', price: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
-          { id: 'blue', name: 'Interceptor', price: 80, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
-          { id: 'purple', name: 'Void Walker', price: 160, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
-          { id: 'green', name: 'Venom Striker', price: 300, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
-          { id: 'yellow', name: 'Solar Flare', price: 600, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
-          { id: 'red', name: 'Crimson Fury', price: 1200, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
-          { id: 'legendary', name: 'Abyssal King', price: 2000, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
+          { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
+          { id: 'blue', name: 'Interceptor', adCost: 5, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
+          { id: 'purple', name: 'Void Walker', adCost: 10, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
+          { id: 'green', name: 'Venom Striker', adCost: 15, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
+          { id: 'yellow', name: 'Solar Flare', adCost: 20, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
+          { id: 'red', name: 'Crimson Fury', adCost: 25, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
+          { id: 'legendary', name: 'Abyssal King', adCost: 30, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
       ];
 
       const generatePlayerSprite = (palette) => {
@@ -381,23 +381,21 @@
       };
 
       // --- COMPONENT: Shop Screen ---
-      const ShopScreen = ({ coins, unlockShip, equipShip, unlockedShips, equippedShip, onBack }) => {
+      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => {
           const ShipCard = ({ ship }) => {
               const isUnlocked = unlockedShips.includes(ship.id);
               const isEquipped = equippedShip === ship.id;
               const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+              const currentAds = adProgress[ship.id] || 0;
+              const reqAds = ship.adCost;
 
               const handleAction = () => {
                   if (isUnlocked) {
                       equipShip(ship.id);
                       playSound('powerup');
                   } else {
-                      if (coins >= ship.price) {
-                          unlockShip(ship.id, ship.price);
-                          playSound('buy');
-                      } else {
-                          playSound('wrong');
-                      }
+                      handleShipAdWatch(ship.id, reqAds);
+                      playSound('buy');
                   }
               };
 
@@ -423,14 +421,17 @@
                               {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
                           </button>
                       ) : (
-                          <button 
-                              onClick={handleAction}
-                              disabled={coins < ship.price}
-                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
-                                  ${coins >= ship.price ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                          >
-                              <Coins size={12} /> {ship.price}
-                          </button>
+                          <div className="w-full flex flex-col gap-1">
+                              <button 
+                                  onClick={handleAction}
+                                  className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white`}
+                              >
+                                  <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
+                              </button>
+                              <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                  <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
+                              </div>
+                          </div>
                       )}
                   </div>
               );
@@ -441,10 +442,7 @@
                    <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
                       <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
                       <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
-                      <div className="flex items-center gap-2 bg-gray-900 px-3 py-1 rounded-full border border-yellow-600/50">
-                          <Coins size={16} className="text-yellow-400" />
-                          <span className="font-bold text-yellow-400">{coins}</span>
-                      </div>
+                      <div className="w-10"></div>
                    </div>
                    
                    <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
@@ -1505,6 +1503,7 @@
                   const cy = boss.y + boss.h/2;
                   ctx.save(); 
                   
+                  // Boss drawing based on type (reusing previous logic)
                   if (boss.type === 'pyramid') {
                       ctx.shadowBlur = 20; ctx.shadowColor = '#eab308'; ctx.fillStyle = '#eab308';
                       ctx.beginPath(); ctx.moveTo(cx, boss.y); ctx.lineTo(boss.x + boss.w, boss.y + boss.h); ctx.lineTo(boss.x, boss.y + boss.h); ctx.closePath(); ctx.fill();
@@ -1543,17 +1542,21 @@
                   }
                   ctx.restore();
                   
+                  // Boss HP Bar
                   ctx.fillStyle = '#330033'; ctx.fillRect(10, 80, g.width - 20, 10); ctx.fillStyle = '#ff00ff'; ctx.fillRect(10, 80, (g.width - 20) * (boss.health / boss.maxHealth), 10);
               }
 
               g.particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
 
+              // HUD
               ctx.font = 'bold 16px "Courier New"'; 
               ctx.textAlign = 'left';
               
+              // Move Level/Weapon to Top Left
               ctx.fillStyle = 'white';
               ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, 10, 25);
               
+              // Level Progress Bar
               const levelProgress = Math.min(1, g.levelScore / g.bossTarget);
               ctx.textAlign = 'center';
               ctx.font = '12px "Courier New"';
@@ -1562,22 +1565,27 @@
               ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 65, 200 * levelProgress, 6);
               ctx.textAlign = 'left';
 
+              // Lives
               ctx.fillStyle = '#ef4444';
               ctx.font = 'bold 20px Arial';
               ctx.fillText(`❤ x ${g.player.lives}`, 10, g.height - 40);
 
+              // Player Health Bar
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
               ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
               ctx.fillRect(10, g.height - 30, 150 * hpPercent, 15);
               ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(10, g.height - 30, 150, 15);
 
+              // SCORE & COINS (Moved to Bottom, Next to HP Bar)
               const currentTotalCoins = currentCoins + g.earnedCoins + Math.floor(g.sessionScore / 1000);
 
+              // Coins (Bottom Left, aligned with Lives Y-axis)
               ctx.fillStyle = '#fbbf24';
               ctx.font = 'bold 16px "Courier New"';
               ctx.fillText(`${currentTotalCoins} COINS`, 170, g.height - 40);
 
+              // Score (Bottom Left, aligned with HP Bar Y-axis)
               ctx.fillStyle = 'white';
               ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 170, g.height - 18);
 
@@ -1659,18 +1667,30 @@
               const saved = safeStorage.getItem('galaxy_equipped');
               return saved || 'starter';
           });
+          const [adProgress, setAdProgress] = useState(() => {
+              const saved = safeStorage.getItem('galaxy_ad_progress');
+              return saved ? JSON.parse(saved) : {};
+          });
 
           // Sync with LocalStorage
           useEffect(() => { safeStorage.setItem('galaxy_coins', coins); }, [coins]);
           useEffect(() => { safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)); }, [unlockedShips]);
           useEffect(() => { safeStorage.setItem('galaxy_equipped', equippedShip); }, [equippedShip]);
+          useEffect(() => { safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)); }, [adProgress]);
 
           const addCoins = (amount) => setCoins(prev => prev + amount);
           
-          const unlockShip = (shipId, price) => {
-              if (coins >= price && !unlockedShips.includes(shipId)) {
-                  setCoins(prev => prev - price);
-                  setUnlockedShips(prev => [...prev, shipId]);
+          const handleShipAdWatch = (shipId, reqAds) => {
+              window.open('https://otieu.com/4/10270523', '_blank');
+              const current = adProgress[shipId] || 0;
+              const next = current + 1;
+              setAdProgress(prev => ({...prev, [shipId]: next}));
+              
+              if (next >= reqAds) {
+                  if (!unlockedShips.includes(shipId)) {
+                      setUnlockedShips(prev => [...prev, shipId]);
+                      playSound('powerup'); // Unlock Sound
+                  }
               }
           };
 
@@ -1702,10 +1722,10 @@
               switch(currentScreen) {
                   case 'shop': return (
                       <ShopScreen 
-                          coins={coins}
+                          adProgress={adProgress}
+                          handleShipAdWatch={handleShipAdWatch}
                           unlockedShips={unlockedShips}
                           equippedShip={equippedShip}
-                          unlockShip={unlockShip}
                           equipShip={equipShip}
                           onBack={() => setCurrentScreen('galaxy-menu')}
                       />
