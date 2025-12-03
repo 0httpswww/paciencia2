@@ -70,31 +70,62 @@
             animation: swing 3s infinite ease-in-out;
         }
 
-        /* Farm 3D Effect */
+        /* Farm 3D & Neon Effects */
+        .farm-scene {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+        }
         .farm-perspective {
-            perspective: 800px;
+            perspective: 1000px;
         }
         .farm-grid-3d {
-            transform: rotateX(20deg) scale(0.95);
+            transform: rotateX(45deg) rotateZ(-45deg) scale(0.8);
             transform-style: preserve-3d;
             transition: transform 0.5s ease;
         }
         .farm-plot {
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            background: #0f172a; /* Slate 900 */
+            box-shadow: 
+                inset 0 0 20px #000,
+                5px 5px 15px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transform-style: preserve-3d;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .farm-plot:hover {
+            transform: translateZ(10px);
+            border-color: rgba(56, 189, 248, 0.5); /* Light Blue */
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+        .farm-plot.ready {
+            border-color: #facc15; /* Yellow */
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+        .neon-bar {
+            background: rgba(15, 23, 42, 0.8);
+            border-top: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
         }
         
         /* Farmer 3D Walking Animation */
         @keyframes walker {
-            0% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
-            25% { transform: translateZ(60px) rotateX(-20deg) translateY(-10px) rotate(5deg); }
-            50% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
-            75% { transform: translateZ(60px) rotateX(-20deg) translateY(-10px) rotate(-5deg); }
-            100% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
+            0% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); }
+            50% { transform: translateZ(50px) rotateX(-45deg) rotateY(45deg) translateY(-5px); }
+            100% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); }
         }
         .farmer-anim {
-            animation: walker 0.8s infinite linear;
+            animation: walker 1.5s infinite ease-in-out;
             transform-style: preserve-3d;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+        }
+
+        /* Floating UI Elements */
+        .float-ui {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
     </style>
     <script type="importmap">
@@ -126,7 +157,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map } from 'lucide-react';
 
       // --- Helpers ---
       const safeStorage = {
@@ -259,12 +290,13 @@
       // --- Reusable Components ---
       const Modal = ({ title, onClose, children }) => (
           <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
-              <div className="bg-slate-800 w-full max-w-sm rounded-2xl border-2 border-slate-600 shadow-2xl overflow-hidden flex flex-col max-h-[80%]" onClick={e => e.stopPropagation()}>
-                  <div className="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-white">{title}</h2>
+              <div className="bg-slate-900 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[80%] relative" onClick={e => e.stopPropagation()}>
+                  <div className="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
+                  <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center z-10">
+                      <h2 className="text-xl font-bold text-white neon-text-small">{title}</h2>
                       <button onClick={onClose}><X className="text-gray-400 hover:text-white" /></button>
                   </div>
-                  <div className="p-4 overflow-y-auto flex-1">{children}</div>
+                  <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
               </div>
           </div>
       );
@@ -629,39 +661,81 @@
           );
       };
 
-      // --- GAME 2: FARM GAME (3D, Premium) ---
+      // --- GAME 2: FARM GAME (Premium Dark Neon) ---
       const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
           const CROPS = {
               'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', adCost: 0 },
               'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', adCost: 0 },
               'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, time: 20000, icon: '🥕', adCost: 1 },
               'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, time: 45000, icon: '🍅', adCost: 2 },
-              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, time: 90000, icon: '🍓', adCost: 3 }
+              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, time: 90000, icon: '🍓', adCost: 3 },
+              'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, time: 180000, icon: '🍇', adCost: 5 }
           };
 
           const [grid, setGrid] = useState(() => {
-             try { return JSON.parse(localStorage.getItem('farm_grid') || '[]'); } catch { return []; }
+             try { return JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'); } catch { return []; }
           });
           const [selectedCrop, setSelectedCrop] = useState('wheat');
           const [now, setNow] = useState(Date.now());
+          const [showMissions, setShowMissions] = useState(false);
+          const [showExpand, setShowExpand] = useState(false);
+          const [landLevel, setLandLevel] = useState(() => {
+             try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; }
+          });
+
+          // Daily Missions State
+          const [missions, setMissions] = useState(() => {
+              const saved = safeStorage.getItem('farm_missions');
+              const defaultMissions = [
+                  { id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false },
+                  { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false },
+                  { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }
+              ];
+              return saved ? JSON.parse(saved) : defaultMissions;
+          });
 
           useEffect(() => {
-              if (grid.length < 6) {
+              // Ensure grid size matches land level
+              if (grid.length < landLevel) {
                    const newGrid = [...grid];
-                   while(newGrid.length < 6) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null });
+                   while(newGrid.length < landLevel) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null });
                    setGrid(newGrid);
               }
               const interval = setInterval(() => setNow(Date.now()), 1000);
               return () => clearInterval(interval);
-          }, []);
+          }, [landLevel]);
 
-          useEffect(() => safeStorage.setItem('farm_grid', JSON.stringify(grid)), [grid]);
+          useEffect(() => safeStorage.setItem('farm_grid_v2', JSON.stringify(grid)), [grid]);
+          useEffect(() => safeStorage.setItem('farm_land', landLevel.toString()), [landLevel]);
+          useEffect(() => safeStorage.setItem('farm_missions', JSON.stringify(missions)), [missions]);
+
+          const updateMission = (type, id, amount = 1) => {
+              setMissions(prev => prev.map(m => {
+                  if (m.claimed) return m;
+                  let match = false;
+                  if (m.type === 'earn' && type === 'earn') match = true;
+                  else if (m.target === id) match = true;
+                  
+                  if (match) {
+                      return { ...m, progress: Math.min(m.count, m.progress + amount) };
+                  }
+                  return m;
+              }));
+          };
+
+          const claimMission = (m) => {
+              if (m.progress >= m.count && !m.claimed) {
+                  addCoins(m.reward);
+                  playSound('win');
+                  setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm));
+              }
+          };
 
           const handlePlotClick = (index) => {
               const plot = grid[index];
               if (plot.crop) {
                   const def = CROPS[plot.crop];
-                  if (!def) { // Fix for invalid crop data
+                  if (!def) { // Fallback
                        const newGrid = [...grid];
                        newGrid[index] = { ...plot, crop: null, plantedAt: null };
                        setGrid(newGrid);
@@ -669,6 +743,8 @@
                   }
                   if (now - plot.plantedAt >= def.time) {
                       addCoins(def.reward);
+                      updateMission('harvest', plot.crop);
+                      updateMission('earn', null, def.reward);
                       playSound('harvest');
                       const newGrid = [...grid];
                       newGrid[index] = { ...plot, crop: null, plantedAt: null };
@@ -687,19 +763,40 @@
               }
           };
 
+          const handleExpand = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Ad Link
+              setLandLevel(prev => prev + 2);
+              setShowExpand(false);
+              playSound('buy');
+          };
+
           return (
-              <div className="w-full h-full bg-gradient-to-b from-sky-400 to-green-800 flex flex-col overflow-hidden relative">
-                   <div className="absolute top-0 w-full p-4 flex justify-between z-20 bg-black/20 backdrop-blur">
-                       <button onClick={onBack} className="text-white"><ChevronLeft /></button>
-                       <div className="bg-yellow-500/80 px-4 py-1 rounded-full font-bold text-white shadow-lg border border-yellow-300 flex items-center gap-2">
-                           <Coins size={16} /> {coins}
+              <div className="w-full h-full farm-scene flex flex-col overflow-hidden relative text-white font-sans">
+                   {/* HUD */}
+                   <div className="absolute top-0 w-full p-4 flex justify-between z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                       <button onClick={onBack} className="pointer-events-auto p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur"><ChevronLeft /></button>
+                       <div className="flex items-center gap-3">
+                           <button onClick={() => setShowMissions(true)} className="pointer-events-auto bg-blue-600/80 p-2 rounded-full border border-blue-400 shadow-lg animate-pulse relative">
+                                <ClipboardList size={20} />
+                                {missions.some(m => m.progress >= m.count && !m.claimed) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>}
+                           </button>
+                           <button onClick={() => setShowExpand(true)} className="pointer-events-auto bg-green-600/80 p-2 rounded-full border border-green-400 shadow-lg">
+                                <Map size={20} />
+                           </button>
+                           <div className="bg-yellow-500/80 px-4 py-1.5 rounded-full font-bold text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-300 flex items-center gap-2">
+                               <Coins size={16} className="text-white fill-white" /> {coins}
+                           </div>
                        </div>
                    </div>
                    
-                   <div className="flex-1 flex items-center justify-center farm-perspective relative">
-                       <div className="farm-grid-3d grid grid-cols-2 gap-4 p-8 bg-amber-900/40 rounded-[3rem] shadow-2xl border-4 border-amber-800/50 backdrop-blur-sm">
-                           {/* 3D Farmer */}
-                           <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-6xl farmer-anim z-30 drop-shadow-2xl pointer-events-none">👨‍🌾</div>
+                   {/* Main Game World */}
+                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden">
+                       <div className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative">
+                            {/* Neon Grid Glow */}
+                            <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
+
+                           {/* 3D Cyber Farmer */}
+                           <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
                            
                            {grid.map((plot, i) => {
                                const def = plot.crop ? CROPS[plot.crop] : null;
@@ -707,31 +804,85 @@
                                const isReady = progress >= 100;
                                
                                return (
-                                   <button key={i} onClick={() => handlePlotClick(i)} className={`w-24 h-24 rounded-2xl farm-plot transition-all duration-300 relative ${plot.crop ? 'bg-amber-800' : 'bg-green-700 hover:bg-green-600'} border-b-8 ${isReady ? 'border-yellow-600' : 'border-green-900'}`}>
+                                   <button key={i} onClick={() => handlePlotClick(i)} className={`w-28 h-28 rounded-xl farm-plot relative group ${isReady ? 'ready' : ''}`}>
+                                       {/* Holographic Projection */}
                                        {def && (
-                                           <div className={`text-4xl drop-shadow-lg ${isReady ? 'animate-bounce' : 'opacity-80'}`}>{def.icon}</div>
-                                       )}
-                                       {def && !isReady && (
-                                           <div className="absolute bottom-2 left-2 right-2 h-2 bg-black/50 rounded-full overflow-hidden">
-                                               <div className="h-full bg-green-400 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                           <div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}>
+                                               <span className="text-5xl filter drop-shadow-md">{def.icon}</span>
                                            </div>
                                        )}
+                                       {/* Progress Neon Ring */}
+                                       {def && !isReady && (
+                                           <div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                               <div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div>
+                                           </div>
+                                       )}
+                                       {/* Empty Plot Marker */}
+                                       {!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}
                                    </button>
                                );
                            })}
                        </div>
                    </div>
                    
-                   {/* Seed Selector */}
-                   <div className="h-32 bg-white/10 backdrop-blur-md border-t border-white/20 p-4 overflow-x-auto flex gap-4 z-20 items-center">
+                   {/* Cyber Seed Selector */}
+                   <div className="neon-bar h-36 w-full overflow-x-auto flex gap-4 p-4 z-40 items-center">
                        {Object.values(CROPS).map(crop => (
-                           <button key={crop.id} onClick={() => setSelectedCrop(crop.id)} className={`flex-shrink-0 w-20 h-24 rounded-xl flex flex-col items-center justify-center bg-black/40 border-2 transition-all ${selectedCrop === crop.id ? 'border-green-400 scale-105 bg-green-900/40' : 'border-transparent'}`}>
-                               <div className="text-3xl mb-1">{crop.icon}</div>
-                               <div className="text-xs font-bold text-white">{crop.name}</div>
-                               <div className="text-[10px] text-yellow-300 font-bold">{crop.cost}💰</div>
+                           <button key={crop.id} onClick={() => setSelectedCrop(crop.id)} className={`flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center bg-black/40 border border-slate-700 transition-all active:scale-95 ${selectedCrop === crop.id ? 'border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)] bg-cyan-900/20' : 'hover:border-slate-500'}`}>
+                               <div className="text-4xl mb-2 filter drop-shadow-lg">{crop.icon}</div>
+                               <div className="text-xs font-bold text-gray-300 uppercase tracking-wide">{crop.name}</div>
+                               <div className="text-[10px] text-yellow-400 font-bold mt-1 bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">{crop.cost} 💰</div>
                            </button>
                        ))}
+                       {/* Locked Slots / Ads Hint */}
+                       <div className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center bg-black/20 border border-slate-800 opacity-50">
+                           <Lock size={24} className="text-gray-500 mb-1" />
+                           <span className="text-[10px] text-gray-500">EM BREVE</span>
+                       </div>
                    </div>
+
+                   {/* Modals */}
+                   {showMissions && (
+                       <Modal title="MISSÕES DIÁRIAS" onClose={() => setShowMissions(false)}>
+                           <div className="flex flex-col gap-3">
+                               {missions.map(m => (
+                                   <div key={m.id} className="bg-slate-800/80 p-3 rounded-lg border border-slate-700 flex justify-between items-center">
+                                       <div className="flex-1">
+                                           <div className="text-sm font-bold text-cyan-100">{m.text}</div>
+                                           <div className="w-full bg-slate-950 h-1.5 mt-2 rounded-full overflow-hidden">
+                                               <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (m.progress/m.count)*100)}%` }}></div>
+                                           </div>
+                                           <div className="text-[10px] text-gray-400 mt-1">{m.progress} / {m.count}</div>
+                                       </div>
+                                       {m.claimed ? (
+                                           <CheckCircle className="text-green-500 ml-2" />
+                                       ) : (
+                                            <button 
+                                                disabled={m.progress < m.count}
+                                                onClick={() => claimMission(m)}
+                                                className={`ml-3 px-3 py-1 rounded text-xs font-bold ${m.progress >= m.count ? 'bg-yellow-500 text-black animate-pulse shadow-[0_0_10px_gold]' : 'bg-slate-700 text-gray-500'}`}
+                                            >
+                                                +{m.reward}
+                                            </button>
+                                       )}
+                                   </div>
+                               ))}
+                           </div>
+                       </Modal>
+                   )}
+
+                   {showExpand && (
+                       <Modal title="EXPANDIR TERRENO" onClose={() => setShowExpand(false)}>
+                           <div className="text-center p-4">
+                               <div className="text-6xl mb-4">🚜</div>
+                               <h3 className="text-white text-lg font-bold mb-2">Precisa de mais espaço?</h3>
+                               <p className="text-gray-400 text-sm mb-6">Assista a um anúncio para adicionar 2 novos lotes de plantio à sua fazenda.</p>
+                               <button onClick={handleExpand} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2">
+                                   <PlayCircle size={18} /> EXPANDIR AGORA
+                               </button>
+                           </div>
+                       </Modal>
+                   )}
               </div>
           );
       };
