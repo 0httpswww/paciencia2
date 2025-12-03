@@ -103,6 +103,19 @@
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0px); }
         }
+        
+        /* Farmer 3D Walking Animation */
+        @keyframes walker {
+            0% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
+            25% { transform: translateZ(60px) rotateX(-20deg) translateY(-10px) rotate(5deg); }
+            50% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
+            75% { transform: translateZ(60px) rotateX(-20deg) translateY(-10px) rotate(-5deg); }
+            100% { transform: translateZ(50px) rotateX(-20deg) translateY(0) rotate(0deg); }
+        }
+        .farmer-anim {
+            animation: walker 0.8s infinite linear;
+            transform-style: preserve-3d;
+        }
     </style>
     <script type="importmap">
     {
@@ -1623,7 +1636,18 @@
                               </div>
 
                               {/* Farmer */}
-                              <div className="absolute w-24 h-24 pointer-events-none transition-all duration-700 ease-in-out z-20 flex items-center justify-center text-6xl filter drop-shadow-2xl transform -translate-y-8" style={{ gridColumn: farmerPos.col, gridRow: farmerPos.row }}>👨‍🌾</div>
+                              <div 
+                                  className="absolute w-24 h-24 pointer-events-none transition-all duration-700 ease-in-out z-50 flex flex-col items-center justify-center transform" 
+                                  style={{ 
+                                      gridColumn: farmerPos.col, 
+                                      gridRow: farmerPos.row,
+                                      marginTop: '-3rem',
+                                      marginLeft: '-1rem'
+                                  }}
+                              >
+                                  <div className="text-6xl filter drop-shadow-2xl farmer-anim">👨‍🌾</div>
+                                  <div className="w-10 h-3 bg-black/40 rounded-[50%] blur-sm mt-[-10px] transform rotateX(-20deg) translate-z-0"></div>
+                              </div>
 
                               {/* Plots */}
                               {grid.map((plot, index) => {
