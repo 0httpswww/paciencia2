@@ -521,10 +521,15 @@
       // --- Farm Game ("Fazendinha") ---
       const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
           const CROPS = {
-              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', color: '#fef08a' },
-              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', color: '#facc15' },
-              'strawberry': { id: 'strawberry', name: 'Morango', cost: 50, reward: 120, time: 30000, icon: '🍓', color: '#fca5a5' },
-              'pumpkin': { id: 'pumpkin', name: 'Abóbora', cost: 200, reward: 500, time: 60000, icon: '🎃', color: '#fdba74' },
+              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', color: '#fef08a', adCost: 0 },
+              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', color: '#facc15', adCost: 0 },
+              'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, time: 20000, icon: '🥕', color: '#fb923c', adCost: 1 },
+              'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, time: 45000, icon: '🍅', color: '#f87171', adCost: 2 },
+              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, time: 90000, icon: '🍓', color: '#fca5a5', adCost: 3 },
+              'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, time: 180000, icon: '🍇', color: '#c084fc', adCost: 5 },
+              'pineapple': { id: 'pineapple', name: 'Abacaxi', cost: 600, reward: 1600, time: 300000, icon: '🍍', color: '#fde047', adCost: 8 },
+              'watermelon': { id: 'watermelon', name: 'Melancia', cost: 1200, reward: 3500, time: 600000, icon: '🍉', color: '#86efac', adCost: 12 },
+              'pumpkin': { id: 'pumpkin', name: 'Abóbora', cost: 2500, reward: 8000, time: 1200000, icon: '🎃', color: '#fdba74', adCost: 15 },
           };
 
           const LAND_LEVELS = [
@@ -566,6 +571,14 @@
               const saved = safeStorage.getItem('farm_missions');
               return saved ? JSON.parse(saved) : [];
           });
+          const [unlockedCrops, setUnlockedCrops] = useState(() => {
+              const saved = safeStorage.getItem('farm_unlocked_crops');
+              return saved ? JSON.parse(saved) : ['wheat', 'corn'];
+          });
+          const [cropAdProgress, setCropAdProgress] = useState(() => {
+              const saved = safeStorage.getItem('farm_crop_ad_progress');
+              return saved ? JSON.parse(saved) : {};
+          });
           const [selectedCrop, setSelectedCrop] = useState('wheat');
           const [now, setNow] = useState(Date.now());
           const [farmerPos, setFarmerPos] = useState({ col: 1, row: 1 });
@@ -586,6 +599,8 @@
           useEffect(() => { safeStorage.setItem('farm_missions', JSON.stringify(missions)); }, [missions]);
           useEffect(() => { safeStorage.setItem('farm_land_level', landLevel); }, [landLevel]);
           useEffect(() => { if (grid.length > 0) safeStorage.setItem('farm_grid', JSON.stringify(grid)); }, [grid]);
+          useEffect(() => { safeStorage.setItem('farm_unlocked_crops', JSON.stringify(unlockedCrops)); }, [unlockedCrops]);
+          useEffect(() => { safeStorage.setItem('farm_crop_ad_progress', JSON.stringify(cropAdProgress)); }, [cropAdProgress]);
           useEffect(() => { const interval = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(interval); }, []);
 
           // Initialize Grid
@@ -645,7 +660,7 @@
                       setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: null, plantedAt: null } : p));
                   } else { playSound('wrong'); }
               } else {
-                  if (selectedCrop) {
+                  if (selectedCrop && unlockedCrops.includes(selectedCrop)) {
                       const cropDef = CROPS[selectedCrop];
                       if (coins >= cropDef.cost) {
                           playSound('plant');
@@ -673,6 +688,20 @@
                       playSound('buy');
                       setActiveModal(null);
                   } else { playSound('wrong'); }
+              }
+          };
+
+          const handleCropAdWatch = (cropId, reqAds) => {
+              window.open('https://otieu.com/4/10270523', '_blank');
+              const current = cropAdProgress[cropId] || 0;
+              const next = current + 1;
+              setCropAdProgress(prev => ({...prev, [cropId]: next}));
+              
+              if (next >= reqAds) {
+                  if (!unlockedCrops.includes(cropId)) {
+                      setUnlockedCrops(prev => [...prev, cropId]);
+                      playSound('powerup');
+                  }
               }
           };
 
@@ -788,17 +817,45 @@
                   {activeModal === 'shop' && (
                       <Modal title="Loja de Sementes" onClose={() => setActiveModal(null)}>
                           <div className="grid grid-cols-2 gap-3">
-                              {Object.values(CROPS).map(crop => (
-                                  <button key={crop.id} onClick={() => { setSelectedCrop(crop.id); setActiveModal(null); }} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${selectedCrop === crop.id ? 'bg-green-600/30 border-green-500' : 'bg-black/30 border-slate-700 hover:border-slate-500'} ${coins < crop.cost ? 'opacity-50' : ''}`}>
-                                      <div className="text-4xl">{crop.icon}</div>
-                                      <div className="w-full text-center">
-                                          <div className="font-bold text-sm">{crop.name}</div>
-                                          <div className="flex items-center justify-center gap-1 text-xs text-yellow-400 font-bold mt-1">
-                                              <Coins size={12} /> {crop.cost}
+                              {Object.values(CROPS).map(crop => {
+                                  const isUnlocked = unlockedCrops.includes(crop.id);
+                                  const adsWatched = cropAdProgress[crop.id] || 0;
+                                  
+                                  return (
+                                      <button 
+                                          key={crop.id} 
+                                          onClick={() => { 
+                                              if(isUnlocked) {
+                                                  setSelectedCrop(crop.id); 
+                                                  setActiveModal(null); 
+                                              } else {
+                                                  handleCropAdWatch(crop.id, crop.adCost);
+                                              }
+                                          }} 
+                                          className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${selectedCrop === crop.id && isUnlocked ? 'bg-green-600/30 border-green-500' : 'bg-black/30 border-slate-700 hover:border-slate-500'}`}
+                                      >
+                                          <div className="text-4xl">{crop.icon}</div>
+                                          <div className="w-full text-center">
+                                              <div className="font-bold text-sm">{crop.name}</div>
+                                              
+                                              {isUnlocked ? (
+                                                  <div className={`flex items-center justify-center gap-1 text-xs font-bold mt-1 ${coins < crop.cost ? 'text-red-400' : 'text-yellow-400'}`}>
+                                                      <Coins size={12} /> {crop.cost}
+                                                  </div>
+                                              ) : (
+                                                  <div className="flex flex-col gap-1 w-full mt-1">
+                                                       <div className="text-[10px] font-bold text-blue-400 bg-blue-900/50 px-2 py-1 rounded">
+                                                           VER AD ({adsWatched}/{crop.adCost})
+                                                       </div>
+                                                       <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                                                           <div className="bg-blue-500 h-full" style={{ width: `${Math.min(100, (adsWatched / crop.adCost) * 100)}%` }}></div>
+                                                       </div>
+                                                  </div>
+                                              )}
                                           </div>
-                                      </div>
-                                  </button>
-                              ))}
+                                      </button>
+                                  );
+                              })}
                           </div>
                       </Modal>
                   )}
@@ -1016,7 +1073,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.9.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.10.0</div>
                           </div>
                       );
               }
