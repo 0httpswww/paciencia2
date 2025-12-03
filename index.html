@@ -1021,28 +1021,6 @@
           const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
           const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
 
-          // Auto-fullscreen on first interaction
-          useEffect(() => {
-              const attemptFullScreen = () => {
-                  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                      document.documentElement.requestFullscreen().catch(err => {
-                          console.log('Fullscreen blocked:', err);
-                      });
-                  }
-                  // We only try once to avoid annoying the user if they exit manually
-                  window.removeEventListener('click', attemptFullScreen);
-                  window.removeEventListener('touchstart', attemptFullScreen);
-              };
-
-              window.addEventListener('click', attemptFullScreen);
-              window.addEventListener('touchstart', attemptFullScreen);
-
-              return () => {
-                  window.removeEventListener('click', attemptFullScreen);
-                  window.removeEventListener('touchstart', attemptFullScreen);
-              };
-          }, []);
-
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]);
           useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]);
           useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]);
@@ -1086,6 +1064,9 @@
               default: return (
                   <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                       <InstallButton />
+                      <button onClick={toggleFullScreen} className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white z-50">
+                          <Maximize size={24}/>
+                      </button>
                       <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
                           <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
                           <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
