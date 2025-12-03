@@ -100,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -1714,12 +1714,47 @@
               'pumpkin': { id: 'pumpkin', name: 'Abóbora', cost: 200, reward: 500, time: 60000, icon: '🎃', color: '#fdba74' },
           };
 
+          const LAND_LEVELS = [
+              { count: 4, cost: 0 },
+              { count: 6, cost: 100 },
+              { count: 8, cost: 300 },
+              { count: 12, cost: 1000 }
+          ];
+
+          const [landLevel, setLandLevel] = useState(() => {
+              const saved = safeStorage.getItem('farm_land_level');
+              return saved ? parseInt(saved) : 0;
+          });
+
           const [grid, setGrid] = useState(() => {
               const saved = safeStorage.getItem('farm_grid');
-              return saved ? JSON.parse(saved) : Array(9).fill(null).map((_, i) => ({ id: i, crop: null, plantedAt: null }));
+              return saved ? JSON.parse(saved) : [];
           });
+          
           const [selectedCrop, setSelectedCrop] = useState(null);
           const [now, setNow] = useState(Date.now());
+          const [farmerPos, setFarmerPos] = useState({ col: 1, row: 1 });
+
+          // Initialize Grid Size based on Land Level
+          useEffect(() => {
+              const targetCount = LAND_LEVELS[landLevel].count;
+              setGrid(prev => {
+                  if (prev.length === targetCount) return prev;
+                  // If resizing up
+                  if (prev.length < targetCount) {
+                      const newGrid = [...prev];
+                      while(newGrid.length < targetCount) {
+                          newGrid.push({ id: newGrid.length, crop: null, plantedAt: null });
+                      }
+                      return newGrid;
+                  }
+                  // If existing save has more (e.g. from older version), keep it or truncate? 
+                  // Let's keep data safe, but only render up to count. 
+                  // Actually, strictly syncing to level is better for mechanic consistency.
+                  return prev.slice(0, targetCount); 
+              });
+              safeStorage.setItem('farm_land_level', landLevel);
+          }, [landLevel]);
 
           useEffect(() => {
               const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -1727,10 +1762,17 @@
           }, []);
 
           useEffect(() => {
-              safeStorage.setItem('farm_grid', JSON.stringify(grid));
+              if (grid.length > 0) safeStorage.setItem('farm_grid', JSON.stringify(grid));
           }, [grid]);
 
-          const handlePlotClick = (plot) => {
+          const handlePlotClick = (plot, index) => {
+              // Calculate col/row for farmer movement
+              // Grid cols logic: <6 plots = 2 cols, >=6 plots = 3 cols
+              const cols = grid.length < 6 ? 2 : 3;
+              const col = (index % cols) + 1;
+              const row = Math.floor(index / cols) + 1;
+              setFarmerPos({ col, row });
+
               if (plot.crop) {
                   // Harvest if ready
                   const cropDef = CROPS[plot.crop];
@@ -1764,6 +1806,23 @@
               playSound('powerup');
           };
 
+          const handleExpand = () => {
+              const nextLevel = landLevel + 1;
+              if (nextLevel < LAND_LEVELS.length) {
+                  const cost = LAND_LEVELS[nextLevel].cost;
+                  if (coins >= cost) {
+                      addCoins(-cost);
+                      setLandLevel(nextLevel);
+                      playSound('buy');
+                  } else {
+                      playSound('wrong');
+                  }
+              }
+          };
+
+          const nextLand = landLevel < LAND_LEVELS.length - 1 ? LAND_LEVELS[landLevel + 1] : null;
+          const gridColsClass = grid.length < 6 ? 'grid-cols-2' : 'grid-cols-3';
+
           return (
               <div className="w-full h-full flex flex-col items-center bg-green-900 text-white relative">
                   {/* Header */}
@@ -1777,11 +1836,47 @@
                   </div>
 
                   {/* Game Area */}
-                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-center gap-6 overflow-y-auto">
+                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-start gap-6 overflow-y-auto">
                       
-                      {/* Grid */}
-                      <div className="grid grid-cols-3 gap-4 bg-green-800/50 p-6 rounded-2xl border-4 border-green-700 shadow-2xl">
-                          {grid.map(plot => {
+                      {/* Grid Container */}
+                      <div className={`grid ${gridColsClass} gap-4 bg-green-800/50 p-6 rounded-2xl border-4 border-green-700 shadow-2xl relative transition-all duration-500`}>
+                          {/* Animated Farmer Overlay */}
+                          <div 
+                              className="absolute z-20 pointer-events-none transition-all duration-1000 ease-in-out flex items-center justify-center -translate-y-4"
+                              style={{ 
+                                  gridColumnStart: farmerPos.col, 
+                                  gridRowStart: farmerPos.row,
+                                  width: '5rem', 
+                                  height: '5rem',
+                                  // We use simple offsets assuming standard cell sizes, but grid placement is safer
+                                  left: grid.length < 6 ? `${(farmerPos.col - 1) * 50 + 25}%` : `${(farmerPos.col - 1) * 33.3 + 16.6}%`,
+                                  top: `${(farmerPos.row - 1) * 6 + 2}%`, // Approximate vertical pos
+                                  transform: `translate(${grid.length < 6 ? (farmerPos.col===1?20:-20) : 0}px, ${farmerPos.row * 100}px)` // Fallback manual positioning not ideal for responsive grid
+                              }}
+                          >
+                              {/* Better Approach: Place farmer inside the grid flow but absolutely positioned relative to container using calc */}
+                          </div>
+                          
+                          {/* Actually simpler: Render farmer inside the specific cell conditionally? No, animation requires it to be independent.
+                              Let's stick to Grid layout. The grid items dictate the flow.
+                              We can put the farmer in a 1x1 div that changes its grid-area.
+                          */}
+                          <div 
+                              className="absolute w-20 h-20 pointer-events-none transition-all duration-700 z-20 flex items-center justify-center text-5xl filter drop-shadow-lg"
+                              style={{
+                                  // Using manual offsets based on cell size + gap is tricky responsively.
+                                  // Best CSS Grid trick: make container 'display: grid', put items in flow, put farmer in same grid but explicit col/row.
+                                  // BUT React maps items.
+                                  // We will rely on the fact that we can overlay a grid on top of a grid?
+                                  // Let's keep it simple: Render Farmer inside the grid as a sibling to buttons, with explicit grid styles.
+                                  gridColumn: farmerPos.col,
+                                  gridRow: farmerPos.row
+                              }}
+                          >
+                              👨‍🌾
+                          </div>
+
+                          {grid.map((plot, index) => {
                               const cropDef = plot.crop ? CROPS[plot.crop] : null;
                               const progress = cropDef ? Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100) : 0;
                               const isReady = progress >= 100;
@@ -1789,7 +1884,7 @@
                               return (
                                   <button 
                                       key={plot.id}
-                                      onClick={() => handlePlotClick(plot)}
+                                      onClick={() => handlePlotClick(plot, index)}
                                       className={`w-20 h-20 md:w-24 md:h-24 rounded-xl flex flex-col items-center justify-center relative transition-all transform active:scale-95
                                           ${plot.crop 
                                               ? (isReady ? 'bg-amber-200 border-yellow-400 animate-bounce' : 'bg-amber-700 border-amber-800') 
@@ -1813,6 +1908,24 @@
                               );
                           })}
                       </div>
+
+                      {/* Expand Land Button */}
+                      {nextLand && (
+                          <button 
+                              onClick={handleExpand}
+                              disabled={coins < nextLand.cost}
+                              className={`w-full py-3 rounded-xl border-2 border-dashed border-green-400/50 flex flex-col items-center justify-center gap-1 transition-all
+                                  ${coins >= nextLand.cost ? 'bg-green-800/50 hover:bg-green-700/50 text-green-200' : 'bg-black/20 text-gray-500 cursor-not-allowed'}
+                              `}
+                          >
+                              <div className="flex items-center gap-2 font-bold">
+                                  <Pickaxe size={18} /> EXPANDIR TERRENO (+{nextLand.count - grid.length} Plots)
+                              </div>
+                              <div className="text-xs flex items-center gap-1">
+                                  Custo: <Coins size={10} /> {nextLand.cost}
+                              </div>
+                          </button>
+                      )}
 
                       {/* Controls */}
                       <div className="w-full flex flex-col gap-4">
@@ -2012,7 +2125,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.8.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.9.0</div>
                           </div>
                       );
               }
