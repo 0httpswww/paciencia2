@@ -830,6 +830,19 @@
               setShowExpand(false);
               playSound('buy');
           };
+          
+          const handleTurbo = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Ad Link
+              // Speed up: Skip 10 minutes
+              const SKIP_MS = 600000;
+              setGrid(prev => prev.map(p => {
+                  if (p.crop && p.plantedAt) {
+                      return { ...p, plantedAt: p.plantedAt - SKIP_MS };
+                  }
+                  return p;
+              }));
+              playSound('powerup');
+          };
 
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
@@ -908,6 +921,13 @@
                            })}
                        </div>
                    </div>
+                   
+                   {/* Turbo Button */}
+                   <button onClick={handleTurbo} className="absolute right-4 bottom-52 z-40 bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-full shadow-[0_0_20px_gold] animate-bounce border-2 border-white flex flex-col items-center">
+                       <Zap size={24} fill="black" />
+                       <span className="text-[10px] font-bold mt-1">TURBO</span>
+                       <span className="text-[8px] bg-black text-yellow-500 px-1 rounded">AD</span>
+                   </button>
                    
                    {/* Cyber Seed/Animal Selector */}
                    <div className="neon-bar h-48 w-full z-40 flex flex-col">
