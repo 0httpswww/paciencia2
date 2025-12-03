@@ -99,7 +99,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -261,7 +261,6 @@
       };
 
       // --- SHIP DEFINITIONS & SPRITE GENERATOR ---
-      
       const SHIPS = [
           { id: 'starter', name: 'Prototype', price: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
           { id: 'blue', name: 'Interceptor', price: 80, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
@@ -297,7 +296,133 @@
           const img = new Image(); img.src = canvas.toDataURL(); return img;
       };
 
-      // --- HANGMAN GAME ---
+      // --- COMPONENT: Galaxy Menu ---
+      // Defined early to prevent ReferenceErrors in App
+      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => {
+          return (
+              <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
+                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+                   
+                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-pulse">
+                       <div className="relative">
+                          <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                          <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
+                       </div>
+                       
+                       <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">
+                          GALAXY<br/><span className="text-blue-400">INVADER</span>
+                       </h1>
+                       
+                       <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                            <Coins size={20} className="text-yellow-400" />
+                            <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                       </div>
+
+                       <div className="w-full grid gap-4 mt-8">
+                           <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
+                                <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
+                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
+                                    <span className="text-2xl font-bold tracking-wider">START MISSION</span>
+                                    <ChevronLeft className="rotate-180" size={24} />
+                                </div>
+                           </button>
+                           
+                           <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
+                                <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
+                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
+                                    <ShoppingCart size={24} />
+                                    <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
+                                </div>
+                           </button>
+                       </div>
+
+                       <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full">
+                          <ChevronLeft size={16} /> Back to Hub
+                       </button>
+                   </div>
+                   
+                   <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+              </div>
+          );
+      };
+
+      // --- COMPONENT: Shop Screen ---
+      const ShopScreen = ({ coins, unlockShip, equipShip, unlockedShips, equippedShip, onBack }) => {
+          const ShipCard = ({ ship }) => {
+              const isUnlocked = unlockedShips.includes(ship.id);
+              const isEquipped = equippedShip === ship.id;
+              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+
+              const handleAction = () => {
+                  if (isUnlocked) {
+                      equipShip(ship.id);
+                      playSound('powerup');
+                  } else {
+                      if (coins >= ship.price) {
+                          unlockShip(ship.id, ship.price);
+                          playSound('buy');
+                      } else {
+                          playSound('wrong');
+                      }
+                  }
+              };
+
+              return (
+                  <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
+                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
+                           {!isUnlocked && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                   <Lock size={20} className="text-gray-400" />
+                               </div>
+                           )}
+                      </div>
+                      
+                      {isUnlocked ? (
+                          <button 
+                              onClick={handleAction}
+                              disabled={isEquipped}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                          >
+                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
+                          </button>
+                      ) : (
+                          <button 
+                              onClick={handleAction}
+                              disabled={coins < ship.price}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${coins >= ship.price ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                          >
+                              <Coins size={12} /> {ship.price}
+                          </button>
+                      )}
+                  </div>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#050505] flex flex-col">
+                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
+                      <div className="flex items-center gap-2 bg-gray-900 px-3 py-1 rounded-full border border-yellow-600/50">
+                          <Coins size={16} className="text-yellow-400" />
+                          <span className="font-bold text-yellow-400">{coins}</span>
+                      </div>
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                       {SHIPS.map(ship => (
+                           <ShipCard key={ship.id} ship={ship} />
+                       ))}
+                   </div>
+              </div>
+          );
+      };
+
+      // --- COMPONENT: Hangman Game ---
       const HangmanGame = ({ onBack, triggerAd, addCoins }) => {
           const rawWordList = "abacate,abelha,abismo,abraso,acenar,acorde,acusar,adaga,adepto,adocar,adotar,adubo,afetar,afinar,afogar,agente,agitar,agosto,aguado,agudo,ajudar,alameda,alarme,albino,alcateia,aldeia,alegre,algema,alicate,alien,alivio,almoco,altar,altura,aluno,amarelo,amigo,amostra,amuleto,analisar,ananas,anexo,animal,anotar,ansioso,antena,anular,apagar,aperto,apitar,apoio,aprender,aprovar,arame,arara,arco,areia,arena,argila,arma,armada,aroma,arvore,asilo,aspirar,assar,astro,atacar,atento,ativo,ator,atrair,audio,aula,aumento,aura,autor,avanco,aviao,avidez,axila,azar,azedo,azul,bagagem,bagre,baiano,baixa,balde,balanco,bambu,banco,bandido,banho,barata,barco,barraco,barreira,base,basico,bastao,bazar,beber,beijo,belga,bezerro,bicudo,bilhete,bilion,bioma,bispo,bispo,bispo,bloco,blusa,boato,bode,boiadeiro,bolacha,bolha,bolota,bonde,bonita,botao,branco,bravo,breu,brilho,brisa,broca,bronze,bruto,bueiro,bufalo,buraco,burro,caatinga,cabelo,cabide,cabo,cachorro,cacife,cactus,cafeina,caixa,cajado,calar,caldo,calmo,calota,calvo,camada,camelo,camisa,caminho,camomila,campo,cancar,candeeiro,caneta,cangaco,canoa,canto,capaz,capim,capuz,caramelo,carne,carona,carpa,carro,cartaz,casaco,casal,casca,casinha,cassetete,castelo,castor,catador,caverna,ceder,cebola,cedo,cegar,celula,cimento,circo,ciscar,citar,civico,clarim,classe,clero,clima,clone,cloro,coala,coceira,coco,coelho,cofre,coibir,coisa,colher,colina,colocar,cometa,comida,compare,comprar,concha,condor,conectar,conforto,conta,controle,coral,coragem,corda,corno,corpo,correr,coruja,cosmos,cotacao,cotovia,couro,cova,cravo,creme,crer,crespo,crise,cruzar,crystal,cuco,culpa,cupido,curso,curto,danado,dançar,danone,dardos,data,dardo,debate,decidir,decorar,dedo,defesa,degelo,degrau,deixar,delirar,demora,dente,deriva,descer,desenho,desfio,desova,destra,detalhe,deusa,devoto,diario,dieta,diego,digito,diminuir,dinamo,dingue,diodo,disco,disegno,disparo,distante,ditado,diva,divino,divulgar,doca,doce,doido,domino,donzela,dormente,dorso,dragao,drama,dueto,duplo,durante,ecoar,edicao,editor,educar,egoista,eixo,elenco,eletrico,elevar,elite,elogio,embrulho,emendar,emotivo,empate,empurrar,encaixe,encanto,encontro,energia,enigma,enlouquecer,enorme,entender,entrada,entulho,enxame,enxada,epoca,ereto,ervilha,escada,escalar,escama,escena,escolha,escudo,esfera,esforco,esfregar,esgoto,esmalte,espada,espelho,espeto,espiral,esporte,esquilo,estaca,estante,esticar,estilo,estocar,estrela,estudo,eterno,etnia,euforico,euforia,euforia,evasao,evento,evitar,exalar,exame,exato,exibir,exigir,exilio,exito,expor,extra,fada,faisca,falcao,falso,faminto,fantasma,farao,fardo,farinha,farol,fastio,fator,fatia,favo,febre,felino,feliz,fenda,feno,fera,ferrugem,festa,feudo,fiapo,fibra,ficar,figura,fileira,filho,final,financeiro,finger,fiorde,firme,flama,flor,floresta,fluir,fluxo,focinho,fogo,foguete,folha,folclore,fome,forca,forma,forno,fosco,fraco,frango,frasco,freio,frio,frisar,fritar,frota,fruta,fugir,fumaça,fundo,fungo,furor,furto,futuro,gabarito,gado,gala,galeria,galho,galo,galpao,ganso,garagem,garfo,garra,garupa,gasolina,gasto,gato,gelado,geleira,gemido,genio,genoma,geodo,geral,germe,gesto,giesta,gigante,ginasta,girafa,girino,giz,globo,gloria,goela,golpe,golfinho,gonzo,gorda,gordo,gosma,gota,governo,grafo,grama,grande,grito,grudar,grupo,guia,guizo,gume,habito,hacker,harpa,habilidade,haste,helice,heroi,hidro,himalaia,hiper,hipnose,historia,hoje,honor,horario,horta,hotel,humano,hurra,icaro,icone,ideia,iglu,ignorar,igreja,ilheu,ilha,iludir,imaculado,imagear,imitar,imovel,imune,inalar,inbox,incenso,inchado,incluso,indicar,inerca,inferno,infimo,iniciar,inocuo,instinto,insular,inteiro,iodo,iraniano,iris,ironia,isqueiro,isso,istmo,italia,jarra,javali,jazida,jeito,jiboia,jig,joia,jornal,jovem,juiz,junho,junto,junior,labio,lacre,lado,lagarta,lagarto,lama,lambda,lance,lanchonete,lanceiro,largo,larva,laser,latir,lavabo,lava,lazer,leao,lebre,legal,leigo,leira,leite,leme,lenha,lento,leque,leste,letra,leve,liame,libra,ligar,limiar,limo,limpo,linha,lirio,listar,litoral,livro,lixao,locao,lobo,lona,longo,lontra,lorde,lote,louco,louro,lua,luar,lugar,lume,luneta,lupa,luta,luto,macaco,maior,malha,malte,mamao,manejo,manga,mangle,manjar,mapa,marca,marco,mare,margem,marinho,maroto,marreco,marte,mascara,massa,mastro,mate,matriz,medalha,melancia,melodia,melhor,memoria,menor,mergulho,mesada,mesmo,mestre,metal,miar,micro,milho,mimo,minhoca,minuto,miolo,mira,misterio,mito,miudeza,moagem,modelo,modulo,moeda,moinho,moita,mofo,mola,molde,moleque,molho,monge,monstro,montanha,moral,morcego,morder,mosaico,mosca,mosquete,mosto,moto,muda,mudar,muela,muito,mundo,municao,mural,musgo,musica,nação,nadar,naive,narvalo,natural,natureza,navio,neblina,negar,negro,nenem,nervoso,nervo,niche,ninho,nobre,notar,nota,novato,novelo,novembro,novo,nucleo,nublado,numero,nuvem,obedecer,obeso,obito,objeto,obliquo,obrar,ocaso,oceano,ocioso,oculo,odiar,odor,ofegar,oferta,oficio,ogiva,oleo,olhar,olho,ombro,ondas,onix,ontem,opala,opcao,opera,opinar,opoente,oracao,orbe,ordem,orelha,orgao,orientar,origem,orla,ornar,oscar,osso,ostra,otario,otimo,ouro,ousar,ouvido,oval,ovino,ovo,oxido,oxigenio,pacto,padrao,pagar,pagode,palha,palio,palma,palmada,pampa,panda,panelão,papel,paprica,parado,parcela,parede,parma,parque,parte,passo,pasto,pato,patria,pedra,pegar,peixe,pena,pente,perda,perigo,perna,peso,peumo,peixe,piada,piano,picada,pico,pilao,pilha,pimenta,pincel,pingo,pinta,pipa,piquenique,pirar,pirata,piso,pista,pitao,pivete,placa,planta,plasma,pneu,poder,podre,poema,poente,poesia,polen,polpa,polvo,pomar,pombo,ponto,ponte,poodle,popular,porcao,porco,porta,portal,poste,pouso,praia,prata,prato,prece,prego,prelo,preto,prima,primo,prisma,proa,prosa,prumo,pular,pulo,punho,pupilo,pura,puxar,quadro,quark,quarto,quase,queda,queijo,quente,querer,quero,quina,quinta,quiosque,quota,rabeca,rabo,racao,rada,radar,radio,raiva,raiz,ramo,rancho,rapido,rasgar,raspao,rasteiro,ratazana,rato,ravina,razao,reagir,real,rebate,reboco,recado,recife,reboque,reparo,repente,repo,retina,reto,reunir,reves,revista,revoada,rim,risada,riso,ritmo,robalo,roca,rocha,roda,rodeo,rodar,rodovia,roer,rojo,rolar,romano,ronco,rosto,roteiro,rotina,roubar,roxo,rua,rubro,rude,rugido,ruido,ruivo,rumor,rumo,rural,rutina,sabao,sabedoria,saber,sabre,sabugo,sacola,sadio,saia,sala,salada,saldao,salgado,salmão,salto,samba,sanduiche,sangue,sapo,sarda,sargento,sarna,sapo,sarau,sabor,salvar,saliva,salmo,selar,selva,semana,sempre,sena,senhor,senso,sentar,sereno,serra,servo,sexta,shoyu,short,silvo,simbolo,sinal,simples,sino,sioux,sistemico,skate,soar,sobrar,social,soco,soja,solar,solene,solo,solta,sombra,somente,sombras,sonar,sonho,sopro,soquete,soro,sorriso,sorte,sossego,sovina,suave,subir,subito,sucesso,suco,sujo,sulco,sul,superior,superar,suporte,surdo,surfar,surgir,susto,sutil,tabela,tabua,tagarelar,talco,talhao,talher,talvez,tambor,tampa,tanque,tapete,tapira,tarifa,tartaruga,tato,taverna,taxa,tecla,tecido,teia,teimoso,teixo,tela,temor,tempo,tenaz,tenda,tenor,tensor,teorico,terra,tesla,testa,tiara,tiro,tigre,tilapia,tipo,tirar,tiroteio,titanio,titulo,toalha,tocar,toldo,tomar,tomate,tombo,tonel,topete,topo,tordo,tornar,torneio,torpedo,torta,torto,torx,tosco,tostar,total,touro,toxico,trafo,tragico,trama,tranco,tranquilo,trapo,trator,treino,trem,trevo,tribo,trigo,trilho,triste,trono,trovao,tucano,tudo,tufao,tulipa,tumulo,turbo,turista,turvo,turno,turquesa,ubuntu,umbigo,umido,unha,unico,unir,urna,urso,urubu,urina,urna,usina,usuario,usura,utopia,vaca,vadio,vale,valor,valsa,vapor,varal,vara,variavel,varrer,vaso,vasto,velcro,velho,veloz,venda,venerar,vento,venus,verao,verbo,verde,vereda,verme,verso,vertente,vespa,vestir,vezes,viagem,viario,vicente,vidro,viela,vingar,vinho,vinil,vinte,viola,violeta,viral,virar,virgem,virtude,visao,visita,vista,visual,vital,vitima,vitral,vivo,vizinho,voar,voce,volante,voltar,volume,voltagem,voraz,vulcao,wafer,wifi,xeque,xicara,xisto,xote,zangoes,zebra,zelar,zelo,zepelim,zerar,zico,zigue,zona,zumbi,zunido";
           
@@ -426,133 +551,7 @@
           );
       };
 
-      // --- Galaxy Menu ---
-      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => {
-          return (
-              <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
-                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
-                   
-                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
-                       <div className="relative">
-                          <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                          <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
-                       </div>
-                       
-                       <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">
-                          GALAXY<br/><span className="text-blue-400">INVADER</span>
-                       </h1>
-                       
-                       <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
-                            <Coins size={20} className="text-yellow-400" />
-                            <span className="font-bold text-xl text-yellow-400">{coins}</span>
-                       </div>
-
-                       <div className="w-full grid gap-4 mt-8">
-                           <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
-                                <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
-                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
-                                    <span className="text-2xl font-bold tracking-wider">START MISSION</span>
-                                    <ChevronLeft className="rotate-180" size={24} />
-                                </div>
-                           </button>
-                           
-                           <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
-                                <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
-                                <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
-                                    <ShoppingCart size={24} />
-                                    <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
-                                </div>
-                           </button>
-                       </div>
-
-                       <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full">
-                          <ChevronLeft size={16} /> Back to Hub
-                       </button>
-                   </div>
-                   
-                   <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-              </div>
-          );
-      };
-
-      // --- Shop Screen ---
-      const ShopScreen = ({ coins, unlockShip, equipShip, unlockedShips, equippedShip, onBack }) => {
-          
-          const ShipCard = ({ ship }) => {
-              const isUnlocked = unlockedShips.includes(ship.id);
-              const isEquipped = equippedShip === ship.id;
-              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
-
-              const handleAction = () => {
-                  if (isUnlocked) {
-                      equipShip(ship.id);
-                      playSound('powerup');
-                  } else {
-                      if (coins >= ship.price) {
-                          unlockShip(ship.id, ship.price);
-                          playSound('buy');
-                      } else {
-                          playSound('wrong');
-                      }
-                  }
-              };
-
-              return (
-                  <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
-                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
-                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
-                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
-                           {!isUnlocked && (
-                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                   <Lock size={20} className="text-gray-400" />
-                               </div>
-                           )}
-                      </div>
-                      
-                      {isUnlocked ? (
-                          <button 
-                              onClick={handleAction}
-                              disabled={isEquipped}
-                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
-                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
-                          >
-                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
-                          </button>
-                      ) : (
-                          <button 
-                              onClick={handleAction}
-                              disabled={coins < ship.price}
-                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
-                                  ${coins >= ship.price ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                          >
-                              <Coins size={12} /> {ship.price}
-                          </button>
-                      )}
-                  </div>
-              );
-          };
-
-          return (
-              <div className="w-full h-full bg-[#050505] flex flex-col">
-                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
-                      <div className="flex items-center gap-2 bg-gray-900 px-3 py-1 rounded-full border border-yellow-600/50">
-                          <Coins size={16} className="text-yellow-400" />
-                          <span className="font-bold text-yellow-400">{coins}</span>
-                      </div>
-                   </div>
-                   
-                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
-                       {SHIPS.map(ship => (
-                           <ShipCard key={ship.id} ship={ship} />
-                       ))}
-                   </div>
-              </div>
-          );
-      };
-
-      // --- LinguaQuest ---
+      // --- COMPONENT: LinguaQuest ---
       const LinguaQuest = ({ onBack, triggerAd }) => {
           const lessonsData = useMemo(() => [
               { id: 1, type: 'translate', q: 'The cat eats fish', a: ['O gato come peixe', 'O cachorro bebe agua', 'O passaro voa'], correct: 0 },
@@ -673,7 +672,263 @@
           );
       };
 
-      // --- Galaxy Invader ---
+      // --- COMPONENT: Slither Game ---
+      const SlitherGame = ({ onBack, triggerAd, addCoins }) => {
+          const canvasRef = useRef(null);
+          const MAP_SIZE = 2000;
+          const [score, setScore] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [joystickData, setJoystickData] = useState({ active: false, x: 0, y: 0, angle: null });
+
+          const gameState = useRef({
+              snake: [],
+              angle: 0,
+              targetAngle: 0,
+              length: 10,
+              speed: 4,
+              foods: [],
+              camera: { x: 0, y: 0 },
+              playing: true,
+              width: 0, 
+              height: 0
+          });
+
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              const g = gameState.current;
+              
+              g.snake = [];
+              const startX = MAP_SIZE / 2;
+              const startY = MAP_SIZE / 2;
+              for(let i=0; i<20; i++) {
+                  g.snake.push({ x: startX - i * 2, y: startY });
+              }
+              g.length = 20;
+              g.angle = 0;
+              g.targetAngle = 0;
+              g.foods = [];
+              g.playing = true;
+              
+              for(let i=0; i<150; i++) {
+                  g.foods.push({
+                      x: Math.random() * MAP_SIZE,
+                      y: Math.random() * MAP_SIZE,
+                      r: 4 + Math.random() * 4,
+                      color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                      val: 1
+                  });
+              }
+
+              const resize = () => {
+                  if (canvas && canvas.parentElement) {
+                      canvas.width = canvas.parentElement.clientWidth;
+                      canvas.height = canvas.parentElement.clientHeight;
+                      g.width = canvas.width;
+                      g.height = canvas.height;
+                  }
+              };
+              window.addEventListener('resize', resize);
+              resize();
+
+              const die = () => {
+                  const g = gameState.current;
+                  g.playing = false;
+                  setGameOver(true);
+                  playSound('explosion');
+                  addCoins(Math.floor(score / 100)); 
+              };
+
+              const update = () => {
+                  const g = gameState.current;
+                  let diff = g.targetAngle - g.angle;
+                  while (diff < -Math.PI) diff += Math.PI * 2;
+                  while (diff > Math.PI) diff -= Math.PI * 2;
+                  g.angle += diff * 0.1;
+
+                  const head = g.snake[0];
+                  const newHead = {
+                      x: head.x + Math.cos(g.angle) * g.speed,
+                      y: head.y + Math.sin(g.angle) * g.speed
+                  };
+
+                  if (newHead.x < 0 || newHead.x > MAP_SIZE || newHead.y < 0 || newHead.y > MAP_SIZE) {
+                      die();
+                      return;
+                  }
+
+                  for (let i = 10; i < g.snake.length; i += 2) {
+                      const seg = g.snake[i];
+                      const d = Math.hypot(newHead.x - seg.x, newHead.y - seg.y);
+                      if (d < 10) {
+                          die();
+                          return;
+                      }
+                  }
+
+                  g.snake.unshift(newHead);
+                  const pointDensity = 4;
+                  if (g.snake.length > g.length * pointDensity) {
+                      g.snake.pop();
+                  }
+
+                  for (let i = g.foods.length - 1; i >= 0; i--) {
+                      const f = g.foods[i];
+                      const d = Math.hypot(newHead.x - f.x, newHead.y - f.y);
+                      if (d < 20 + f.r) {
+                          g.length += f.val;
+                          setScore(s => s + f.val * 10);
+                          playSound('powerup');
+                          g.foods[i] = {
+                              x: Math.random() * MAP_SIZE,
+                              y: Math.random() * MAP_SIZE,
+                              r: 4 + Math.random() * 4,
+                              color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                              val: 1
+                          };
+                      }
+                  }
+                  g.camera.x = newHead.x - g.width / 2;
+                  g.camera.y = newHead.y - g.height / 2;
+              };
+
+              const draw = () => {
+                  const canvas = canvasRef.current;
+                  if (!canvas) return;
+                  const ctx = canvas.getContext('2d');
+                  const g = gameState.current;
+
+                  ctx.fillStyle = '#050505';
+                  ctx.fillRect(0, 0, g.width, g.height);
+
+                  ctx.save();
+                  ctx.translate(-g.camera.x, -g.camera.y);
+
+                  ctx.strokeStyle = '#333';
+                  ctx.lineWidth = 10;
+                  ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+                  ctx.strokeStyle = '#222';
+                  ctx.lineWidth = 2;
+                  ctx.beginPath();
+                  for(let x = 0; x <= MAP_SIZE; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); }
+                  for(let y = 0; y <= MAP_SIZE; y += 100) { ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); }
+                  ctx.stroke();
+
+                  g.foods.forEach(f => {
+                      ctx.shadowBlur = 10; ctx.shadowColor = f.color; ctx.fillStyle = f.color;
+                      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+                      ctx.shadowBlur = 0;
+                  });
+
+                  for (let i = g.snake.length - 1; i >= 0; i--) {
+                      const p = g.snake[i];
+                      if (i % 4 === 0) {
+                          const isHead = i === 0;
+                          const size = isHead ? 14 : 12;
+                          ctx.fillStyle = isHead ? '#fff' : (i % 8 === 0 ? '#a855f7' : '#d8b4fe');
+                          ctx.shadowBlur = isHead ? 20 : 0; ctx.shadowColor = '#a855f7';
+                          ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
+                          
+                          if (isHead) {
+                              ctx.shadowBlur = 0;
+                              ctx.fillStyle = '#000';
+                              ctx.beginPath(); ctx.arc(p.x + Math.cos(g.angle - 0.5) * 8, p.y + Math.sin(g.angle - 0.5) * 8, 3, 0, Math.PI*2); ctx.fill();
+                              ctx.beginPath(); ctx.arc(p.x + Math.cos(g.angle + 0.5) * 8, p.y + Math.sin(g.angle + 0.5) * 8, 3, 0, Math.PI*2); ctx.fill();
+                          }
+                      }
+                  }
+                  ctx.restore();
+              };
+
+              let frameId;
+              const loop = () => {
+                  if (!g.playing) return;
+                  update();
+                  draw();
+                  frameId = requestAnimationFrame(loop);
+              };
+              loop();
+
+              const handleMouseMove = (e) => {
+                  if(joystickData.active) return;
+                  const rect = canvas.getBoundingClientRect();
+                  const dx = e.clientX - rect.left - g.width / 2;
+                  const dy = e.clientY - rect.top - g.height / 2;
+                  g.targetAngle = Math.atan2(dy, dx);
+              };
+
+              const handleTouchStart = (e) => {
+                  e.preventDefault();
+                  const touch = e.touches[0];
+                  setJoystickData({ active: true, startX: touch.clientX, startY: touch.clientY, currX: touch.clientX, currY: touch.clientY });
+              };
+              
+              const handleTouchMove = (e) => {
+                  e.preventDefault();
+                  if (!joystickData.active) return;
+                  const touch = e.touches[0];
+                  const dx = touch.clientX - joystickData.startX;
+                  const dy = touch.clientY - joystickData.startY;
+                  const angle = Math.atan2(dy, dx);
+                  g.targetAngle = angle;
+                  setJoystickData(prev => ({ ...prev, currX: touch.clientX, currY: touch.clientY, angle }));
+              };
+
+              const handleTouchEnd = (e) => {
+                  e.preventDefault();
+                  setJoystickData(prev => ({ ...prev, active: false }));
+              };
+
+              document.addEventListener('mousemove', handleMouseMove);
+              canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+              canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+              canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+
+              return () => {
+                  cancelAnimationFrame(frameId);
+                  window.removeEventListener('resize', resize);
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  canvas.removeEventListener('touchstart', handleTouchStart);
+                  canvas.removeEventListener('touchmove', handleTouchMove);
+                  canvas.removeEventListener('touchend', handleTouchEnd);
+              };
+          }, []);
+
+          const handleRestart = (e) => {
+              if (e) triggerAd(e);
+              onBack(); 
+          };
+
+          return (
+              <div className="w-full h-full relative overflow-hidden bg-black touch-none">
+                  <canvas ref={canvasRef} className="w-full h-full block" />
+                  
+                  {/* HUD */}
+                  <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+                      <div className="text-white font-bold text-xl drop-shadow-md">NEON SLITHER</div>
+                      <div className="text-purple-400 font-mono text-lg">SCORE: {score}</div>
+                  </div>
+
+                  <button onClick={onBack} className="absolute top-4 right-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 backdrop-blur z-20">
+                      <ChevronLeft />
+                  </button>
+
+                  {/* Game Over Modal */}
+                  {gameOver && (
+                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
+                          <Skull size={64} className="text-red-500 mb-4 animate-bounce" />
+                          <h2 className="text-4xl font-bold text-white mb-2 neon-title">GAME OVER</h2>
+                          <div className="text-2xl text-purple-400 mb-8 font-mono">SCORE: {score}</div>
+                          <button onClick={handleRestart} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)] transform transition hover:scale-105 flex items-center gap-2">
+                              <RefreshCcw /> EXIT TO MENU
+                          </button>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
+      // --- COMPONENT: Galaxy Invader ---
       const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
           const canvasRef = useRef(null);
           const game = useRef({
@@ -684,13 +939,53 @@
           });
           const [gameOver, setGameOver] = useState(false);
 
+          // --- Helper Functions Moved Up for Safety ---
+          const rectIntersect = (r1, r2) => !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
+          const createExplosion = (x, y, color, count = 20) => { for (let i = 0; i < count; i++) game.current.particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: Math.random() * 20 + 10, color }); };
+
+          const firePlayerWeapon = (g) => {
+              const { x, y, w, weaponLevel, shieldActive } = g.player;
+              const cx = x + w / 2;
+              
+              if (shieldActive) {
+                  playSound('laser', 0.5); 
+                  // Shield Beam - Base damage 50
+                  g.bullets.push({ x: cx - 6, y: y, w: 12, h: 50, owner: 'player', vy: -25, color: '#facc15', dmg: 250, behavior: 'beam', glow: true });
+                  const numBullets = 20;
+                  for (let i = 0; i < numBullets; i++) {
+                     const angle = (i / numBullets) * Math.PI * 2;
+                     g.bullets.push({ x: cx, y: y + 20, w: 6, h: 6, owner: 'player', vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, color: '#ffff00', dmg: 100 });
+                  }
+                  return;
+              }
+
+              g.player.shootAngle += 0.2;
+              playSound('shoot');
+
+              // Base bullet damage increased to ~75 to handle new HP scaling (15,000 HP / 75 = 200 hits for Lv1 Boss)
+              const baseDmg = 75;
+
+              switch(weaponLevel) {
+                  case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: baseDmg }); break;
+                  case 2: g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: -3, vy: -11, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: 3, vy: -11, color: '#38bdf8', dmg: baseDmg }); break;
+                  case 3: g.bullets.push({ x: cx - 10, y, w: 8, h: 8, owner: 'player', vx: -5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); g.bullets.push({ x: cx + 10, y, w: 8, h: 8, owner: 'player', vx: 5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); break;
+                  case 4: g.bullets.push({ x: cx, y, w: 6, h: 15, owner: 'player', vx: 0, vy: -12, color: '#f472b6', dmg: baseDmg*2, behavior: 'split', dist: 0 }); break;
+                  case 5: const offset = Math.sin(g.player.shootAngle) * 10; g.bullets.push({ x: cx + offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); g.bullets.push({ x: cx - offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); break;
+                  case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); break;
+                  case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: baseDmg*1.5 }); break;
+                  case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: baseDmg*3 }); break;
+                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: baseDmg*1.5 }); } break;
+                  case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: baseDmg*5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); break;
+                  default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: baseDmg*4 });
+              }
+          };
+
           const initGame = useCallback(() => {
               const canvas = canvasRef.current;
               const g = game.current;
               g.width = canvas.width;
               g.height = canvas.height;
               
-              // Load Sprite based on equipped ID
               const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
               g.playerSprite = generatePlayerSprite(shipDef.palette);
 
@@ -736,12 +1031,42 @@
               return closest;
           }, []);
 
+          // --- 10 Unique Boss Types (Moved BEFORE updateBoss) ---
+          const spawnBoss = useCallback(() => {
+              const g = game.current;
+              g.gameState = 'boss';
+              g.enemies = []; 
+              playSound('boss_spawn');
+
+              const bossTypes = [
+                  'pyramid', 'hydra', 'orb', 'dragon', 'spider', 
+                  'cube', 'parasite', 'star', 'tank', 'clock'
+              ];
+              const type = bossTypes[(g.level - 1) % bossTypes.length];
+              let w=120, h=120;
+              
+              // Boss HP Formula: 15,000 * 3^(level-1)
+              let hp = 15000 * Math.pow(3, g.level - 1);
+
+              if (type === 'hydra') { w=150; h=100; hp*=1.2; }
+              if (type === 'dragon') { w=80; h=200; hp*=1.1; }
+              if (type === 'spider') { w=180; h=120; hp*=1.3; }
+              if (type === 'tank') { w=140; h=160; hp*=1.5; }
+              if (type === 'clock') { w=130; h=130; hp*=1.2; }
+
+              g.boss = {
+                  type,
+                  x: g.width / 2 - w/2, y: -150, w, h,
+                  health: hp, maxHealth: hp,
+                  phase: 1, lastShot: Date.now(), moveDir: 1, attackType: 0, tick: 0,
+                  subComponents: [] 
+              };
+          }, []);
+
           const spawnEnemy = useCallback(() => {
               const g = game.current;
-              // Stop normal spawn if we have reached the boss target
               if (g.gameState !== 'playing' || g.boss || g.levelScore >= g.bossTarget) return;
 
-              // Spawn rate increases slightly with level
               if (Math.random() < 0.02 + g.level * 0.005) {
                   const rand = Math.random();
                   let type = 'drone'; 
@@ -760,9 +1085,7 @@
                   let w=30, h=30, health=g.level, vx=0, vy=2, points=100;
                   const e = { type, x: Math.random() * (g.width - 40), y: -50, lastShot: Date.now() + Math.random()*1000, tick: 0, trail: [] };
 
-                  // Base stats scaling with level
                   const speedMult = 1 + (g.level * 0.1);
-                  // Scale enemy health exponentially to match player damage scaling
                   const healthMult = Math.pow(2.5, g.level - 1);
                   const baseHp = 50 * healthMult;
                   
@@ -779,55 +1102,21 @@
                       case 'hive': w=60; h=50; health=12*baseHp; vy=0.5 * speedMult; points=500; e.lastSpawn = Date.now(); break;
                   }
 
-                  // Points also scale to match the massive boss target
                   const pointsMult = Math.pow(3, g.level - 1);
-                  e.points = Math.ceil(points * pointsMult); // Removed 0.02 reduction factor
+                  e.points = Math.ceil(points * pointsMult); 
 
                   e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy;
                   g.enemies.push(e);
               }
           }, []);
 
-          // --- 10 Unique Boss Types ---
-          const spawnBoss = useCallback(() => {
-              const g = game.current;
-              g.gameState = 'boss';
-              g.enemies = []; 
-              playSound('boss_spawn');
-
-              const bossTypes = [
-                  'pyramid', 'hydra', 'orb', 'dragon', 'spider', 
-                  'cube', 'parasite', 'star', 'tank', 'clock'
-              ];
-              const type = bossTypes[(g.level - 1) % bossTypes.length];
-              let w=120, h=120;
-              
-              // Boss HP Formula: 15,000 * 3^(level-1)
-              let hp = 15000 * Math.pow(3, g.level - 1);
-
-              // Boss specific stats adjustments
-              if (type === 'hydra') { w=150; h=100; hp*=1.2; }
-              if (type === 'dragon') { w=80; h=200; hp*=1.1; }
-              if (type === 'spider') { w=180; h=120; hp*=1.3; }
-              if (type === 'tank') { w=140; h=160; hp*=1.5; }
-              if (type === 'clock') { w=130; h=130; hp*=1.2; }
-
-              g.boss = {
-                  type,
-                  x: g.width / 2 - w/2, y: -150, w, h,
-                  health: hp, maxHealth: hp,
-                  phase: 1, lastShot: Date.now(), moveDir: 1, attackType: 0, tick: 0,
-                  subComponents: [] 
-              };
-          }, []);
-
+          // updateBoss defined before update() but after spawnBoss/firePlayerWeapon if needed
           const updateBoss = (g) => {
               if (!g.boss) return;
               const boss = g.boss;
               const now = Date.now();
               boss.tick += 0.05;
 
-              // Movement
               if (boss.y < 50) boss.y += 1;
               
               if (boss.type === 'dragon') {
@@ -839,8 +1128,7 @@
                   if (boss.x <= 20 || boss.x + boss.w >= g.width - 20) boss.moveDir *= -1;
               }
 
-              // Attack Logic
-              let fireRate = Math.max(200, 800 - (g.level * 50)); // Fire rate increases with level
+              let fireRate = Math.max(200, 800 - (g.level * 50)); 
 
               if (now - boss.lastShot > fireRate) {
                   boss.attackType = (boss.attackType + 1) % 3;
@@ -848,53 +1136,48 @@
                   const cy = boss.y + boss.h/2;
 
                   if (boss.type === 'pyramid') {
-                      if (boss.attackType === 0) { // Triangle Spread
+                      if (boss.attackType === 0) {
                           for(let i=-1; i<=1; i++) g.bullets.push({x: cx, y: boss.y+boss.h, w:8, h:15, owner:'enemy', vx:i*3, vy:6, color:'#facc15'});
-                      } else if (boss.attackType === 1) { // Homing Pyramids
+                      } else if (boss.attackType === 1) {
                            g.bullets.push({x: cx, y: boss.y+boss.h, w:10, h:10, owner:'enemy', vx:0, vy:4, color:'#facc15', behavior:'homing'});
-                      } else { // Center Beam
+                      } else {
                            g.bullets.push({x: cx-10, y: boss.y+boss.h, w:20, h:50, owner:'enemy', vx:0, vy:10, color:'#fbbf24'});
                       }
                   } else if (boss.type === 'hydra') {
-                       // 3 Heads firing
                        const heads = [boss.x + 20, cx, boss.x + boss.w - 20];
                        heads.forEach((hx, i) => {
-                           if (i === boss.attackType) return; // Alternate heads
+                           if (i === boss.attackType) return;
                            g.bullets.push({x: hx, y: boss.y+boss.h, w:8, h:8, owner:'enemy', vx:(Math.random()-0.5)*2, vy:5, color: i===0?'#60a5fa':(i===1?'#34d399':'#f87171')});
                        });
                   } else if (boss.type === 'orb') {
-                      if (boss.attackType === 0) { // 360 wave
+                      if (boss.attackType === 0) {
                           for(let i=0; i<12; i++) {
                               const a = (i/12)*Math.PI*2 + boss.tick;
                               g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(a)*4, vy:Math.sin(a)*4, color:'#3b82f6'});
                           }
-                      } else { // Gravity shots
+                      } else {
                           g.bullets.push({x: cx, y: cy, w:10, h:10, owner:'enemy', vx:(g.player.x-cx)*0.01, vy:4, color:'#60a5fa', behavior:'curve'});
                       }
                   } else if (boss.type === 'dragon') {
-                       g.bullets.push({x: cx, y: boss.y+boss.h, w:12, h:20, owner:'enemy', vx:0, vy:7, color:'#ef4444'}); // Fire breath
+                       g.bullets.push({x: cx, y: boss.y+boss.h, w:12, h:20, owner:'enemy', vx:0, vy:7, color:'#ef4444'});
                        if (boss.attackType === 2) {
                            g.bullets.push({x: boss.x, y: boss.y+boss.h/2, w:6, h:12, owner:'enemy', vx:-2, vy:4, color:'#f87171', behavior:'homing'});
                            g.bullets.push({x: boss.x+boss.w, y: boss.y+boss.h/2, w:6, h:12, owner:'enemy', vx:2, vy:4, color:'#f87171', behavior:'homing'});
                        }
                   } else if (boss.type === 'spider') {
-                       // Web shot (Slow, wide)
                        if (boss.attackType === 0) {
                            for(let i=-2; i<=2; i++) g.bullets.push({x: cx, y: cy, w:4, h:4, owner:'enemy', vx:i*2, vy:3, color:'#22c55e'});
-                       } else { // Rain
+                       } else {
                            g.bullets.push({x: Math.random()*g.width, y: 0, w:5, h:15, owner:'enemy', vx:0, vy:8, color:'#4ade80'});
                            g.bullets.push({x: Math.random()*g.width, y: 0, w:5, h:15, owner:'enemy', vx:0, vy:8, color:'#4ade80'});
                        }
                   } else if (boss.type === 'cube') {
-                       // 6 Directions from faces (Simulated)
                        [0, Math.PI/2, Math.PI, 3*Math.PI/2].forEach(a => {
                            g.bullets.push({x: cx, y: cy, w:8, h:8, owner:'enemy', vx:Math.cos(a+boss.tick)*4, vy:Math.sin(a+boss.tick)*4, color:'#d8b4fe'});
                        });
                   } else if (boss.type === 'parasite') {
-                       // Spores
                        for(let i=0; i<3; i++) g.bullets.push({x: cx + (Math.random()-0.5)*40, y: cy + (Math.random()-0.5)*40, w:6, h:6, owner:'enemy', vx:(Math.random()-0.5)*3, vy:2+Math.random()*2, color:'#f472b6'});
                   } else if (boss.type === 'star') {
-                       // Radial Explosion
                        if (boss.attackType === 2) {
                            for(let i=0; i<8; i++) {
                               const a = (i/8)*Math.PI*2;
@@ -904,12 +1187,10 @@
                            g.bullets.push({x: cx, y: cy, w:5, h:20, owner:'enemy', vx:0, vy:8, color:'#f59e0b'});
                        }
                   } else if (boss.type === 'tank') {
-                       // Heavy Machine Gun
                        g.bullets.push({x: boss.x+20, y: boss.y+boss.h, w:4, h:10, owner:'enemy', vx:0, vy:8, color:'#9ca3af'});
                        g.bullets.push({x: boss.x+boss.w-20, y: boss.y+boss.h, w:4, h:10, owner:'enemy', vx:0, vy:8, color:'#9ca3af'});
-                       if (boss.attackType === 2) g.bullets.push({x: cx, y: boss.y+boss.h, w:20, h:20, owner:'enemy', vx:0, vy:4, color:'#ef4444'}); // Main Cannon
+                       if (boss.attackType === 2) g.bullets.push({x: cx, y: boss.y+boss.h, w:20, h:20, owner:'enemy', vx:0, vy:4, color:'#ef4444'});
                   } else if (boss.type === 'clock') {
-                       // Rhythmic bursts
                        const angle = (Date.now() / 1000) % (Math.PI*2);
                        g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(angle)*5, vy:Math.sin(angle)*5, color:'#06b6d4'});
                        g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(angle+Math.PI)*5, vy:Math.sin(angle+Math.PI)*5, color:'#06b6d4'});
@@ -936,14 +1217,12 @@
               if (g.gameState === 'playing' || g.gameState === 'boss') {
                   updateBoss(g);
 
-                  // Auto Fire Logic
                   const fireRate = g.player.weaponLevel >= 8 ? 100 : 150;
                   if (now - g.player.lastShot > fireRate) {
                       firePlayerWeapon(g);
                       g.player.lastShot = now;
                   }
 
-                  // Player Bullets
                   g.bullets.forEach(b => {
                       if (b.behavior === 'homing') {
                           const target = getClosestEnemy(b.x, b.y);
@@ -968,11 +1247,9 @@
                   });
                   g.bullets = g.bullets.filter(b => b.y > -100 && b.y < g.height + 50 && b.x > -50 && b.x < g.width + 50 && !b.hit);
 
-                  // Update Enemies
                   g.enemies.forEach(e => {
                       e.tick += 0.05;
                       
-                      // AI Movement
                       if (e.type === 'snake') {
                           e.trail.unshift({x: e.x, y: e.y});
                           if (e.trail.length > 5) e.trail.pop();
@@ -982,24 +1259,22 @@
                           e.x = e.baseX + Math.sin(e.tick * 2) * 40;
                           e.y += e.vy;
                       } else if (e.type === 'cube') {
-                          // Gravity pull
                           const dx = (p.x + p.w/2) - (e.x + e.w/2);
                           const dy = (p.y + p.h/2) - (e.y + e.h/2);
                           const dist = Math.sqrt(dx*dx + dy*dy);
                           if (dist < 300) {
-                              p.x -= dx * 0.005; // Pull player
+                              p.x -= dx * 0.005; 
                           }
                           e.y += e.vy;
                       } else if (e.type === 'kamikaze') {
-                          if (e.y < p.y) e.vy += 0.1; // Accelerate down
+                          if (e.y < p.y) e.vy += 0.1; 
                           const dx = p.x - e.x;
-                          e.x += dx * 0.02; // Steer towards player
+                          e.x += dx * 0.02; 
                           e.y += e.vy;
                       } else if (e.type === 'disc') {
                           e.x = e.baseX + Math.cos(e.tick) * 50;
                           e.y += e.vy;
                       } else if (e.type === 'hive') {
-                          // Spawns minidrones
                           if (now - e.lastSpawn > 3000) {
                               g.enemies.push({ type: 'swarmer', x: e.x + e.w/2, y: e.y + e.h, w: 15, h: 15, health: 1, vx: (Math.random()-0.5)*4, vy: 3, points: 20 });
                               e.lastSpawn = now;
@@ -1009,7 +1284,6 @@
                           e.y += e.vy;
                       }
 
-                      // AI Shooting
                       if (now - e.lastShot > (e.type === 'tower' ? 50 : 1500)) {
                           if (e.type === 'drone') {
                                g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 4, h: 10, owner: 'enemy', vx: 0, vy: 5, color: '#f00'});
@@ -1038,16 +1312,11 @@
                   });
                   g.enemies = g.enemies.filter(e => e.y < g.height + 50 && e.health > 0);
 
-                  // Powerups
                   g.powerups.forEach(p => p.y += p.vy);
                   g.powerups = g.powerups.filter(p => p.y < g.height && !p.collected);
 
-                  // Collisions
                   g.bullets.forEach(b => {
                       if (b.owner === 'player') {
-                          // Scale damage based on player level: 75 base * 2.7^(level-1)
-                          // This keeps up with the x3 boss HP scaling (15000 -> 45000 -> 135000)
-                          // while making the game slightly more challenging as levels progress.
                           const playerDmg = (b.dmg || 75) * Math.pow(2.7, g.level - 1) * (p.damageMultiplier || 1);
 
                           g.enemies.forEach(e => {
@@ -1056,11 +1325,10 @@
                                   e.health -= playerDmg;
                                   createExplosion(b.x, b.y, '#fb923c', 3);
                                   if(e.health <= 0) {
-                                      const earnedPoints = (e.points || 100); // Points are already scaled in spawnEnemy
+                                      const earnedPoints = (e.points || 100); 
                                       g.score += earnedPoints;
                                       g.levelScore += earnedPoints;
                                       
-                                      // Coin Calculation
                                       g.sessionScore += earnedPoints;
                                       if (g.sessionScore >= 1000) {
                                           const coinsToAdd = Math.floor(g.sessionScore / 1000);
@@ -1087,12 +1355,9 @@
                               createExplosion(b.x, b.y, '#f87171', 5);
                               if (g.boss.health <= 0) {
                                   playSound('explosion');
-                                  // Boss Defeated Logic
-                                  // Points for boss match the boss target to assist progression
                                   const bossPoints = g.bossTarget;
                                   g.score += bossPoints;
                                   
-                                  // Coins for boss
                                   g.sessionScore += bossPoints;
                                   if (g.sessionScore >= 1000) {
                                       const coinsToAdd = Math.floor(g.sessionScore / 1000);
@@ -1104,7 +1369,6 @@
                                   g.boss = null;
                                   g.bullets = []; 
                                   
-                                  // Level Up
                                   setTimeout(() => { 
                                       g.level++; 
                                       g.levelScore = 0; 
@@ -1129,12 +1393,11 @@
                                           p.x = g.width / 2 - p.w/2;
                                           p.y = g.height - 100;
                                           p.invulnerable = 2000;
-                                          // Clear enemy bullets to prevent spawn camping
                                           g.bullets = g.bullets.filter(bullet => bullet.owner === 'player');
                                       } else {
                                           g.gameState = 'game-over';
                                           setGameOver(true);
-                                          addCoins(g.earnedCoins); // Add session coins to wallet
+                                          addCoins(g.earnedCoins); 
                                       }
                                   }
                               }
@@ -1142,10 +1405,9 @@
                       }
                   });
 
-                  // Kamikaze Collision
                   g.enemies.forEach(e => {
                       if (rectIntersect(e, p)) {
-                          e.health = 0; // Enemy dies
+                          e.health = 0; 
                           createExplosion(e.x + e.w/2, e.y + e.h/2, '#f00', 20);
                           if (!p.shieldActive && p.invulnerable <= 0) {
                               p.health -= 20;
@@ -1180,7 +1442,6 @@
                       }
                   });
 
-                  // Trigger Boss Check
                   if (g.levelScore >= g.bossTarget && !g.boss && g.gameState === 'playing') {
                       spawnBoss();
                   }
@@ -1191,53 +1452,12 @@
               spawnEnemy();
           }, [spawnEnemy, spawnBoss, initGame, spawnPowerup, getClosestEnemy, addCoins]);
 
-          const rectIntersect = (r1, r2) => !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
-          const createExplosion = (x, y, color, count = 20) => { for (let i = 0; i < count; i++) game.current.particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: Math.random() * 20 + 10, color }); };
-
-          const firePlayerWeapon = (g) => {
-              const { x, y, w, weaponLevel, shieldActive } = g.player;
-              const cx = x + w / 2;
-              
-              if (shieldActive) {
-                  playSound('laser', 0.5); 
-                  // Shield Beam - Base damage 50
-                  g.bullets.push({ x: cx - 6, y: y, w: 12, h: 50, owner: 'player', vy: -25, color: '#facc15', dmg: 250, behavior: 'beam', glow: true });
-                  const numBullets = 20;
-                  for (let i = 0; i < numBullets; i++) {
-                     const angle = (i / numBullets) * Math.PI * 2;
-                     g.bullets.push({ x: cx, y: y + 20, w: 6, h: 6, owner: 'player', vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, color: '#ffff00', dmg: 100 });
-                  }
-                  return;
-              }
-
-              g.player.shootAngle += 0.2;
-              playSound('shoot');
-
-              // Base bullet damage increased to ~75 to handle new HP scaling (15,000 HP / 75 = 200 hits for Lv1 Boss)
-              const baseDmg = 75;
-
-              switch(weaponLevel) {
-                  case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: baseDmg }); break;
-                  case 2: g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: -3, vy: -11, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: 3, vy: -11, color: '#38bdf8', dmg: baseDmg }); break;
-                  case 3: g.bullets.push({ x: cx - 10, y, w: 8, h: 8, owner: 'player', vx: -5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); g.bullets.push({ x: cx + 10, y, w: 8, h: 8, owner: 'player', vx: 5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); break;
-                  case 4: g.bullets.push({ x: cx, y, w: 6, h: 15, owner: 'player', vx: 0, vy: -12, color: '#f472b6', dmg: baseDmg*2, behavior: 'split', dist: 0 }); break;
-                  case 5: const offset = Math.sin(g.player.shootAngle) * 10; g.bullets.push({ x: cx + offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); g.bullets.push({ x: cx - offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); break;
-                  case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); break;
-                  case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: baseDmg*1.5 }); break;
-                  case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: baseDmg*3 }); break;
-                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: baseDmg*1.5 }); } break;
-                  case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: baseDmg*5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); break;
-                  default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: baseDmg*4 });
-              }
-          };
-
           const draw = useCallback(() => {
               const canvas = canvasRef.current;
               if (!canvas) return;
               const ctx = canvas.getContext('2d');
               const g = game.current;
               
-              // Clear with solid black to hide background grid
               ctx.fillStyle = '#000000';
               ctx.fillRect(0, 0, g.width, g.height);
               
@@ -1247,8 +1467,6 @@
               if (g.gameState !== 'game-over') {
                   const p = g.player;
 
-                  // Player Drawing
-                  // Blink if invulnerable
                   if (p.invulnerable > 0) {
                       ctx.globalAlpha = Math.floor(Date.now() / 100) % 2 === 0 ? 0.4 : 1.0;
                   }
@@ -1259,9 +1477,7 @@
                       ctx.fillStyle = 'rgba(139, 92, 246, 0.3)'; ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
                   }
 
-                  // Draw the pixel art sprite
                   if (g.playerSprite) {
-                      // Draw Engine Glow
                       ctx.save();
                       const glowScale = 0.8 + Math.random() * 0.4;
                       const cx = p.x + p.w / 2;
@@ -1276,11 +1492,9 @@
                       ctx.fill();
                       ctx.restore();
 
-                      // Draw Sprite
-                      ctx.imageSmoothingEnabled = false; // Keep pixels sharp
+                      ctx.imageSmoothingEnabled = false; 
                       ctx.drawImage(g.playerSprite, p.x, p.y, p.w, p.h);
                   } else {
-                      // Fallback
                       ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
                       ctx.beginPath(); ctx.moveTo(p.x + p.w/2, p.y); ctx.lineTo(p.x + p.w, p.y + p.h); ctx.lineTo(p.x + p.w/2, p.y + p.h - 10); ctx.lineTo(p.x, p.y + p.h); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
                   }
@@ -1583,6 +1797,7 @@
                   );
                   case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
                   case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
+                  case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
@@ -1600,6 +1815,12 @@
                                               <Rocket size={32} className="text-purple-400" />
                                           </div>
                                       </button>
+                                      <button onClick={(e) => startGame('slither', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                          <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
+                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON SLITHER</span><span className="text-xs text-gray-400">Snake IO</span></div>
+                                              <Worm size={32} className="text-pink-400" />
+                                          </div>
+                                      </button>
                                       <button onClick={(e) => startGame('lingua-quest', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
                                               <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">LINGUA QUEST</span><span className="text-xs text-gray-400">Learn English</span></div>
@@ -1615,7 +1836,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.5.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.6.0</div>
                           </div>
                       );
               }
