@@ -1021,6 +1021,28 @@
           const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
           const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
 
+          // Auto-fullscreen on first interaction
+          useEffect(() => {
+              const attemptFullScreen = () => {
+                  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                      document.documentElement.requestFullscreen().catch(err => {
+                          console.log('Fullscreen blocked:', err);
+                      });
+                  }
+                  // We only try once to avoid annoying the user if they exit manually
+                  window.removeEventListener('click', attemptFullScreen);
+                  window.removeEventListener('touchstart', attemptFullScreen);
+              };
+
+              window.addEventListener('click', attemptFullScreen);
+              window.addEventListener('touchstart', attemptFullScreen);
+
+              return () => {
+                  window.removeEventListener('click', attemptFullScreen);
+                  window.removeEventListener('touchstart', attemptFullScreen);
+              };
+          }, []);
+
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]);
           useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]);
           useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]);
@@ -1045,7 +1067,14 @@
               window.open('https://otieu.com/4/10270523', '_blank');
           };
           
-          const startGame = (name) => { triggerAd(); setCurrentScreen(name); };
+          const startGame = (name) => {
+              // Try fullscreen
+              if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                   document.documentElement.requestFullscreen().catch(() => {});
+              }
+              triggerAd();
+              setCurrentScreen(name);
+          };
 
           switch(currentScreen) {
               case 'galaxy-menu': return <GalaxyMenu onStart={() => startGame('galaxy-game')} onShop={() => setCurrentScreen('shop')} onBack={() => setCurrentScreen('home')} coins={coins} />;
