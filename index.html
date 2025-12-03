@@ -157,7 +157,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save } from 'lucide-react';
 
       // --- Helpers ---
       const safeStorage = {
@@ -1069,6 +1069,10 @@
                               <button onClick={() => startGame('farm')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">FAZENDINHA</span><span className="text-xs text-gray-400">Farm Idle</span></div><Sprout size={32} className="text-green-400" /></div></button>
                               <button onClick={() => startGame('hangman')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div><Brain size={32} className="text-blue-400" /></div></button>
                           </div>
+                      </div>
+                      <div className="absolute bottom-4 text-gray-700 text-xs flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> Progresso Salvo Automático</div>
+                          <div>v4.11.0</div>
                       </div>
                   </div>
               );
