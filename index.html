@@ -99,7 +99,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download } from 'lucide-react';
+      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -260,7 +260,42 @@
         }
       };
 
+      // --- Install Button Component ---
+      const InstallButton = () => {
+          const [deferredPrompt, setDeferredPrompt] = useState(null);
+          
+          useEffect(() => {
+              const handler = (e) => {
+                  e.preventDefault();
+                  setDeferredPrompt(e);
+              };
+              window.addEventListener('beforeinstallprompt', handler);
+              return () => window.removeEventListener('beforeinstallprompt', handler);
+          }, []);
+
+          const handleInstall = async () => {
+              if (!deferredPrompt) return;
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              if (outcome === 'accepted') {
+                  setDeferredPrompt(null);
+              }
+          };
+
+          if (!deferredPrompt) return null;
+
+          return (
+              <button 
+                  onClick={handleInstall}
+                  className="absolute top-4 left-4 p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-purple-400"
+              >
+                  <Download size={16} /> INSTALAR APP
+              </button>
+          );
+      };
+
       // --- SHIP DEFINITIONS & SPRITE GENERATOR ---
+      
       const SHIPS = [
           { id: 'starter', name: 'Prototype', price: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
           { id: 'blue', name: 'Interceptor', price: 80, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
@@ -302,7 +337,7 @@
               <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
                    
-                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-pulse">
+                   <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
                        <div className="relative">
                           <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
                           <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
@@ -421,288 +456,7 @@
           );
       };
 
-      // --- COMPONENT: Hangman Game ---
-      const HangmanGame = ({ onBack, triggerAd, addCoins, coins }) => {
-          const rawWordList = "abacate,abelha,abismo,abraso,acenar,acorde,acusar,adaga,adepto,adocar,adotar,adubo,afetar,afinar,afogar,agente,agitar,agosto,aguado,agudo,ajudar,alameda,alarme,albino,alcateia,aldeia,alegre,algema,alicate,alien,alivio,almoco,altar,altura,aluno,amarelo,amigo,amostra,amuleto,analisar,ananas,anexo,animal,anotar,ansioso,antena,anular,apagar,aperto,apitar,apoio,aprender,aprovar,arame,arara,arco,areia,arena,argila,arma,armada,aroma,arvore,asilo,aspirar,assar,astro,atacar,atento,ativo,ator,atrair,audio,aula,aumento,aura,autor,avanco,aviao,avidez,axila,azar,azedo,azul,bagagem,bagre,baiano,baixa,balde,balanco,bambu,banco,bandido,banho,barata,barco,barraco,barreira,base,basico,bastao,bazar,beber,beijo,belga,bezerro,bicudo,bilhete,bilion,bioma,bispo,bispo,bispo,bloco,blusa,boato,bode,boiadeiro,bolacha,bolha,bolota,bonde,bonita,botao,branco,bravo,breu,brilho,brisa,broca,bronze,bruto,bueiro,bufalo,buraco,burro,caatinga,cabelo,cabide,cabo,cachorro,cacife,cactus,cafeina,caixa,cajado,calar,caldo,calmo,calota,calvo,camada,camelo,camisa,caminho,camomila,campo,cancar,candeeiro,caneta,cangaco,canoa,canto,capaz,capim,capuz,caramelo,carne,carona,carpa,carro,cartaz,casaco,casal,casca,casinha,cassetete,castelo,castor,catador,caverna,ceder,cebola,cedo,cegar,celula,cimento,circo,ciscar,citar,civico,clarim,classe,clero,clima,clone,cloro,coala,coceira,coco,coelho,cofre,coibir,coisa,colher,colina,colocar,cometa,comida,compare,comprar,concha,condor,conectar,conforto,conta,controle,coral,coragem,corda,corno,corpo,correr,coruja,cosmos,cotacao,cotovia,couro,cova,cravo,creme,crer,crespo,crise,cruzar,crystal,cuco,culpa,cupido,curso,curto,danado,dançar,danone,dardos,data,dardo,debate,decidir,decorar,dedo,defesa,degelo,degrau,deixar,delirar,demora,dente,deriva,descer,desenho,desfio,desova,destra,detalhe,deusa,devoto,diario,dieta,diego,digito,diminuir,dinamo,dingue,diodo,disco,disegno,disparo,distante,ditado,diva,divino,divulgar,doca,doce,doido,domino,donzela,dormente,dorso,dragao,drama,dueto,duplo,durante,ecoar,edicao,editor,educar,egoista,eixo,elenco,eletrico,elevar,elite,elogio,embrulho,emendar,emotivo,empate,empurrar,encaixe,encanto,encontro,energia,enigma,enlouquecer,enorme,entender,entrada,entulho,enxame,enxada,epoca,ereto,ervilha,escada,escalar,escama,escena,escolha,escudo,esfera,esforco,esfregar,esgoto,esmalte,espada,espelho,espeto,espiral,esporte,esquilo,estaca,estante,esticar,estilo,estocar,estrela,estudo,eterno,etnia,euforico,euforia,euforia,evasao,evento,evitar,exalar,exame,exato,exibir,exigir,exilio,exito,expor,extra,fada,faisca,falcao,falso,faminto,fantasma,farao,fardo,farinha,farol,fastio,fator,fatia,favo,febre,felino,feliz,fenda,feno,fera,ferrugem,festa,feudo,fiapo,fibra,ficar,figura,fileira,filho,final,financeiro,finger,fiorde,firme,flama,flor,floresta,fluir,fluxo,focinho,fogo,foguete,folha,folclore,fome,forca,forma,forno,fosco,fraco,frango,frasco,freio,frio,frisar,fritar,frota,fruta,fugir,fumaça,fundo,fungo,furor,furto,futuro,gabarito,gado,gala,galeria,galho,galo,galpao,ganso,garagem,garfo,garra,garupa,gasolina,gasto,gato,gelado,geleira,gemido,genio,genoma,geodo,geral,germe,gesto,giesta,gigante,ginasta,girafa,girino,giz,globo,gloria,goela,golpe,golfinho,gonzo,gorda,gordo,gosma,gota,governo,grafo,grama,grande,grito,grudar,grupo,guia,guizo,gume,habito,hacker,harpa,habilidade,haste,helice,heroi,hidro,himalaia,hiper,hipnose,historia,hoje,honor,horario,horta,hotel,humano,hurra,icaro,icone,ideia,iglu,ignorar,igreja,ilheu,ilha,iludir,imaculado,imagear,imitar,imovel,imune,inalar,inbox,incenso,inchado,incluso,indicar,inerca,inferno,infimo,iniciar,inocuo,instinto,insular,inteiro,iodo,iraniano,iris,ironia,isqueiro,isso,istmo,italia,jarra,javali,jazida,jeito,jiboia,jig,joia,jornal,jovem,juiz,junho,junto,junior,labio,lacre,lado,lagarta,lagarto,lama,lambda,lance,lanchonete,lanceiro,largo,larva,laser,latir,lavabo,lava,lazer,leao,lebre,legal,leigo,leira,leite,leme,lenha,lento,leque,leste,letra,leve,liame,libra,ligar,limiar,limo,limpo,linha,lirio,listar,litoral,livro,lixao,locao,lobo,lona,longo,lontra,lorde,lote,louco,louro,lua,luar,lugar,lume,luneta,lupa,luta,luto,macaco,maior,malha,malte,mamao,manejo,manga,mangle,manjar,mapa,marca,marco,mare,margem,marinho,maroto,marreco,marte,mascara,massa,mastro,mate,matriz,medalha,melancia,melodia,melhor,memoria,menor,mergulho,mesada,mesmo,mestre,metal,miar,micro,milho,mimo,minhoca,minuto,miolo,mira,misterio,mito,miudeza,moagem,modelo,modulo,moeda,moinho,moita,mofo,mola,molde,moleque,molho,monge,monstro,montanha,moral,morcego,morder,mosaico,mosca,mosquete,mosto,moto,muda,mudar,muela,muito,mundo,municao,mural,musgo,musica,nação,nadar,naive,narvalo,natural,natureza,navio,neblina,negar,negro,nenem,nervoso,nervo,niche,ninho,nobre,notar,nota,novato,novelo,novembro,novo,nucleo,nublado,numero,nuvem,obedecer,obeso,obito,objeto,obliquo,obrar,ocaso,oceano,ocioso,oculo,odiar,odor,ofegar,oferta,oficio,ogiva,oleo,olhar,olho,ombro,ondas,onix,ontem,opala,opcao,opera,opinar,opoente,oracao,orbe,ordem,orelha,orgao,orientar,origem,orla,ornar,oscar,osso,ostra,otario,otimo,ouro,ousar,ouvido,oval,ovino,ovo,oxido,oxigenio,pacto,padrao,pagar,pagode,palha,palio,palma,palmada,pampa,panda,panelão,papel,paprica,parado,parcela,parede,parma,parque,parte,passo,pasto,pato,patria,pedra,pegar,peixe,pena,pente,perda,perigo,perna,peso,peumo,peixe,piada,piano,picada,pico,pilao,pilha,pimenta,pincel,pingo,pinta,pipa,piquenique,pirar,pirata,piso,pista,pitao,pivete,placa,planta,plasma,pneu,poder,podre,poema,poente,poesia,polen,polpa,polvo,pomar,pombo,ponto,ponte,poodle,popular,porcao,porco,porta,portal,poste,pouso,praia,prata,prato,prece,prego,prelo,preto,prima,primo,prisma,proa,prosa,prumo,pular,pulo,punho,pupilo,pura,puxar,quadro,quark,quarto,quase,queda,queijo,quente,querer,quero,quina,quinta,quiosque,quota,rabeca,rabo,racao,rada,radar,radio,raiva,raiz,ramo,rancho,rapido,rasgar,raspao,rasteiro,ratazana,rato,ravina,razao,reagir,real,rebate,reboco,recado,recife,reboque,reparo,repente,repo,retina,reto,reunir,reves,revista,revoada,rim,risada,riso,ritmo,robalo,roca,rocha,roda,rodeo,rodar,rodovia,roer,rojo,rolar,romano,ronco,rosto,roteiro,rotina,roubar,roxo,rua,rubro,rude,rugido,ruido,ruivo,rumor,rumo,rural,rutina,sabao,sabedoria,saber,sabre,sabugo,sacola,sadio,saia,sala,salada,saldao,salgado,salmão,salto,samba,sanduiche,sangue,sapo,sarda,sargento,sarna,sapo,sarau,sabor,salvar,saliva,salmo,selar,selva,semana,sempre,sena,senhor,senso,sentar,sereno,serra,servo,sexta,shoyu,short,silvo,simbolo,sinal,simples,sino,sioux,sistemico,skate,soar,sobrar,social,soco,soja,solar,solene,solo,solta,sombra,somente,sombras,sonar,sonho,sopro,soquete,soro,sorriso,sorte,sossego,sovina,suave,subir,subito,sucesso,suco,sujo,sulco,sul,superior,superar,suporte,surdo,surfar,surgir,susto,sutil,tabela,tabua,tagarelar,talco,talhao,talher,talvez,tambor,tampa,tanque,tapete,tapira,tarifa,tartaruga,tato,taverna,taxa,tecla,tecido,teia,teimoso,teixo,tela,temor,tempo,tenaz,tenda,tenor,tensor,teorico,terra,tesla,testa,tiara,tiro,tigre,tilapia,tipo,tirar,tiroteio,titanio,titulo,toalha,tocar,toldo,tomar,tomate,tombo,tonel,topete,topo,tordo,tornar,torneio,torpedo,torta,torto,torx,tosco,tostar,total,touro,toxico,trafo,tragico,trama,tranco,tranquilo,trapo,trator,treino,trem,trevo,tribo,trigo,trilho,triste,trono,trovao,tucano,tudo,tufao,tulipa,tumulo,turbo,turista,turvo,turno,turquesa,ubuntu,umbigo,umido,unha,unico,unir,urna,urso,urubu,urina,urna,usina,usuario,usura,utopia,vaca,vadio,vale,valor,valsa,vapor,varal,vara,variavel,varrer,vaso,vasto,velcro,velho,veloz,venda,venerar,vento,venus,verao,verbo,verde,vereda,verme,verso,vertente,vespa,vestir,vezes,viagem,viario,vicente,vidro,viela,vingar,vinho,vinil,vinte,viola,violeta,viral,virar,virgem,virtude,visao,visita,vista,visual,vital,vitima,vitral,vivo,vizinho,voar,voce,volante,voltar,volume,voltagem,voraz,vulcao,wafer,wifi,xeque,xicara,xisto,xote,zangoes,zebra,zelar,zelo,zepelim,zerar,zico,zigue,zona,zumbi,zunido";
-          
-          const WORDS = useMemo(() => {
-              return rawWordList.split(',').map(w => 
-                w.trim().toUpperCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-                .replace(/[^A-Z]/g, "") // Remove non-letters
-              ).filter(w => w.length > 0);
-          }, []);
-          
-          const MAX_MISTAKES = 7;
-          
-          const [word, setWord] = useState('');
-          const [guessed, setGuessed] = useState(new Set());
-          const [mistakes, setMistakes] = useState(0);
-          const [status, setStatus] = useState('playing'); 
-
-          useEffect(() => { startNewGame(); }, []);
-
-          const startNewGame = (e) => {
-              if(e) triggerAd(e);
-              const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-              setWord(randomWord);
-              setGuessed(new Set());
-              setMistakes(0);
-              setStatus('playing');
-          };
-
-          const handleGuess = (letter) => {
-              if (status !== 'playing' || guessed.has(letter)) return;
-              
-              const newGuessed = new Set(guessed);
-              newGuessed.add(letter);
-              setGuessed(newGuessed);
-
-              if (!word.includes(letter)) {
-                  const newMistakes = mistakes + 1;
-                  setMistakes(newMistakes);
-                  playSound('wrong'); 
-                  if (newMistakes >= MAX_MISTAKES) {
-                      setStatus('lost');
-                      playSound('explosion');
-                  }
-              } else {
-                  playSound('correct');
-                  const isWon = word.split('').every(l => newGuessed.has(l));
-                  if (isWon) {
-                      setStatus('won');
-                      playSound('powerup');
-                      addCoins(20); // Award 20 coins
-                  }
-              }
-          };
-
-          const handleHint = () => {
-              if (status !== 'playing') return;
-              if (coins < 1) {
-                  playSound('wrong');
-                  return;
-              }
-              
-              const unguessedLetters = word.split('').filter(char => !guessed.has(char));
-              if (unguessedLetters.length > 0) {
-                  const randomChar = unguessedLetters[Math.floor(Math.random() * unguessedLetters.length)];
-                  addCoins(-1);
-                  playSound('buy');
-                  handleGuess(randomChar);
-              }
-          };
-
-          const renderHangman = () => {
-              const s = "#e2e8f0"; const w = 4;
-              return (
-                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                      {mistakes >= 1 && <path d="M 20 240 L 180 240 M 60 240 L 60 20" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
-                      {mistakes >= 2 && <path d="M 60 20 L 140 20 L 140 50" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
-                      {mistakes >= 3 && <circle cx="140" cy="70" r="20" stroke={s} strokeWidth={w} fill="none" />}
-                      {mistakes >= 4 && <line x1="140" y1="90" x2="140" y2="170" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 5 && <line x1="140" y1="110" x2="110" y2="140" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 6 && <line x1="140" y1="110" x2="170" y2="140" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 7 && <path d="M 140 170 L 110 210 M 140 170 L 170 210" stroke={s} strokeWidth={w} fill="none" />}
-                  </svg>
-              );
-          };
-
-          return (
-              <div className="w-full h-full flex flex-col items-center text-white relative bg-transparent">
-                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-white/10">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold neon-title text-slate-200">JOGO DA FORCA</h1>
-                      <div className="flex items-center gap-1 bg-yellow-900/50 px-3 py-1 rounded-full border border-yellow-600/30">
-                          <Coins size={16} className="text-yellow-400" />
-                          <span className="text-sm font-bold text-yellow-400">{coins}</span>
-                      </div>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-start w-full max-w-lg p-4 gap-4 overflow-y-auto">
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 w-full flex justify-center relative">
-                          {renderHangman()}
-                          <button 
-                              onClick={handleHint}
-                              disabled={coins < 1 || status !== 'playing'}
-                              className={`absolute top-4 right-4 p-3 rounded-full shadow-lg transition-all ${coins >= 1 ? 'bg-yellow-500 hover:bg-yellow-400 text-black' : 'bg-gray-700 text-gray-500 opacity-50'}`}
-                          >
-                              <div className="flex flex-col items-center gap-0">
-                                  <Lightbulb size={24} fill={coins >= 1 ? "currentColor" : "none"} />
-                                  <span className="text-[10px] font-bold">-1</span>
-                              </div>
-                          </button>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-2 my-2">
-                          {word.split('').map((char, i) => (
-                              <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 ${guessed.has(char) || status === 'lost' ? 'border-slate-500 bg-slate-800 text-white' : 'border-white/10 bg-white/5 text-transparent'} ${status === 'lost' && !guessed.has(char) ? 'text-red-400' : ''}`}>
-                                  {guessed.has(char) || status !== 'playing' ? char : '_'}
-                              </div>
-                          ))}
-                      </div>
-                      <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
-                          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => {
-                              const isGuessed = guessed.has(char); const isCorrect = word.includes(char);
-                              let btnClass = "bg-white/10 hover:bg-white/20 text-slate-200";
-                              if (isGuessed) btnClass = isCorrect ? "bg-green-600/80 text-white border-green-500" : "bg-red-600/80 text-white border-red-500 opacity-50";
-                              return (
-                                  <button key={char} onClick={() => handleGuess(char)} disabled={isGuessed || status !== 'playing'} className={`h-10 rounded-md font-bold text-sm md:text-base transition-all border-b-2 border-transparent active:border-b-0 active:translate-y-1 ${btnClass}`}>{char}</button>
-                              )
-                          })}
-                      </div>
-                  </div>
-                  {status !== 'playing' && (
-                      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                          <div className={`bg-slate-900 border border-slate-700 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl ${status === 'won' ? 'animate-bounce-in shadow-green-500/20' : 'animate-pulse shadow-red-500/20'}`}>
-                              {status === 'won' ? (
-                                <>
-                                  <Star size={64} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-bounce" />
-                                  <h2 className="text-3xl font-bold text-center text-green-400 neon-text-small">VOCÊ VENCEU!</h2>
-                                  <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-full border border-yellow-500/50">
-                                      <Coins size={20} className="text-yellow-400" />
-                                      <span className="font-bold text-yellow-400">+20 MOEDAS</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <Skull size={64} className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse" />
-                                  <h2 className="text-3xl font-bold text-center text-red-500 neon-text-small">VOCÊ PERDEU!</h2>
-                                  <p className="text-slate-400">A palavra era:</p>
-                                  <div className="text-2xl font-bold text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 tracking-widest">{word}</div>
-                                </>
-                              )}
-                              
-                              <button onClick={(e) => startNewGame(e)} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2 transform transition hover:scale-105">
-                                  <RefreshCcw size={20}/> JOGAR NOVAMENTE
-                              </button>
-                          </div>
-                      </div>
-                  )}
-              </div>
-          );
-      };
-
-      // --- LinguaQuest ---
-      const LinguaQuest = ({ onBack, triggerAd }) => {
-          const lessonsData = useMemo(() => [
-              { id: 1, type: 'translate', q: 'The cat eats fish', a: ['O gato come peixe', 'O cachorro bebe agua', 'O passaro voa'], correct: 0 },
-              { id: 2, type: 'listen', q: 'Hello, how are you?', a: ['Ola, como vai voce?', 'Adeus, ate logo', 'Bom dia, amigo'], correct: 0, text: 'Hello, how are you?' },
-              { id: 3, type: 'translate', q: 'Where is the library?', a: ['Onde fica a biblioteca?', 'Onde esta o livro?', 'Eu gosto de ler'], correct: 0 },
-              { id: 4, type: 'translate', q: 'I like to play soccer', a: ['Eu gosto de jogar futebol', 'Eu gosto de comer', 'Eu nao gosto de esporte'], correct: 0 },
-              { id: 5, type: 'listen', q: 'Good morning', a: ['Bom dia', 'Boa noite', 'Boa tarde'], correct: 0, text: 'Good morning' },
-              { id: 6, type: 'translate', q: 'My car is blue', a: ['Meu carro e azul', 'Minha casa e azul', 'O ceu e azul'], correct: 0 },
-          ], []);
-
-          const [currentLesson, setCurrentLesson] = useState(0);
-          const [hearts, setHearts] = useState(5);
-          const [xp, setXp] = useState(0);
-          const [status, setStatus] = useState('playing'); 
-          const [selectedOption, setSelectedOption] = useState(null);
-
-          const handleCheck = (e) => {
-              if (e) e.stopPropagation();
-              if (selectedOption === null) return;
-              const lesson = lessonsData[currentLesson];
-              if (selectedOption === lesson.correct) {
-                  setStatus('correct');
-                  playSound('correct');
-                  setXp(p => p + 10);
-              } else {
-                  setStatus('wrong');
-                  playSound('wrong');
-                  setHearts(h => h - 1);
-              }
-          };
-
-          const handleNext = (e) => {
-              if (e && hearts > 0) triggerAd(e); // Can trigger ad
-              
-              if (hearts <= 0) { setStatus('failed'); return; }
-              if (currentLesson < lessonsData.length - 1) {
-                  setCurrentLesson(p => p + 1);
-                  setStatus('playing');
-                  setSelectedOption(null);
-              } else {
-                  setStatus('completed');
-              }
-          };
-
-          const restart = (e) => {
-              if(e) triggerAd(e);
-              setCurrentLesson(0);
-              setHearts(5);
-              setStatus('playing');
-              setSelectedOption(null);
-          };
-
-          const lesson = lessonsData[currentLesson];
-
-          if (status === 'completed') {
-              return (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] text-white p-6">
-                      <Star size={64} className="text-yellow-400 mb-4 animate-bounce" />
-                      <h2 className="text-3xl font-bold mb-2 neon-text-small">Lesson Complete!</h2>
-                      <p className="text-gray-400 mb-8">+50 XP Earned</p>
-                      <button onClick={restart} className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105">Continue</button>
-                  </div>
-              );
-          }
-          if (status === 'failed') {
-               return (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] text-white p-6">
-                      <Heart size={64} className="text-red-500 mb-4 animate-pulse" />
-                      <h2 className="text-3xl font-bold mb-2">Out of Hearts!</h2>
-                      <button onClick={restart} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Try Again</button>
-                  </div>
-              );
-          }
-
-          return (
-              <div className="w-full h-full flex flex-col bg-[#111] text-white">
-                  <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                      <button onClick={onBack}><XCircle className="text-gray-400" /></button>
-                      <div className="flex-1 mx-4 bg-gray-700 h-3 rounded-full overflow-hidden">
-                          <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${((currentLesson) / lessonsData.length) * 100}%` }}></div>
-                      </div>
-                      <div className="flex items-center gap-1 text-red-500"><Heart fill="currentColor" size={20} /><span className="font-bold">{hearts}</span></div>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg mx-auto w-full">
-                      <h2 className="text-2xl font-bold mb-8 text-center">{lesson.type === 'translate' ? 'Translate this sentence' : 'Listen and select'}</h2>
-                      {lesson.type === 'listen' && (
-                          <button onClick={(e) => { e.stopPropagation(); speakText(lesson.text); }} className="mb-8 p-6 bg-blue-500/20 border-2 border-blue-500 rounded-2xl hover:bg-blue-500/30 transition">
-                              <Volume2 size={48} className="text-blue-400" />
-                          </button>
-                      )}
-                      {lesson.type === 'translate' && (
-                          <div className="mb-8 p-4 border border-gray-600 rounded-xl flex items-center gap-3">
-                              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center font-bold text-2xl text-black">D</div>
-                              <div className="bg-gray-800 p-3 rounded-xl rounded-tl-none border border-gray-700">{lesson.q}</div>
-                          </div>
-                      )}
-                      <div className="w-full grid gap-3">
-                          {lesson.a.map((option, idx) => (
-                              <button key={idx} onClick={(e) => { e.stopPropagation(); if(status === 'playing') setSelectedOption(idx); }} disabled={status !== 'playing'}
-                                  className={`p-4 rounded-xl border-2 text-left transition-all transform ${selectedOption === idx ? 'border-blue-500 bg-blue-500/20' : 'border-gray-700 hover:bg-gray-800'}`}>
-                                  {option}
-                              </button>
-                          ))}
-                      </div>
-                  </div>
-                  <div className={`p-4 border-t ${status === 'correct' ? 'bg-green-900/30 border-green-500' : (status === 'wrong' ? 'bg-red-900/30 border-red-500' : 'border-gray-800')}`}>
-                      <div className="max-w-lg mx-auto flex items-center justify-between">
-                          {status === 'correct' && (<div className="flex items-center gap-2 text-green-400 font-bold"><CheckCircle size={32} /><span>Correct!</span></div>)}
-                          {status === 'wrong' && (<div className="flex items-center gap-2 text-red-400 font-bold"><XCircle size={32} /><div><span>Correct answer:</span><span className="text-sm font-normal text-white ml-2">{lesson.a[lesson.correct]}</span></div></div>)}
-                          {status === 'playing' ? (
-                              <button onClick={handleCheck} disabled={selectedOption === null} className={`w-full py-3 rounded-xl font-bold transition ${selectedOption !== null ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-gray-700 text-gray-500'}`}>CHECK</button>
-                          ) : (
-                              <button onClick={handleNext} className={`ml-auto px-8 py-3 rounded-xl font-bold text-white transition ${status === 'correct' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}>CONTINUE</button>
-                          )}
-                      </div>
-                  </div>
-              </div>
-          );
-      };
-
-      // --- COMPONENT: Slither Game ---
+      // --- Slither Game (Neon Snake) ---
       const SlitherGame = ({ onBack, triggerAd, addCoins }) => {
           const canvasRef = useRef(null);
           const MAP_SIZE = 2000;
@@ -958,7 +712,165 @@
           );
       };
 
-      // --- COMPONENT: Galaxy Invader ---
+      // --- HANGMAN GAME ---
+      const HangmanGame = ({ onBack, triggerAd, addCoins, coins }) => {
+          const rawWordList = "abacate,abelha,abismo,abraso,acenar,acorde,acusar,adaga,adepto,adocar,adotar,adubo,afetar,afinar,afogar,agente,agitar,agosto,aguado,agudo,ajudar,alameda,alarme,albino,alcateia,aldeia,alegre,algema,alicate,alien,alivio,almoco,altar,altura,aluno,amarelo,amigo,amostra,amuleto,analisar,ananas,anexo,animal,anotar,ansioso,antena,anular,apagar,aperto,apitar,apoio,aprender,aprovar,arame,arara,arco,areia,arena,argila,arma,armada,aroma,arvore,asilo,aspirar,assar,astro,atacar,atento,ativo,ator,atrair,audio,aula,aumento,aura,autor,avanco,aviao,avidez,axila,azar,azedo,azul,bagagem,bagre,baiano,baixa,balde,balanco,bambu,banco,bandido,banho,barata,barco,barraco,barreira,base,basico,bastao,bazar,beber,beijo,belga,bezerro,bicudo,bilhete,bilion,bioma,bispo,bispo,bispo,bloco,blusa,boato,bode,boiadeiro,bolacha,bolha,bolota,bonde,bonita,botao,branco,bravo,breu,brilho,brisa,broca,bronze,bruto,bueiro,bufalo,buraco,burro,caatinga,cabelo,cabide,cabo,cachorro,cacife,cactus,cafeina,caixa,cajado,calar,caldo,calmo,calota,calvo,camada,camelo,camisa,caminho,camomila,campo,cancar,candeeiro,caneta,cangaco,canoa,canto,capaz,capim,capuz,caramelo,carne,carona,carpa,carro,cartaz,casaco,casal,casca,casinha,cassetete,castelo,castor,catador,caverna,ceder,cebola,cedo,cegar,celula,cimento,circo,ciscar,citar,civico,clarim,classe,clero,clima,clone,cloro,coala,coceira,coco,coelho,cofre,coibir,coisa,colher,colina,colocar,cometa,comida,compare,comprar,concha,condor,conectar,conforto,conta,controle,coral,coragem,corda,corno,corpo,correr,coruja,cosmos,cotacao,cotovia,couro,cova,cravo,creme,crer,crespo,crise,cruzar,crystal,cuco,culpa,cupido,curso,curto,danado,dançar,danone,dardos,data,dardo,debate,decidir,decorar,dedo,defesa,degelo,degrau,deixar,delirar,demora,dente,deriva,descer,desenho,desfio,desova,destra,detalhe,deusa,devoto,diario,dieta,diego,digito,diminuir,dinamo,dingue,diodo,disco,disegno,disparo,distante,ditado,diva,divino,divulgar,doca,doce,doido,domino,donzela,dormente,dorso,dragao,drama,dueto,duplo,durante,ecoar,edicao,editor,educar,egoista,eixo,elenco,eletrico,elevar,elite,elogio,embrulho,emendar,emotivo,empate,empurrar,encaixe,encanto,encontro,energia,enigma,enlouquecer,enorme,entender,entrada,entulho,enxame,enxada,epoca,ereto,ervilha,escada,escalar,escama,escena,escolha,escudo,esfera,esforco,esfregar,esgoto,esmalte,espada,espelho,espeto,espiral,esporte,esquilo,estaca,estante,esticar,estilo,estocar,estrela,estudo,eterno,etnia,euforico,euforia,euforia,evasao,evento,evitar,exalar,exame,exato,exibir,exigir,exilio,exito,expor,extra,fada,faisca,falcao,falso,faminto,fantasma,farao,fardo,farinha,farol,fastio,fator,fatia,favo,febre,felino,feliz,fenda,feno,fera,ferrugem,festa,feudo,fiapo,fibra,ficar,figura,fileira,filho,final,financeiro,finger,fiorde,firme,flama,flor,floresta,fluir,fluxo,focinho,fogo,foguete,folha,folclore,fome,forca,forma,forno,fosco,fraco,frango,frasco,freio,frio,frisar,fritar,frota,fruta,fugir,fumaça,fundo,fungo,furor,furto,futuro,gabarito,gado,gala,galeria,galho,galo,galpao,ganso,garagem,garfo,garra,garupa,gasolina,gasto,gato,gelado,geleira,gemido,genio,genoma,geodo,geral,germe,gesto,giesta,gigante,ginasta,girafa,girino,giz,globo,gloria,goela,golpe,golfinho,gonzo,gorda,gordo,gosma,gota,governo,grafo,grama,grande,grito,grudar,grupo,guia,guizo,gume,habito,hacker,harpa,habilidade,haste,helice,heroi,hidro,himalaia,hiper,hipnose,historia,hoje,honor,horario,horta,hotel,humano,hurra,icaro,icone,ideia,iglu,ignorar,igreja,ilheu,ilha,iludir,imaculado,imagear,imitar,imovel,imune,inalar,inbox,incenso,inchado,incluso,indicar,inerca,inferno,infimo,iniciar,inocuo,instinto,insular,inteiro,iodo,iraniano,iris,ironia,isqueiro,isso,istmo,italia,jarra,javali,jazida,jeito,jiboia,jig,joia,jornal,jovem,juiz,junho,junto,junior,labio,lacre,lado,lagarta,lagarto,lama,lambda,lance,lanchonete,lanceiro,largo,larva,laser,latir,lavabo,lava,lazer,leao,lebre,legal,leigo,leira,leite,leme,lenha,lento,leque,leste,letra,leve,liame,libra,ligar,limiar,limo,limpo,linha,lirio,listar,litoral,livro,lixao,locao,lobo,lona,longo,lontra,lorde,lote,louco,louro,lua,luar,lugar,lume,luneta,lupa,luta,luto,macaco,maior,malha,malte,mamao,manejo,manga,mangle,manjar,mapa,marca,marco,mare,margem,marinho,maroto,marreco,marte,mascara,massa,mastro,mate,matriz,medalha,melancia,melodia,melhor,memoria,menor,mergulho,mesada,mesmo,mestre,metal,miar,micro,milho,mimo,minhoca,minuto,miolo,mira,misterio,mito,miudeza,moagem,modelo,modulo,moeda,moinho,moita,mofo,mola,molde,moleque,molho,monge,monstro,montanha,moral,morcego,morder,mosaico,mosca,mosquete,mosto,moto,muda,mudar,muela,muito,mundo,municao,mural,musgo,musica,nação,nadar,naive,narvalo,natural,natureza,navio,neblina,negar,negro,nenem,nervoso,nervo,niche,ninho,nobre,notar,nota,novato,novelo,novembro,novo,nucleo,nublado,numero,nuvem,obedecer,obeso,obito,objeto,obliquo,obrar,ocaso,oceano,ocioso,oculo,odiar,odor,ofegar,oferta,oficio,ogiva,oleo,olhar,olho,ombro,ondas,onix,ontem,opala,opcao,opera,opinar,opoente,oracao,orbe,ordem,orelha,orgao,orientar,origem,orla,ornar,oscar,osso,ostra,otario,otimo,ouro,ousar,ouvido,oval,ovino,ovo,oxido,oxigenio,pacto,padrao,pagar,pagode,palha,palio,palma,palmada,pampa,panda,panelão,papel,paprica,parado,parcela,parede,parma,parque,parte,passo,pasto,pato,patria,pedra,pegar,peixe,pena,pente,perda,perigo,perna,peso,peumo,peixe,piada,piano,picada,pico,pilao,pilha,pimenta,pincel,pingo,pinta,pipa,piquenique,pirar,pirata,piso,pista,pitao,pivete,placa,planta,plasma,pneu,poder,podre,poema,poente,poesia,polen,polpa,polvo,pomar,pombo,ponto,ponte,poodle,popular,porcao,porco,porta,portal,poste,pouso,praia,prata,prato,prece,prego,prelo,preto,prima,primo,prisma,proa,prosa,prumo,pular,pulo,punho,pupilo,pura,puxar,quadro,quark,quarto,quase,queda,queijo,quente,querer,quero,quina,quinta,quiosque,quota,rabeca,rabo,racao,rada,radar,radio,raiva,raiz,ramo,rancho,rapido,rasgar,raspao,rasteiro,ratazana,rato,ravina,razao,reagir,real,rebate,reboco,recado,recife,reboque,reparo,repente,repo,retina,reto,reunir,reves,revista,revoada,rim,risada,riso,ritmo,robalo,roca,rocha,roda,rodeo,rodar,rodovia,roer,rojo,rolar,romano,ronco,rosto,roteiro,rotina,roubar,roxo,rua,rubro,rude,rugido,ruido,ruivo,rumor,rumo,rural,rutina,sabao,sabedoria,saber,sabre,sabugo,sacola,sadio,saia,sala,salada,saldao,salgado,salmão,salto,samba,sanduiche,sangue,sapo,sarda,sargento,sarna,sapo,sarau,sabor,salvar,saliva,salmo,selar,selva,semana,sempre,sena,senhor,senso,sentar,sereno,serra,servo,sexta,shoyu,short,silvo,simbolo,sinal,simples,sino,sioux,sistemico,skate,soar,sobrar,social,soco,soja,solar,solene,solo,solta,sombra,somente,sombras,sonar,sonho,sopro,soquete,soro,sorriso,sorte,sossego,sovina,suave,subir,subito,sucesso,suco,sujo,sulco,sul,superior,superar,suporte,surdo,surfar,surgir,susto,sutil,tabela,tabua,tagarelar,talco,talhao,talher,talvez,tambor,tampa,tanque,tapete,tapira,tarifa,tartaruga,tato,taverna,taxa,tecla,tecido,teia,teimoso,teixo,tela,temor,tempo,tenaz,tenda,tenor,tensor,teorico,terra,tesla,testa,tiara,tiro,tigre,tilapia,tipo,tirar,tiroteio,titanio,titulo,toalha,tocar,toldo,tomar,tomate,tombo,tonel,topete,topo,tordo,tornar,torneio,torpedo,torta,torto,torx,tosco,tostar,total,touro,toxico,trafo,tragico,trama,tranco,tranquilo,trapo,trator,treino,trem,trevo,tribo,trigo,trilho,triste,trono,trovao,tucano,tudo,tufao,tulipa,tumulo,turbo,turista,turvo,turno,turquesa,ubuntu,umbigo,umido,unha,unico,unir,urna,urso,urubu,urina,urna,usina,usuario,usura,utopia,vaca,vadio,vale,valor,valsa,vapor,varal,vara,variavel,varrer,vaso,vasto,velcro,velho,veloz,venda,venerar,vento,venus,verao,verbo,verde,vereda,verme,verso,vertente,vespa,vestir,vezes,viagem,viario,vicente,vidro,viela,vingar,vinho,vinil,vinte,viola,violeta,viral,virar,virgem,virtude,visao,visita,vista,visual,vital,vitima,vitral,vivo,vizinho,voar,voce,volante,voltar,volume,voltagem,voraz,vulcao,wafer,wifi,xeque,xicara,xisto,xote,zangoes,zebra,zelar,zelo,zepelim,zerar,zico,zigue,zona,zumbi,zunido";
+          
+          const WORDS = useMemo(() => {
+              return rawWordList.split(',').map(w => 
+                w.trim().toUpperCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/[^A-Z]/g, "") // Remove non-letters
+              ).filter(w => w.length > 0);
+          }, []);
+          
+          const MAX_MISTAKES = 7;
+          
+          const [word, setWord] = useState('');
+          const [guessed, setGuessed] = useState(new Set());
+          const [mistakes, setMistakes] = useState(0);
+          const [status, setStatus] = useState('playing'); 
+
+          useEffect(() => { startNewGame(); }, []);
+
+          const startNewGame = (e) => {
+              if(e) triggerAd(e);
+              const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+              setWord(randomWord);
+              setGuessed(new Set());
+              setMistakes(0);
+              setStatus('playing');
+          };
+
+          const handleGuess = (letter) => {
+              if (status !== 'playing' || guessed.has(letter)) return;
+              
+              const newGuessed = new Set(guessed);
+              newGuessed.add(letter);
+              setGuessed(newGuessed);
+
+              if (!word.includes(letter)) {
+                  const newMistakes = mistakes + 1;
+                  setMistakes(newMistakes);
+                  playSound('wrong'); 
+                  if (newMistakes >= MAX_MISTAKES) {
+                      setStatus('lost');
+                      playSound('explosion');
+                  }
+              } else {
+                  playSound('correct');
+                  const isWon = word.split('').every(l => newGuessed.has(l));
+                  if (isWon) {
+                      setStatus('won');
+                      playSound('powerup');
+                      addCoins(2); // Win 2 Coins
+                  }
+              }
+          };
+
+          const handleHint = () => {
+              // Open Direct Ad Link for Hint
+              window.open('https://otieu.com/4/10270523', '_blank');
+              
+              // Reveal a letter after returning (Simulated immediate reveal)
+              const unguessedLetters = word.split('').filter(char => !guessed.has(char));
+              if (unguessedLetters.length > 0) {
+                  const randomChar = unguessedLetters[Math.floor(Math.random() * unguessedLetters.length)];
+                  handleGuess(randomChar);
+                  playSound('powerup');
+              }
+          };
+
+          const renderHangman = () => {
+              const s = "#e2e8f0"; const w = 4;
+              return (
+                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                      {mistakes >= 1 && <path d="M 20 240 L 180 240 M 60 240 L 60 20" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
+                      {mistakes >= 2 && <path d="M 60 20 L 140 20 L 140 50" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
+                      {mistakes >= 3 && <circle cx="140" cy="70" r="20" stroke={s} strokeWidth={w} fill="none" />}
+                      {mistakes >= 4 && <line x1="140" y1="90" x2="140" y2="170" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 5 && <line x1="140" y1="110" x2="110" y2="140" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 6 && <line x1="140" y1="110" x2="170" y2="140" stroke={s} strokeWidth={w} />}
+                      {mistakes >= 7 && <path d="M 140 170 L 110 210 M 140 170 L 170 210" stroke={s} strokeWidth={w} fill="none" />}
+                  </svg>
+              );
+          };
+
+          return (
+              <div className="w-full h-full flex flex-col items-center text-white relative bg-transparent">
+                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-white/10">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold neon-title text-slate-200">JOGO DA FORCA</h1>
+                      <div className="flex items-center gap-2">
+                          <button 
+                              onClick={handleHint} 
+                              disabled={status !== 'playing'}
+                              className={`flex items-center gap-1 px-3 py-1 rounded-full border border-blue-500/50 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 cursor-pointer`}
+                          >
+                              <PlayCircle size={16} />
+                              <span className="font-bold text-xs">WATCH AD</span>
+                          </button>
+                      </div>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-start w-full max-w-lg p-4 gap-4 overflow-y-auto">
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 w-full flex justify-center">{renderHangman()}</div>
+                      <div className="flex flex-wrap justify-center gap-2 my-2">
+                          {word.split('').map((char, i) => {
+                              const isRevealed = guessed.has(char);
+                              const isLost = status === 'lost';
+                              // Animation trigger: if revealed and game playing (or newly won)
+                              const animate = isRevealed ? "animate-bounce" : "";
+                              
+                              return (
+                                  <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 transition-all ${isRevealed || isLost ? 'border-slate-500 bg-slate-800 text-white' : 'border-white/10 bg-white/5 text-transparent'} ${isLost && !isRevealed ? 'text-red-400' : (isRevealed ? 'text-green-400' : '')} ${animate}`}>
+                                      {isRevealed || !status === 'playing' ? char : '_'}
+                                  </div>
+                              )
+                          })}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
+                          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => {
+                              const isGuessed = guessed.has(char); const isCorrect = word.includes(char);
+                              let btnClass = "bg-white/10 hover:bg-white/20 text-slate-200";
+                              if (isGuessed) btnClass = isCorrect ? "bg-green-600/80 text-white border-green-500" : "bg-red-600/80 text-white border-red-500 opacity-50";
+                              return (
+                                  <button key={char} onClick={() => handleGuess(char)} disabled={isGuessed || status !== 'playing'} className={`h-10 rounded-md font-bold text-sm md:text-base transition-all border-b-2 border-transparent active:border-b-0 active:translate-y-1 ${btnClass}`}>{char}</button>
+                              )
+                          })}
+                      </div>
+                  </div>
+                  {status !== 'playing' && (
+                      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                          <div className={`bg-slate-900 border border-slate-700 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl ${status === 'won' ? 'animate-bounce-in shadow-green-500/20' : 'animate-pulse shadow-red-500/20'}`}>
+                              {status === 'won' ? (
+                                <>
+                                  <Star size={64} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-bounce" />
+                                  <h2 className="text-3xl font-bold text-center text-green-400 neon-text-small">VOCÊ VENCEU!</h2>
+                                  <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-full border border-yellow-500/50">
+                                      <Coins size={20} className="text-yellow-400" />
+                                      <span className="font-bold text-yellow-400">+2 MOEDAS</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <Skull size={64} className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse" />
+                                  <h2 className="text-3xl font-bold text-center text-red-500 neon-text-small">VOCÊ PERDEU!</h2>
+                                  <p className="text-slate-400">A palavra era:</p>
+                                  <div className="text-2xl font-bold text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 tracking-widest">{word}</div>
+                                </>
+                              )}
+                              
+                              <button onClick={(e) => startNewGame(e)} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2 transform transition hover:scale-105">
+                                  <RefreshCcw size={20}/> JOGAR NOVAMENTE
+                              </button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
+      // --- Galaxy Invader ---
       const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
           const canvasRef = useRef(null);
           const game = useRef({
@@ -1435,7 +1347,6 @@
                       }
                   });
 
-                  // Kamikaze Collision
                   g.enemies.forEach(e => {
                       if (rectIntersect(e, p)) {
                           e.health = 0; 
@@ -1594,7 +1505,6 @@
                   const cy = boss.y + boss.h/2;
                   ctx.save(); 
                   
-                  // Boss drawing based on type (reusing previous logic)
                   if (boss.type === 'pyramid') {
                       ctx.shadowBlur = 20; ctx.shadowColor = '#eab308'; ctx.fillStyle = '#eab308';
                       ctx.beginPath(); ctx.moveTo(cx, boss.y); ctx.lineTo(boss.x + boss.w, boss.y + boss.h); ctx.lineTo(boss.x, boss.y + boss.h); ctx.closePath(); ctx.fill();
@@ -1633,21 +1543,17 @@
                   }
                   ctx.restore();
                   
-                  // Boss HP Bar
                   ctx.fillStyle = '#330033'; ctx.fillRect(10, 80, g.width - 20, 10); ctx.fillStyle = '#ff00ff'; ctx.fillRect(10, 80, (g.width - 20) * (boss.health / boss.maxHealth), 10);
               }
 
               g.particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
 
-              // HUD
               ctx.font = 'bold 16px "Courier New"'; 
               ctx.textAlign = 'left';
               
-              // Move Level/Weapon to Top Left
               ctx.fillStyle = 'white';
               ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, 10, 25);
               
-              // Level Progress Bar
               const levelProgress = Math.min(1, g.levelScore / g.bossTarget);
               ctx.textAlign = 'center';
               ctx.font = '12px "Courier New"';
@@ -1656,27 +1562,22 @@
               ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 65, 200 * levelProgress, 6);
               ctx.textAlign = 'left';
 
-              // Lives
               ctx.fillStyle = '#ef4444';
               ctx.font = 'bold 20px Arial';
               ctx.fillText(`❤ x ${g.player.lives}`, 10, g.height - 40);
 
-              // Player Health Bar
               const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
               ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
               ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
               ctx.fillRect(10, g.height - 30, 150 * hpPercent, 15);
               ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(10, g.height - 30, 150, 15);
 
-              // SCORE & COINS (Moved to Bottom, Next to HP Bar)
               const currentTotalCoins = currentCoins + g.earnedCoins + Math.floor(g.sessionScore / 1000);
 
-              // Coins (Bottom Left, aligned with Lives Y-axis)
               ctx.fillStyle = '#fbbf24';
               ctx.font = 'bold 16px "Courier New"';
               ctx.fillText(`${currentTotalCoins} COINS`, 170, g.height - 40);
 
-              // Score (Bottom Left, aligned with HP Bar Y-axis)
               ctx.fillStyle = 'white';
               ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 170, g.height - 18);
 
@@ -1779,14 +1680,6 @@
               }
           };
 
-          const installApp = async () => {
-              if (window.deferredPrompt) {
-                  window.deferredPrompt.prompt();
-                  const { outcome } = await window.deferredPrompt.userChoice;
-                  window.deferredPrompt = null;
-              }
-          };
-
           // Strict 3-minute cooldown (180000ms)
           const triggerAd = useCallback((e) => {
              const now = Date.now();
@@ -1805,18 +1698,6 @@
              setCurrentScreen(gameName); 
           };
 
-          // Install Prompt Logic
-          const [installPrompt, setInstallPrompt] = useState(null);
-          useEffect(() => {
-              const handler = (e) => {
-                  e.preventDefault();
-                  setInstallPrompt(e);
-                  window.deferredPrompt = e;
-              };
-              window.addEventListener('beforeinstallprompt', handler);
-              return () => window.removeEventListener('beforeinstallprompt', handler);
-          }, []);
-
           const renderScreen = () => {
               switch(currentScreen) {
                   case 'shop': return (
@@ -1831,7 +1712,23 @@
                   );
                   case 'galaxy-menu': return (
                       <GalaxyMenu 
-                          onStart={(e) => startGame('galaxy-game', e)}
+                          onStart={(e) => {
+                              // Direct Link Logic for Start Mission
+                              const now = Date.now();
+                              // Check 3 min cooldown
+                              if (now - lastAdTime >= 180000) {
+                                  // Open Direct Link
+                                  window.open('https://otieu.com/4/10270523', '_blank');
+                                  setLastAdTime(now);
+                                  // Prevent global script if possible, or let it be. 
+                                  // Stop propagation to prevent 'double' ad if user has global click script.
+                                  if (e && e.stopPropagation) e.stopPropagation();
+                              } else {
+                                  // If cooldown active, stop global script too
+                                  if (e && e.stopPropagation) e.stopPropagation();
+                              }
+                              setCurrentScreen('galaxy-game');
+                          }}
                           onShop={() => setCurrentScreen('shop')}
                           onBack={() => setCurrentScreen('home')}
                           coins={coins}
@@ -1851,6 +1748,7 @@
                   case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+                              <InstallButton />
                               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
                                   <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
                                   
@@ -1885,12 +1783,6 @@
                                           </div>
                                       </button>
                                   </div>
-                                  
-                                  {installPrompt && (
-                                      <button onClick={installApp} className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 animate-pulse">
-                                          <Download size={20} /> INSTALL APP
-                                      </button>
-                                  )}
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
                               <div className="absolute bottom-4 text-gray-700 text-xs">v4.7.0</div>
