@@ -212,6 +212,42 @@
                     osc.start(now);
                     osc.stop(now + 0.2);
                     break;
+                case 'plant':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'harvest':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
+                 case 'buy':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'talk':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
             }
           } catch(e) {}
       };
@@ -1586,13 +1622,47 @@
                       </div>
                   </div>
 
-                  {/* Bottom Dock Menu */}
+                  {/* Seed Selection Bar */}
                   <div className="w-full bg-slate-900 border-t border-slate-700 p-2 safe-area-bottom z-40">
-                      <div className="max-w-md mx-auto flex justify-around items-center">
-                          <button onClick={() => setActiveModal('shop')} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-green-400 transition-colors active:scale-95">
-                              <Store size={24} />
-                              <span className="text-[10px] font-bold uppercase">Loja</span>
-                          </button>
+                      <div className="flex overflow-x-auto gap-2 pb-2 mb-2 scrollbar-hide px-2">
+                          {Object.values(CROPS).map(crop => {
+                              const isUnlocked = unlockedCrops.includes(crop.id);
+                              const isSelected = selectedCrop === crop.id;
+                              const adsWatched = cropAdProgress[crop.id] || 0;
+                              
+                              return (
+                                  <button 
+                                      key={crop.id}
+                                      onClick={() => {
+                                          if (isUnlocked) {
+                                              setSelectedCrop(crop.id);
+                                          } else {
+                                              handleCropAdWatch(crop.id, crop.adCost);
+                                          }
+                                      }}
+                                      className={`flex-shrink-0 w-20 p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                                          isSelected ? 'bg-green-600/50 border-green-400 ring-2 ring-green-500/50' : 'bg-slate-800 border-slate-700'
+                                      } ${!isUnlocked ? 'opacity-70 grayscale' : ''}`}
+                                  >
+                                      <div className="text-2xl">{crop.icon}</div>
+                                      {isUnlocked ? (
+                                          <div className={`text-[10px] font-bold ${coins >= crop.cost ? 'text-yellow-400' : 'text-red-400'}`}>
+                                              {crop.cost}
+                                          </div>
+                                      ) : (
+                                          <div className="flex flex-col items-center w-full">
+                                              <Lock size={12} className="text-gray-400 mb-1" />
+                                              <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                                  <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, (adsWatched / crop.adCost) * 100)}%` }}></div>
+                                              </div>
+                                          </div>
+                                      )}
+                                  </button>
+                              );
+                          })}
+                      </div>
+
+                      <div className="max-w-md mx-auto flex justify-around items-center border-t border-slate-800 pt-2">
                           <button onClick={() => setActiveModal('missions')} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-yellow-400 transition-colors active:scale-95 relative">
                               <ClipboardList size={24} />
                               <span className="text-[10px] font-bold uppercase">Missões</span>
@@ -1613,52 +1683,6 @@
                   </div>
 
                   {/* Modals */}
-                  {activeModal === 'shop' && (
-                      <Modal title="Loja de Sementes" onClose={() => setActiveModal(null)}>
-                          <div className="grid grid-cols-2 gap-3">
-                              {Object.values(CROPS).map(crop => {
-                                  const isUnlocked = unlockedCrops.includes(crop.id);
-                                  const adsWatched = cropAdProgress[crop.id] || 0;
-                                  
-                                  return (
-                                      <button 
-                                          key={crop.id} 
-                                          onClick={() => { 
-                                              if(isUnlocked) {
-                                                  setSelectedCrop(crop.id); 
-                                                  setActiveModal(null); 
-                                              } else {
-                                                  handleCropAdWatch(crop.id, crop.adCost);
-                                              }
-                                          }} 
-                                          className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${selectedCrop === crop.id && isUnlocked ? 'bg-green-600/30 border-green-500' : 'bg-black/30 border-slate-700 hover:border-slate-500'}`}
-                                      >
-                                          <div className="text-4xl">{crop.icon}</div>
-                                          <div className="w-full text-center">
-                                              <div className="font-bold text-sm">{crop.name}</div>
-                                              
-                                              {isUnlocked ? (
-                                                  <div className={`flex items-center justify-center gap-1 text-xs font-bold mt-1 ${coins < crop.cost ? 'text-red-400' : 'text-yellow-400'}`}>
-                                                      <Coins size={12} /> {crop.cost}
-                                                  </div>
-                                              ) : (
-                                                  <div className="flex flex-col gap-1 w-full mt-1">
-                                                       <div className="text-[10px] font-bold text-blue-400 bg-blue-900/50 px-2 py-1 rounded">
-                                                           VER AD ({adsWatched}/{crop.adCost})
-                                                       </div>
-                                                       <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                                                           <div className="bg-blue-500 h-full" style={{ width: `${Math.min(100, (adsWatched / crop.adCost) * 100)}%` }}></div>
-                                                       </div>
-                                                  </div>
-                                              )}
-                                          </div>
-                                      </button>
-                                  );
-                              })}
-                          </div>
-                      </Modal>
-                  )}
-
                   {activeModal === 'missions' && (
                       <Modal title="Missões Diárias" onClose={() => setActiveModal(null)}>
                           <div className="flex flex-col gap-3">
