@@ -100,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -518,1202 +518,6 @@
           );
       };
 
-      // --- Slither Game (Neon Snake) ---
-      const SlitherGame = ({ onBack, triggerAd, addCoins }) => {
-          const canvasRef = useRef(null);
-          const MAP_SIZE = 2000;
-          const [score, setScore] = useState(0);
-          const [gameOver, setGameOver] = useState(false);
-          const [joystickData, setJoystickData] = useState({ active: false, x: 0, y: 0, angle: null });
-
-          const gameState = useRef({
-              snake: [],
-              angle: 0,
-              targetAngle: 0,
-              length: 10,
-              speed: 4,
-              foods: [],
-              camera: { x: 0, y: 0 },
-              playing: true,
-              width: 0, 
-              height: 0
-          });
-
-          useEffect(() => {
-              const canvas = canvasRef.current;
-              const g = gameState.current;
-              
-              g.snake = [];
-              const startX = MAP_SIZE / 2;
-              const startY = MAP_SIZE / 2;
-              for(let i=0; i<20; i++) {
-                  g.snake.push({ x: startX - i * 2, y: startY });
-              }
-              g.length = 20;
-              g.angle = 0;
-              g.targetAngle = 0;
-              g.foods = [];
-              g.playing = true;
-              
-              for(let i=0; i<150; i++) {
-                  g.foods.push({
-                      x: Math.random() * MAP_SIZE,
-                      y: Math.random() * MAP_SIZE,
-                      r: 4 + Math.random() * 4,
-                      color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                      val: 1
-                  });
-              }
-
-              const resize = () => {
-                  if (canvas && canvas.parentElement) {
-                      canvas.width = canvas.parentElement.clientWidth;
-                      canvas.height = canvas.parentElement.clientHeight;
-                      g.width = canvas.width;
-                      g.height = canvas.height;
-                  }
-              };
-              window.addEventListener('resize', resize);
-              resize();
-
-              const die = () => {
-                  const g = gameState.current;
-                  g.playing = false;
-                  setGameOver(true);
-                  playSound('explosion');
-                  addCoins(Math.floor(score / 100)); 
-              };
-
-              const update = () => {
-                  const g = gameState.current;
-                  let diff = g.targetAngle - g.angle;
-                  while (diff < -Math.PI) diff += Math.PI * 2;
-                  while (diff > Math.PI) diff -= Math.PI * 2;
-                  g.angle += diff * 0.1;
-
-                  const head = g.snake[0];
-                  const newHead = {
-                      x: head.x + Math.cos(g.angle) * g.speed,
-                      y: head.y + Math.sin(g.angle) * g.speed
-                  };
-
-                  if (newHead.x < 0 || newHead.x > MAP_SIZE || newHead.y < 0 || newHead.y > MAP_SIZE) {
-                      die();
-                      return;
-                  }
-
-                  for (let i = 10; i < g.snake.length; i += 2) {
-                      const seg = g.snake[i];
-                      const d = Math.hypot(newHead.x - seg.x, newHead.y - seg.y);
-                      if (d < 10) {
-                          die();
-                          return;
-                      }
-                  }
-
-                  g.snake.unshift(newHead);
-                  const pointDensity = 4;
-                  if (g.snake.length > g.length * pointDensity) {
-                      g.snake.pop();
-                  }
-
-                  for (let i = g.foods.length - 1; i >= 0; i--) {
-                      const f = g.foods[i];
-                      const d = Math.hypot(newHead.x - f.x, newHead.y - f.y);
-                      if (d < 20 + f.r) {
-                          g.length += f.val;
-                          setScore(s => s + f.val * 10);
-                          playSound('powerup');
-                          g.foods[i] = {
-                              x: Math.random() * MAP_SIZE,
-                              y: Math.random() * MAP_SIZE,
-                              r: 4 + Math.random() * 4,
-                              color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                              val: 1
-                          };
-                      }
-                  }
-                  g.camera.x = newHead.x - g.width / 2;
-                  g.camera.y = newHead.y - g.height / 2;
-              };
-
-              const draw = () => {
-                  const canvas = canvasRef.current;
-                  if (!canvas) return;
-                  const ctx = canvas.getContext('2d');
-                  const g = gameState.current;
-
-                  ctx.fillStyle = '#050505';
-                  ctx.fillRect(0, 0, g.width, g.height);
-
-                  ctx.save();
-                  ctx.translate(-g.camera.x, -g.camera.y);
-
-                  ctx.strokeStyle = '#333';
-                  ctx.lineWidth = 10;
-                  ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
-
-                  ctx.strokeStyle = '#222';
-                  ctx.lineWidth = 2;
-                  ctx.beginPath();
-                  for(let x = 0; x <= MAP_SIZE; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); }
-                  for(let y = 0; y <= MAP_SIZE; y += 100) { ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); }
-                  ctx.stroke();
-
-                  g.foods.forEach(f => {
-                      ctx.shadowBlur = 10; ctx.shadowColor = f.color; ctx.fillStyle = f.color;
-                      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
-                      ctx.shadowBlur = 0;
-                  });
-
-                  for (let i = g.snake.length - 1; i >= 0; i--) {
-                      const p = g.snake[i];
-                      if (i % 4 === 0) {
-                          const isHead = i === 0;
-                          const size = isHead ? 14 : 12;
-                          ctx.fillStyle = isHead ? '#fff' : (i % 8 === 0 ? '#a855f7' : '#d8b4fe');
-                          ctx.shadowBlur = isHead ? 20 : 0; ctx.shadowColor = '#a855f7';
-                          ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
-                          
-                          if (isHead) {
-                              ctx.shadowBlur = 0;
-                              ctx.fillStyle = '#000';
-                              ctx.beginPath(); ctx.arc(p.x + Math.cos(g.angle - 0.5) * 8, p.y + Math.sin(g.angle - 0.5) * 8, 3, 0, Math.PI*2); ctx.fill();
-                              ctx.beginPath(); ctx.arc(p.x + Math.cos(g.angle + 0.5) * 8, p.y + Math.sin(g.angle + 0.5) * 8, 3, 0, Math.PI*2); ctx.fill();
-                          }
-                      }
-                  }
-                  ctx.restore();
-              };
-
-              let frameId;
-              const loop = () => {
-                  if (!g.playing) return;
-                  update();
-                  draw();
-                  frameId = requestAnimationFrame(loop);
-              };
-              loop();
-
-              const handleMouseMove = (e) => {
-                  if(joystickData.active) return;
-                  const rect = canvas.getBoundingClientRect();
-                  const dx = e.clientX - rect.left - g.width / 2;
-                  const dy = e.clientY - rect.top - g.height / 2;
-                  g.targetAngle = Math.atan2(dy, dx);
-              };
-
-              const handleTouchStart = (e) => {
-                  e.preventDefault();
-                  const touch = e.touches[0];
-                  setJoystickData({ active: true, startX: touch.clientX, startY: touch.clientY, currX: touch.clientX, currY: touch.clientY });
-              };
-              
-              const handleTouchMove = (e) => {
-                  e.preventDefault();
-                  if (!joystickData.active) return;
-                  const touch = e.touches[0];
-                  const dx = touch.clientX - joystickData.startX;
-                  const dy = touch.clientY - joystickData.startY;
-                  const angle = Math.atan2(dy, dx);
-                  g.targetAngle = angle;
-                  setJoystickData(prev => ({ ...prev, currX: touch.clientX, currY: touch.clientY, angle }));
-              };
-
-              const handleTouchEnd = (e) => {
-                  e.preventDefault();
-                  setJoystickData(prev => ({ ...prev, active: false }));
-              };
-
-              document.addEventListener('mousemove', handleMouseMove);
-              canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
-              canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
-              canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
-
-              return () => {
-                  cancelAnimationFrame(frameId);
-                  window.removeEventListener('resize', resize);
-                  document.removeEventListener('mousemove', handleMouseMove);
-                  canvas.removeEventListener('touchstart', handleTouchStart);
-                  canvas.removeEventListener('touchmove', handleTouchMove);
-                  canvas.removeEventListener('touchend', handleTouchEnd);
-              };
-          }, []);
-
-          const handleRestart = (e) => {
-              if (e) triggerAd(e);
-              window.open('https://otieu.com/4/10270523', '_blank');
-              onBack(); 
-          };
-
-          return (
-              <div className="w-full h-full relative overflow-hidden bg-black touch-none">
-                  <canvas ref={canvasRef} className="w-full h-full block" />
-                  
-                  {/* HUD */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
-                      <div className="text-white font-bold text-xl drop-shadow-md">NEON SLITHER</div>
-                      <div className="text-purple-400 font-mono text-lg">SCORE: {score}</div>
-                  </div>
-
-                  <button onClick={onBack} className="absolute top-4 right-4 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 backdrop-blur z-20">
-                      <ChevronLeft />
-                  </button>
-
-                  {/* Game Over Modal */}
-                  {gameOver && (
-                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
-                          <Skull size={64} className="text-red-500 mb-4 animate-bounce" />
-                          <h2 className="text-4xl font-bold text-white mb-2 neon-title">GAME OVER</h2>
-                          <div className="text-2xl text-purple-400 mb-8 font-mono">SCORE: {score}</div>
-                          <button onClick={handleRestart} className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)] transform transition hover:scale-105 flex items-center gap-2">
-                              <RefreshCcw /> EXIT TO MENU
-                          </button>
-                      </div>
-                  )}
-              </div>
-          );
-      };
-
-      // --- HANGMAN GAME ---
-      const HangmanGame = ({ onBack, triggerAd, addCoins, coins }) => {
-          const rawWordList = "abacate,abelha,abismo,abraso,acenar,acorde,acusar,adaga,adepto,adocar,adotar,adubo,afetar,afinar,afogar,agente,agitar,agosto,aguado,agudo,ajudar,alameda,alarme,albino,alcateia,aldeia,alegre,algema,alicate,alien,alivio,almoco,altar,altura,aluno,amarelo,amigo,amostra,amuleto,analisar,ananas,anexo,animal,anotar,ansioso,antena,anular,apagar,aperto,apitar,apoio,aprender,aprovar,arame,arara,arco,areia,arena,argila,arma,armada,aroma,arvore,asilo,aspirar,assar,astro,atacar,atento,ativo,ator,atrair,audio,aula,aumento,aura,autor,avanco,aviao,avidez,axila,azar,azedo,azul,bagagem,bagre,baiano,baixa,balde,balanco,bambu,banco,bandido,banho,barata,barco,barraco,barreira,base,basico,bastao,bazar,beber,beijo,belga,bezerro,bicudo,bilhete,bilion,bioma,bispo,bispo,bispo,bloco,blusa,boato,bode,boiadeiro,bolacha,bolha,bolota,bonde,bonita,botao,branco,bravo,breu,brilho,brisa,broca,bronze,bruto,bueiro,bufalo,buraco,burro,caatinga,cabelo,cabide,cabo,cachorro,cacife,cactus,cafeina,caixa,cajado,calar,caldo,calmo,calota,calvo,camada,camelo,camisa,caminho,camomila,campo,cancar,candeeiro,caneta,cangaco,canoa,canto,capaz,capim,capuz,caramelo,carne,carona,carpa,carro,cartaz,casaco,casal,casca,casinha,cassetete,castelo,castor,catador,caverna,ceder,cebola,cedo,cegar,celula,cimento,circo,ciscar,citar,civico,clarim,classe,clero,clima,clone,cloro,coala,coceira,coco,coelho,cofre,coibir,coisa,colher,colina,colocar,cometa,comida,compare,comprar,concha,condor,conectar,conforto,conta,controle,coral,coragem,corda,corno,corpo,correr,coruja,cosmos,cotacao,cotovia,couro,cova,cravo,creme,crer,crespo,crise,cruzar,crystal,cuco,culpa,cupido,curso,curto,danado,dançar,danone,dardos,data,dardo,debate,decidir,decorar,dedo,defesa,degelo,degrau,deixar,delirar,demora,dente,deriva,descer,desenho,desfio,desova,destra,detalhe,deusa,devoto,diario,dieta,diego,digito,diminuir,dinamo,dingue,diodo,disco,disegno,disparo,distante,ditado,diva,divino,divulgar,doca,doce,doido,domino,donzela,dormente,dorso,dragao,drama,dueto,duplo,durante,ecoar,edicao,editor,educar,egoista,eixo,elenco,eletrico,elevar,elite,elogio,embrulho,emendar,emotivo,empate,empurrar,encaixe,encanto,encontro,energia,enigma,enlouquecer,enorme,entender,entrada,entulho,enxame,enxada,epoca,ereto,ervilha,escada,escalar,escama,escena,escolha,escudo,esfera,esforco,esfregar,esgoto,esmalte,espada,espelho,espeto,espiral,esporte,esquilo,estaca,estante,esticar,estilo,estocar,estrela,estudo,eterno,etnia,euforico,euforia,euforia,evasao,evento,evitar,exalar,exame,exato,exibir,exigir,exilio,exito,expor,extra,fada,faisca,falcao,falso,faminto,fantasma,farao,fardo,farinha,farol,fastio,fator,fatia,favo,febre,felino,feliz,fenda,feno,fera,ferrugem,festa,feudo,fiapo,fibra,ficar,figura,fileira,filho,final,financeiro,finger,fiorde,firme,flama,flor,floresta,fluir,fluxo,focinho,fogo,foguete,folha,folclore,fome,forca,forma,forno,fosco,fraco,frango,frasco,freio,frio,frisar,fritar,frota,fruta,fugir,fumaça,fundo,fungo,furor,furto,futuro,gabarito,gado,gala,galeria,galho,galo,galpao,ganso,garagem,garfo,garra,garupa,gasolina,gasto,gato,gelado,geleira,gemido,genio,genoma,geodo,geral,germe,gesto,giesta,gigante,ginasta,girafa,girino,giz,globo,gloria,goela,golpe,golfinho,gonzo,gorda,gordo,gosma,gota,governo,grafo,grama,grande,grito,grudar,grupo,guia,guizo,gume,habito,hacker,harpa,habilidade,haste,helice,heroi,hidro,himalaia,hiper,hipnose,historia,hoje,honor,horario,horta,hotel,humano,hurra,icaro,icone,ideia,iglu,ignorar,igreja,ilheu,ilha,iludir,imaculado,imagear,imitar,imovel,imune,inalar,inbox,incenso,inchado,incluso,indicar,inerca,inferno,infimo,iniciar,inocuo,instinto,insular,inteiro,iodo,iraniano,iris,ironia,isqueiro,isso,istmo,italia,jarra,javali,jazida,jeito,jiboia,jig,joia,jornal,jovem,juiz,junho,junto,junior,labio,lacre,lado,lagarta,lagarto,lama,lambda,lance,lanchonete,lanceiro,largo,larva,laser,latir,lavabo,lava,lazer,leao,lebre,legal,leigo,leira,leite,leme,lenha,lento,leque,leste,letra,leve,liame,libra,ligar,limiar,limo,limpo,linha,lirio,listar,litoral,livro,lixao,locao,lobo,lona,longo,lontra,lorde,lote,louco,louro,lua,luar,lugar,lume,luneta,lupa,luta,luto,macaco,maior,malha,malte,mamao,manejo,manga,mangle,manjar,mapa,marca,marco,mare,margem,marinho,maroto,marreco,marte,mascara,massa,mastro,mate,matriz,medalha,melancia,melodia,melhor,memoria,menor,mergulho,mesada,mesmo,mestre,metal,miar,micro,milho,mimo,minhoca,minuto,miolo,mira,misterio,mito,miudeza,moagem,modelo,modulo,moeda,moinho,moita,mofo,mola,molde,moleque,molho,monge,monstro,montanha,moral,morcego,morder,mosaico,mosca,mosquete,mosto,moto,muda,mudar,muela,muito,mundo,municao,mural,musgo,musica,nação,nadar,naive,narvalo,natural,natureza,navio,neblina,negar,negro,nenem,nervoso,nervo,niche,ninho,nobre,notar,nota,novato,novelo,novembro,novo,nucleo,nublado,numero,nuvem,obedecer,obeso,obito,objeto,obliquo,obrar,ocaso,oceano,ocioso,oculo,odiar,odor,ofegar,oferta,oficio,ogiva,oleo,olhar,olho,ombro,ondas,onix,ontem,opala,opcao,opera,opinar,opoente,oracao,orbe,ordem,orelha,orgao,orientar,origem,orla,ornar,oscar,osso,ostra,otario,otimo,ouro,ousar,ouvido,oval,ovino,ovo,oxido,oxigenio,pacto,padrao,pagar,pagode,palha,palio,palma,palmada,pampa,panda,panelão,papel,paprica,parado,parcela,parede,parma,parque,parte,passo,pasto,pato,patria,pedra,pegar,peixe,pena,pente,perda,perigo,perna,peso,peumo,peixe,piada,piano,picada,pico,pilao,pilha,pimenta,pincel,pingo,pinta,pipa,piquenique,pirar,pirata,piso,pista,pitao,pivete,placa,planta,plasma,pneu,poder,podre,poema,poente,poesia,polen,polpa,polvo,pomar,pombo,ponto,ponte,poodle,popular,porcao,porco,porta,portal,poste,pouso,praia,prata,prato,prece,prego,prelo,preto,prima,primo,prisma,proa,prosa,prumo,pular,pulo,punho,pupilo,pura,puxar,quadro,quark,quarto,quase,queda,queijo,quente,querer,quero,quina,quinta,quiosque,quota,rabeca,rabo,racao,rada,radar,radio,raiva,raiz,ramo,rancho,rapido,rasgar,raspao,rasteiro,ratazana,rato,ravina,razao,reagir,real,rebate,reboco,recado,recife,reboque,reparo,repente,repo,retina,reto,reunir,reves,revista,revoada,rim,risada,riso,ritmo,robalo,roca,rocha,roda,rodeo,rodar,rodovia,roer,rojo,rolar,romano,ronco,rosto,roteiro,rotina,roubar,roxo,rua,rubro,rude,rugido,ruido,ruivo,rumor,rumo,rural,rutina,sabao,sabedoria,saber,sabre,sabugo,sacola,sadio,saia,sala,salada,saldao,salgado,salmão,salto,samba,sanduiche,sangue,sapo,sarda,sargento,sarna,sapo,sarau,sabor,salvar,saliva,salmo,selar,selva,semana,sempre,sena,senhor,senso,sentar,sereno,serra,servo,sexta,shoyu,short,silvo,simbolo,sinal,simples,sino,sioux,sistemico,skate,soar,sobrar,social,soco,soja,solar,solene,solo,solta,sombra,somente,sombras,sonar,sonho,sopro,soquete,soro,sorriso,sorte,sossego,sovina,suave,subir,subito,sucesso,suco,sujo,sulco,sul,superior,superar,suporte,surdo,surfar,surgir,susto,sutil,tabela,tabua,tagarelar,talco,talhao,talher,talvez,tambor,tampa,tanque,tapete,tapira,tarifa,tartaruga,tato,taverna,taxa,tecla,tecido,teia,teimoso,teixo,tela,temor,tempo,tenaz,tenda,tenor,tensor,teorico,terra,tesla,testa,tiara,tiro,tigre,tilapia,tipo,tirar,tiroteio,titanio,titulo,toalha,tocar,toldo,tomar,tomate,tombo,tonel,topete,topo,tordo,tornar,torneio,torpedo,torta,torto,torx,tosco,tostar,total,touro,toxico,trafo,tragico,trama,tranco,tranquilo,trapo,trator,treino,trem,trevo,tribo,trigo,trilho,triste,trono,trovao,tucano,tudo,tufao,tulipa,tumulo,turbo,turista,turvo,turno,turquesa,ubuntu,umbigo,umido,unha,unico,unir,urna,urso,urubu,urina,urna,usina,usuario,usura,utopia,vaca,vadio,vale,valor,valsa,vapor,varal,vara,variavel,varrer,vaso,vasto,velcro,velho,veloz,venda,venerar,vento,venus,verao,verbo,verde,vereda,verme,verso,vertente,vespa,vestir,vezes,viagem,viario,vicente,vidro,viela,vingar,vinho,vinil,vinte,viola,violeta,viral,virar,virgem,virtude,visao,visita,vista,visual,vital,vitima,vitral,vivo,vizinho,voar,voce,volante,voltar,volume,voltagem,voraz,vulcao,wafer,wifi,xeque,xicara,xisto,xote,zangoes,zebra,zelar,zelo,zepelim,zerar,zico,zigue,zona,zumbi,zunido";
-          
-          const WORDS = useMemo(() => {
-              return rawWordList.split(',').map(w => 
-                w.trim().toUpperCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-                .replace(/[^A-Z]/g, "") // Remove non-letters
-              ).filter(w => w.length > 0);
-          }, []);
-          
-          const MAX_MISTAKES = 7;
-          
-          const [word, setWord] = useState('');
-          const [guessed, setGuessed] = useState(new Set());
-          const [mistakes, setMistakes] = useState(0);
-          const [status, setStatus] = useState('playing'); 
-
-          useEffect(() => { startNewGame(); }, []);
-
-          const startNewGame = (e) => {
-              if(e) triggerAd(e);
-              const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-              setWord(randomWord);
-              setGuessed(new Set());
-              setMistakes(0);
-              setStatus('playing');
-          };
-
-          const handleGuess = (letter) => {
-              if (status !== 'playing' || guessed.has(letter)) return;
-              
-              const newGuessed = new Set(guessed);
-              newGuessed.add(letter);
-              setGuessed(newGuessed);
-
-              if (!word.includes(letter)) {
-                  const newMistakes = mistakes + 1;
-                  setMistakes(newMistakes);
-                  playSound('wrong'); 
-                  if (newMistakes >= MAX_MISTAKES) {
-                      setStatus('lost');
-                      playSound('explosion');
-                  }
-              } else {
-                  playSound('correct');
-                  const isWon = word.split('').every(l => newGuessed.has(l));
-                  if (isWon) {
-                      setStatus('won');
-                      playSound('powerup');
-                      addCoins(2); // Win 2 Coins
-                  }
-              }
-          };
-
-          const handleHint = () => {
-              // Open Direct Ad Link for Hint
-              window.open('https://otieu.com/4/10270523', '_blank');
-              
-              // Reveal a letter after returning (Simulated immediate reveal)
-              const unguessedLetters = word.split('').filter(char => !guessed.has(char));
-              if (unguessedLetters.length > 0) {
-                  const randomChar = unguessedLetters[Math.floor(Math.random() * unguessedLetters.length)];
-                  handleGuess(randomChar);
-                  playSound('powerup');
-              }
-          };
-
-          const renderHangman = () => {
-              const s = "#e2e8f0"; const w = 4;
-              return (
-                  <svg viewBox="0 0 200 250" className="w-48 h-60 overflow-visible drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                      {mistakes >= 1 && <path d="M 20 240 L 180 240 M 60 240 L 60 20" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
-                      {mistakes >= 2 && <path d="M 60 20 L 140 20 L 140 50" stroke={s} strokeWidth={w} fill="none" strokeLinecap="round" />}
-                      {mistakes >= 3 && <circle cx="140" cy="70" r="20" stroke={s} strokeWidth={w} fill="none" />}
-                      {mistakes >= 4 && <line x1="140" y1="90" x2="140" y2="170" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 5 && <line x1="140" y1="110" x2="110" y2="140" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 6 && <line x1="140" y1="110" x2="170" y2="140" stroke={s} strokeWidth={w} />}
-                      {mistakes >= 7 && <path d="M 140 170 L 110 210 M 140 170 L 170 210" stroke={s} strokeWidth={w} fill="none" />}
-                  </svg>
-              );
-          };
-
-          return (
-              <div className="w-full h-full flex flex-col items-center text-white relative bg-transparent">
-                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-white/10">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold neon-title text-slate-200">JOGO DA FORCA</h1>
-                      <div className="flex items-center gap-2">
-                          <button 
-                              onClick={handleHint} 
-                              disabled={status !== 'playing'}
-                              className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-yellow-400 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.6)] hover:shadow-[0_0_25px_rgba(234,179,8,0.8)] transition-all transform hover:scale-105"
-                          >
-                              <Lightbulb size={20} className="fill-yellow-400 text-yellow-100 animate-pulse" />
-                              <span className="font-bold text-sm">DICA (Ver Ad)</span>
-                          </button>
-                      </div>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-start w-full max-w-lg p-4 gap-4 overflow-y-auto">
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10 w-full flex justify-center">{renderHangman()}</div>
-                      <div className="flex flex-wrap justify-center gap-2 my-2">
-                          {word.split('').map((char, i) => {
-                              const isRevealed = guessed.has(char);
-                              const isLost = status === 'lost';
-                              // Animation trigger: if revealed and game playing (or newly won)
-                              const animate = isRevealed ? "animate-bounce" : "";
-                              
-                              return (
-                                  <div key={i} className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold rounded-lg border-2 transition-all ${isRevealed || isLost ? 'border-slate-500 bg-slate-800 text-white' : 'border-white/10 bg-white/5 text-transparent'} ${isLost && !isRevealed ? 'text-red-400' : (isRevealed ? 'text-green-400' : '')} ${animate}`}>
-                                      {isRevealed || !status === 'playing' ? char : '_'}
-                                  </div>
-                              )
-                          })}
-                      </div>
-                      <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
-                          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => {
-                              const isGuessed = guessed.has(char); const isCorrect = word.includes(char);
-                              let btnClass = "bg-white/10 hover:bg-white/20 text-slate-200";
-                              if (isGuessed) btnClass = isCorrect ? "bg-green-600/80 text-white border-green-500" : "bg-red-600/80 text-white border-red-500 opacity-50";
-                              return (
-                                  <button key={char} onClick={() => handleGuess(char)} disabled={isGuessed || status !== 'playing'} className={`h-10 rounded-md font-bold text-sm md:text-base transition-all border-b-2 border-transparent active:border-b-0 active:translate-y-1 ${btnClass}`}>{char}</button>
-                              )
-                          })}
-                      </div>
-                  </div>
-                  {status !== 'playing' && (
-                      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                          <div className={`bg-slate-900 border border-slate-700 p-8 rounded-2xl flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl ${status === 'won' ? 'animate-bounce-in shadow-green-500/20' : 'animate-pulse shadow-red-500/20'}`}>
-                              {status === 'won' ? (
-                                <>
-                                  <Star size={64} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-bounce" />
-                                  <h2 className="text-3xl font-bold text-center text-green-400 neon-text-small">VOCÊ VENCEU!</h2>
-                                  <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-full border border-yellow-500/50">
-                                      <Coins size={20} className="text-yellow-400" />
-                                      <span className="font-bold text-yellow-400">+2 MOEDAS</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <Skull size={64} className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse" />
-                                  <h2 className="text-3xl font-bold text-center text-red-500 neon-text-small">VOCÊ PERDEU!</h2>
-                                  <p className="text-slate-400">A palavra era:</p>
-                                  <div className="text-2xl font-bold text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 tracking-widest">{word}</div>
-                                </>
-                              )}
-                              
-                              <button onClick={(e) => { window.open('https://otieu.com/4/10270523', '_blank'); startNewGame(e); }} className="mt-4 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg w-full flex items-center justify-center gap-2 transform transition hover:scale-105">
-                                  <RefreshCcw size={20}/> JOGAR NOVAMENTE
-                              </button>
-                          </div>
-                      </div>
-                  )}
-              </div>
-          );
-      };
-
-      // --- Galaxy Invader ---
-      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
-          const canvasRef = useRef(null);
-          const game = useRef({
-              player: { x: 0, y: 0, w: 40, h: 40, health: 100, maxHealth: 100, lives: 3, weaponLevel: 1, shieldActive: false, shieldTimer: 0, damageMultiplier: 1, lastShot: 0, shootAngle: 0, invulnerable: 0 },
-              bullets: [], enemies: [], powerups: [], boss: null, particles: [], stars: [],
-              score: 0, level: 1, levelScore: 0, bossTarget: 5000, gameState: 'menu', width: 0, height: 0,
-              playerSprite: null, earnedCoins: 0, sessionScore: 0
-          });
-          const [gameOver, setGameOver] = useState(false);
-
-          // --- Helper Functions Moved Up for Safety ---
-          const rectIntersect = (r1, r2) => !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
-          const createExplosion = (x, y, color, count = 20) => { for (let i = 0; i < count; i++) game.current.particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: Math.random() * 20 + 10, color }); };
-
-          const firePlayerWeapon = (g) => {
-              const { x, y, w, weaponLevel, shieldActive } = g.player;
-              const cx = x + w / 2;
-              
-              if (shieldActive) {
-                  playSound('laser', 0.5); 
-                  // Shield Beam - Base damage 50
-                  g.bullets.push({ x: cx - 6, y: y, w: 12, h: 50, owner: 'player', vy: -25, color: '#facc15', dmg: 250, behavior: 'beam', glow: true });
-                  const numBullets = 20;
-                  for (let i = 0; i < numBullets; i++) {
-                     const angle = (i / numBullets) * Math.PI * 2;
-                     g.bullets.push({ x: cx, y: y + 20, w: 6, h: 6, owner: 'player', vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, color: '#ffff00', dmg: 100 });
-                  }
-                  return;
-              }
-
-              g.player.shootAngle += 0.2;
-              playSound('shoot');
-
-              // Base bullet damage increased to ~75 to handle new HP scaling (15,000 HP / 75 = 200 hits for Lv1 Boss)
-              const baseDmg = 75;
-
-              switch(weaponLevel) {
-                  case 1: g.bullets.push({ x: cx - 2, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#67e8f9', dmg: baseDmg }); break;
-                  case 2: g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vy: -12, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: -3, vy: -11, color: '#38bdf8', dmg: baseDmg }); g.bullets.push({ x: cx, y, w: 4, h: 12, owner: 'player', vx: 3, vy: -11, color: '#38bdf8', dmg: baseDmg }); break;
-                  case 3: g.bullets.push({ x: cx - 10, y, w: 8, h: 8, owner: 'player', vx: -5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); g.bullets.push({ x: cx + 10, y, w: 8, h: 8, owner: 'player', vx: 5, vy: -10, color: '#a3e635', dmg: baseDmg*1.5, behavior: 'bounce' }); break;
-                  case 4: g.bullets.push({ x: cx, y, w: 6, h: 15, owner: 'player', vx: 0, vy: -12, color: '#f472b6', dmg: baseDmg*2, behavior: 'split', dist: 0 }); break;
-                  case 5: const offset = Math.sin(g.player.shootAngle) * 10; g.bullets.push({ x: cx + offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); g.bullets.push({ x: cx - offset, y, w: 6, h: 12, owner: 'player', vy: -15, color: '#c084fc', dmg: baseDmg*2 }); break;
-                  case 6: g.bullets.push({ x: cx - 15, y, w: 6, h: 10, owner: 'player', vx: -4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); g.bullets.push({ x: cx + 15, y, w: 6, h: 10, owner: 'player', vx: 4, vy: -6, color: '#ef4444', dmg: baseDmg*2, behavior: 'homing' }); break;
-                  case 7: for(let i=0; i<5; i++) g.bullets.push({ x: cx, y, w: 4, h: 4, owner: 'player', vx: (Math.random()-0.5)*10, vy: -10 - Math.random()*5, color: '#22d3ee', dmg: baseDmg*1.5 }); break;
-                  case 8: g.bullets.push({ x: cx - 20, y, w: 4, h: 20, owner: 'player', vx: 2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx + 20, y, w: 4, h: 20, owner: 'player', vx: -2, vy: -15, color: '#e879f9', dmg: baseDmg*2.5, behavior: 'curve' }); g.bullets.push({ x: cx, y, w: 6, h: 25, owner: 'player', vx: 0, vy: -18, color: '#e879f9', dmg: baseDmg*3 }); break;
-                  case 9: const burstCount = 16; for (let i = 0; i < burstCount; i++) { const angle = (i / burstCount) * Math.PI * 2; g.bullets.push({ x: cx, y, w: 5, h: 5, owner: 'player', vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, color: '#fbbf24', dmg: baseDmg*1.5 }); } break;
-                  case 10: g.bullets.push({ x: cx - 8, y: y - 20, w: 16, h: 60, owner: 'player', vy: -25, color: '#ffffff', dmg: baseDmg*5, behavior: 'beam', glow: true }); g.bullets.push({ x: cx - 15, y, w: 4, h: 15, owner: 'player', vx: -2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); g.bullets.push({ x: cx + 15, y, w: 4, h: 15, owner: 'player', vx: 2, vy: -15, color: '#60a5fa', dmg: baseDmg*2 }); break;
-                  default: g.bullets.push({ x: cx, y, w: 10, h: 40, owner: 'player', vy: -20, color: '#fff', dmg: baseDmg*4 });
-              }
-          };
-
-          const initGame = useCallback(() => {
-              const canvas = canvasRef.current;
-              const g = game.current;
-              g.width = canvas.width;
-              g.height = canvas.height;
-              
-              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
-              g.playerSprite = generatePlayerSprite(shipDef.palette);
-
-              g.player.x = g.width / 2 - g.player.w / 2;
-              g.player.y = g.height - 100;
-              g.player.health = 100;
-              g.player.lives = 3;
-              g.player.weaponLevel = 1;
-              g.player.shieldActive = false;
-              g.player.invulnerable = 0;
-              g.score = 0; 
-              g.level = 1; 
-              g.levelScore = 0;
-              g.bossTarget = 5000;
-              g.earnedCoins = 0;
-              g.sessionScore = 0;
-              g.bullets = []; g.enemies = []; g.powerups = []; g.boss = null; g.particles = [];
-              g.gameState = 'playing';
-              setGameOver(false);
-              g.stars = [];
-              for(let i=0; i<80; i++) g.stars.push({ x: Math.random() * g.width, y: Math.random() * g.height, size: Math.random() * 2, speed: Math.random() * 3 + 0.5 });
-          }, [equippedShipId]);
-
-          const spawnPowerup = useCallback((x, y) => {
-              if (Math.random() < 0.35) { 
-                  const r = Math.random();
-                  let type = 'weapon';
-                  if (r > 0.96) type = 'life';
-                  else if (r > 0.85) type = 'health';
-                  else if (r > 0.70) type = 'shield';
-                  game.current.powerups.push({ x, y, w: 20, h: 20, type, vy: 2 });
-              }
-          }, []);
-
-          const getClosestEnemy = useCallback((x, y) => {
-              const g = game.current;
-              let closest = null; let minDist = Infinity;
-              const targets = g.boss ? [g.boss] : g.enemies;
-              targets.forEach(e => {
-                  const dx = e.x - x; const dy = e.y - y; const dist = Math.sqrt(dx*dx + dy*dy);
-                  if (dist < minDist) { minDist = dist; closest = e; }
-              });
-              return closest;
-          }, []);
-
-          // --- 10 Unique Boss Types (Moved BEFORE updateBoss) ---
-          const spawnBoss = useCallback(() => {
-              const g = game.current;
-              g.gameState = 'boss';
-              g.enemies = []; 
-              playSound('boss_spawn');
-
-              const bossTypes = [
-                  'pyramid', 'hydra', 'orb', 'dragon', 'spider', 
-                  'cube', 'parasite', 'star', 'tank', 'clock'
-              ];
-              const type = bossTypes[(g.level - 1) % bossTypes.length];
-              let w=120, h=120;
-              
-              // Boss HP Formula: 15,000 * 3^(level-1)
-              let hp = 15000 * Math.pow(3, g.level - 1);
-
-              if (type === 'hydra') { w=150; h=100; hp*=1.2; }
-              if (type === 'dragon') { w=80; h=200; hp*=1.1; }
-              if (type === 'spider') { w=180; h=120; hp*=1.3; }
-              if (type === 'tank') { w=140; h=160; hp*=1.5; }
-              if (type === 'clock') { w=130; h=130; hp*=1.2; }
-
-              g.boss = {
-                  type,
-                  x: g.width / 2 - w/2, y: -150, w, h,
-                  health: hp, maxHealth: hp,
-                  phase: 1, lastShot: Date.now(), moveDir: 1, attackType: 0, tick: 0,
-                  subComponents: [] 
-              };
-          }, []);
-
-          const spawnEnemy = useCallback(() => {
-              const g = game.current;
-              if (g.gameState !== 'playing' || g.boss || g.levelScore >= g.bossTarget) return;
-
-              if (Math.random() < 0.02 + g.level * 0.005) {
-                  const rand = Math.random();
-                  let type = 'drone'; 
-                  
-                  if (g.level >= 6 && rand > 0.96) type = 'cube';
-                  else if (g.level >= 4 && rand > 0.92) type = 'hive';
-                  else if (g.level >= 8 && rand > 0.88) type = 'disc';
-                  else if (g.level >= 7 && rand > 0.84) type = 'specter';
-                  else if (g.level >= 4 && rand > 0.75) type = 'kamikaze';
-                  else if (g.level >= 3 && rand > 0.65) type = 'spider';
-                  else if (g.level >= 5 && rand > 0.55) type = 'satellite';
-                  else if (g.level >= 5 && rand > 0.45) type = 'tower';
-                  else if (g.level >= 2 && rand > 0.30) type = 'snake';
-                  else type = 'drone';
-
-                  let w=30, h=30, health=g.level, vx=0, vy=2, points=100;
-                  const e = { type, x: Math.random() * (g.width - 40), y: -50, lastShot: Date.now() + Math.random()*1000, tick: 0, trail: [] };
-
-                  const speedMult = 1 + (g.level * 0.1);
-                  const healthMult = Math.pow(2.5, g.level - 1);
-                  const baseHp = 50 * healthMult;
-                  
-                  switch(type) {
-                      case 'drone': w=30; h=30; health=2*baseHp; vy=4 * speedMult; points=100; break;
-                      case 'snake': w=25; h=25; health=3*baseHp; vy=2 * speedMult; points=150; e.trail = []; break;
-                      case 'tower': w=40; h=40; health=5*baseHp; vy=0.5 * speedMult; points=200; e.angle = 0; break;
-                      case 'spider': w=35; h=35; health=3*baseHp; vy=2 * speedMult; points=150; e.baseX = e.x; break;
-                      case 'satellite': w=35; h=35; health=6*baseHp; vy=1 * speedMult; points=250; e.angle = 0; break;
-                      case 'cube': w=35; h=35; health=5*baseHp; vy=1.5 * speedMult; points=300; break;
-                      case 'specter': w=30; h=30; health=2*baseHp; vy=2 * speedMult; points=150; e.opacity = 0.5; break;
-                      case 'kamikaze': w=25; h=30; health=10; vy=6 * speedMult; points=50; break;
-                      case 'disc': w=40; h=20; health=4*baseHp; vy=2 * speedMult; points=200; e.baseX = e.x; break;
-                      case 'hive': w=60; h=50; health=12*baseHp; vy=0.5 * speedMult; points=500; e.lastSpawn = Date.now(); break;
-                  }
-
-                  const pointsMult = Math.pow(3, g.level - 1);
-                  e.points = Math.ceil(points * pointsMult); 
-
-                  e.w = w; e.h = h; e.health = health; e.maxHealth = health; e.vx = vx; e.vy = vy;
-                  g.enemies.push(e);
-              }
-          }, []);
-
-          // updateBoss defined before update() but after spawnBoss/firePlayerWeapon if needed
-          const updateBoss = (g) => {
-              if (!g.boss) return;
-              const boss = g.boss;
-              const now = Date.now();
-              boss.tick += 0.05;
-
-              if (boss.y < 50) boss.y += 1;
-              
-              if (boss.type === 'dragon') {
-                  boss.x += Math.sin(boss.tick * 0.5) * 3;
-              } else if (boss.type === 'spider') {
-                   boss.x = (g.width/2 - boss.w/2) + Math.sin(boss.tick) * 100;
-              } else {
-                  boss.x += boss.moveDir * (1 + g.level * 0.1);
-                  if (boss.x <= 20 || boss.x + boss.w >= g.width - 20) boss.moveDir *= -1;
-              }
-
-              let fireRate = Math.max(200, 800 - (g.level * 50)); 
-
-              if (now - boss.lastShot > fireRate) {
-                  boss.attackType = (boss.attackType + 1) % 3;
-                  const cx = boss.x + boss.w/2;
-                  const cy = boss.y + boss.h/2;
-
-                  if (boss.type === 'pyramid') {
-                      if (boss.attackType === 0) {
-                          for(let i=-1; i<=1; i++) g.bullets.push({x: cx, y: boss.y+boss.h, w:8, h:15, owner:'enemy', vx:i*3, vy:6, color:'#facc15'});
-                      } else if (boss.attackType === 1) {
-                           g.bullets.push({x: cx, y: boss.y+boss.h, w:10, h:10, owner:'enemy', vx:0, vy:4, color:'#facc15', behavior:'homing'});
-                      } else {
-                           g.bullets.push({x: cx-10, y: boss.y+boss.h, w:20, h:50, owner:'enemy', vx:0, vy:10, color:'#fbbf24'});
-                      }
-                  } else if (boss.type === 'hydra') {
-                       const heads = [boss.x + 20, cx, boss.x + boss.w - 20];
-                       heads.forEach((hx, i) => {
-                           if (i === boss.attackType) return;
-                           g.bullets.push({x: hx, y: boss.y+boss.h, w:8, h:8, owner:'enemy', vx:(Math.random()-0.5)*2, vy:5, color: i===0?'#60a5fa':(i===1?'#34d399':'#f87171')});
-                       });
-                  } else if (boss.type === 'orb') {
-                      if (boss.attackType === 0) {
-                          for(let i=0; i<12; i++) {
-                              const a = (i/12)*Math.PI*2 + boss.tick;
-                              g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(a)*4, vy:Math.sin(a)*4, color:'#3b82f6'});
-                          }
-                      } else {
-                          g.bullets.push({x: cx, y: cy, w:10, h:10, owner:'enemy', vx:(g.player.x-cx)*0.01, vy:4, color:'#60a5fa', behavior:'curve'});
-                      }
-                  } else if (boss.type === 'dragon') {
-                       g.bullets.push({x: cx, y: boss.y+boss.h, w:12, h:20, owner:'enemy', vx:0, vy:7, color:'#ef4444'});
-                       if (boss.attackType === 2) {
-                           g.bullets.push({x: boss.x, y: boss.y+boss.h/2, w:6, h:12, owner:'enemy', vx:-2, vy:4, color:'#f87171', behavior:'homing'});
-                           g.bullets.push({x: boss.x+boss.w, y: boss.y+boss.h/2, w:6, h:12, owner:'enemy', vx:2, vy:4, color:'#f87171', behavior:'homing'});
-                       }
-                  } else if (boss.type === 'spider') {
-                       if (boss.attackType === 0) {
-                           for(let i=-2; i<=2; i++) g.bullets.push({x: cx, y: cy, w:4, h:4, owner:'enemy', vx:i*2, vy:3, color:'#22c55e'});
-                       } else {
-                           g.bullets.push({x: Math.random()*g.width, y: 0, w:5, h:15, owner:'enemy', vx:0, vy:8, color:'#4ade80'});
-                           g.bullets.push({x: Math.random()*g.width, y: 0, w:5, h:15, owner:'enemy', vx:0, vy:8, color:'#4ade80'});
-                       }
-                  } else if (boss.type === 'cube') {
-                       [0, Math.PI/2, Math.PI, 3*Math.PI/2].forEach(a => {
-                           g.bullets.push({x: cx, y: cy, w:8, h:8, owner:'enemy', vx:Math.cos(a+boss.tick)*4, vy:Math.sin(a+boss.tick)*4, color:'#d8b4fe'});
-                       });
-                  } else if (boss.type === 'parasite') {
-                       for(let i=0; i<3; i++) g.bullets.push({x: cx + (Math.random()-0.5)*40, y: cy + (Math.random()-0.5)*40, w:6, h:6, owner:'enemy', vx:(Math.random()-0.5)*3, vy:2+Math.random()*2, color:'#f472b6'});
-                  } else if (boss.type === 'star') {
-                       if (boss.attackType === 2) {
-                           for(let i=0; i<8; i++) {
-                              const a = (i/8)*Math.PI*2;
-                              g.bullets.push({x: cx, y: cy, w:8, h:8, owner:'enemy', vx:Math.cos(a)*6, vy:Math.sin(a)*6, color:'#fbbf24'});
-                           }
-                       } else {
-                           g.bullets.push({x: cx, y: cy, w:5, h:20, owner:'enemy', vx:0, vy:8, color:'#f59e0b'});
-                       }
-                  } else if (boss.type === 'tank') {
-                       g.bullets.push({x: boss.x+20, y: boss.y+boss.h, w:4, h:10, owner:'enemy', vx:0, vy:8, color:'#9ca3af'});
-                       g.bullets.push({x: boss.x+boss.w-20, y: boss.y+boss.h, w:4, h:10, owner:'enemy', vx:0, vy:8, color:'#9ca3af'});
-                       if (boss.attackType === 2) g.bullets.push({x: cx, y: boss.y+boss.h, w:20, h:20, owner:'enemy', vx:0, vy:4, color:'#ef4444'});
-                  } else if (boss.type === 'clock') {
-                       const angle = (Date.now() / 1000) % (Math.PI*2);
-                       g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(angle)*5, vy:Math.sin(angle)*5, color:'#06b6d4'});
-                       g.bullets.push({x: cx, y: cy, w:6, h:6, owner:'enemy', vx:Math.cos(angle+Math.PI)*5, vy:Math.sin(angle+Math.PI)*5, color:'#06b6d4'});
-                  }
-                  
-                  boss.lastShot = now;
-                  playSound('enemy_shoot');
-              }
-          };
-
-          const update = useCallback(() => {
-              const g = game.current;
-              const now = Date.now();
-              const p = g.player;
-
-              g.stars.forEach(s => { s.y += s.speed; if (s.y > g.height) { s.y = 0; s.x = Math.random() * g.width; } });
-
-              if (p.invulnerable > 0) p.invulnerable -= 16;
-              if (p.shieldActive) {
-                  p.shieldTimer -= 16;
-                  if (p.shieldTimer <= 0) { p.shieldActive = false; p.damageMultiplier = 1; }
-              }
-
-              if (g.gameState === 'playing' || g.gameState === 'boss') {
-                  updateBoss(g);
-
-                  const fireRate = g.player.weaponLevel >= 8 ? 100 : 150;
-                  if (now - g.player.lastShot > fireRate) {
-                      firePlayerWeapon(g);
-                      g.player.lastShot = now;
-                  }
-
-                  g.bullets.forEach(b => {
-                      if (b.behavior === 'homing') {
-                          const target = getClosestEnemy(b.x, b.y);
-                          if (target) {
-                              const angle = Math.atan2((target.y + target.h/2) - b.y, (target.x + target.w/2) - b.x);
-                              b.vx = b.vx * 0.95 + Math.cos(angle) * 1; b.vy = b.vy * 0.95 + Math.sin(angle) * 1;
-                          }
-                          b.x += b.vx * 8; b.y += b.vy * 8;
-                      } else if (b.behavior === 'bounce') {
-                          b.x += b.vx; b.y += b.vy; if (b.x <= 0 || b.x >= g.width) b.vx *= -1;
-                      } else if (b.behavior === 'curve') {
-                           b.vx += Math.sin(now / 100) * 0.5; b.x += b.vx; b.y += b.vy;
-                      } else if (b.behavior === 'split') {
-                          b.x += b.vx; b.y += b.vy; b.dist += Math.abs(b.vy);
-                          if (b.dist > 200 && !b.split) {
-                              b.hit = true; 
-                              for(let i=-1; i<=1; i++) g.bullets.push({x: b.x, y: b.y, w: 6, h: 6, owner: 'player', vx: i*3, vy: -10, color: '#f0f', dmg: 1});
-                          }
-                      } else {
-                          if (b.vx !== undefined) b.x += b.vx; if (b.vy !== undefined) b.y += b.vy;
-                      }
-                  });
-                  g.bullets = g.bullets.filter(b => b.y > -100 && b.y < g.height + 50 && b.x > -50 && b.x < g.width + 50 && !b.hit);
-
-                  g.enemies.forEach(e => {
-                      e.tick += 0.05;
-                      
-                      if (e.type === 'snake') {
-                          e.trail.unshift({x: e.x, y: e.y});
-                          if (e.trail.length > 5) e.trail.pop();
-                          e.x += Math.sin(e.tick) * 3;
-                          e.y += e.vy;
-                      } else if (e.type === 'spider') {
-                          e.x = e.baseX + Math.sin(e.tick * 2) * 40;
-                          e.y += e.vy;
-                      } else if (e.type === 'cube') {
-                          const dx = (p.x + p.w/2) - (e.x + e.w/2);
-                          const dy = (p.y + p.h/2) - (e.y + e.h/2);
-                          const dist = Math.sqrt(dx*dx + dy*dy);
-                          if (dist < 300) {
-                              p.x -= dx * 0.005; 
-                          }
-                          e.y += e.vy;
-                      } else if (e.type === 'kamikaze') {
-                          if (e.y < p.y) e.vy += 0.1; 
-                          const dx = p.x - e.x;
-                          e.x += dx * 0.02; 
-                          e.y += e.vy;
-                      } else if (e.type === 'disc') {
-                          e.x = e.baseX + Math.cos(e.tick) * 50;
-                          e.y += e.vy;
-                      } else if (e.type === 'hive') {
-                          if (now - e.lastSpawn > 3000) {
-                              g.enemies.push({ type: 'swarmer', x: e.x + e.w/2, y: e.y + e.h, w: 15, h: 15, health: 1, vx: (Math.random()-0.5)*4, vy: 3, points: 20 });
-                              e.lastSpawn = now;
-                          }
-                          e.y += e.vy;
-                      } else {
-                          e.y += e.vy;
-                      }
-
-                      if (now - e.lastShot > (e.type === 'tower' ? 50 : 1500)) {
-                          if (e.type === 'drone') {
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 4, h: 10, owner: 'enemy', vx: 0, vy: 5, color: '#f00'});
-                          } else if (e.type === 'snake') {
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 10, h: 10, owner: 'enemy', vx: 0, vy: 3, color: '#0ff'});
-                          } else if (e.type === 'tower') {
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 2, h: 15, owner: 'enemy', vx: 0, vy: 10, color: '#ff0'});
-                          } else if (e.type === 'spider') {
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 8, h: 8, owner: 'enemy', vx: 0, vy: 4, color: '#0f0', behavior: 'split'});
-                          } else if (e.type === 'satellite') {
-                               for(let i=0; i<8; i++) {
-                                   const a = (i/8)*Math.PI*2 + e.tick;
-                                   g.bullets.push({x: e.x + e.w/2, y: e.y + e.h/2, w: 4, h: 4, owner: 'enemy', vx: Math.cos(a)*3, vy: Math.sin(a)*3, color: '#aaf'});
-                               }
-                          } else if (e.type === 'specter') {
-                               for(let i=0; i<3; i++) {
-                                   g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, owner: 'enemy', vx: (Math.random()-0.5)*4, vy: 3, color: '#f0f'});
-                               }
-                          } else if (e.type === 'disc') {
-                               const a = Math.sin(e.tick)*2;
-                               g.bullets.push({x: e.x + e.w/2, y: e.y + e.h, w: 6, h: 6, owner: 'enemy', vx: Math.sin(a)*2, vy: 3, color: '#f0f'});
-                          }
-                          
-                          if (e.type !== 'kamikaze') e.lastShot = now; 
-                      }
-                  });
-                  g.enemies = g.enemies.filter(e => e.y < g.height + 50 && e.health > 0);
-
-                  g.powerups.forEach(p => p.y += p.vy);
-                  g.powerups = g.powerups.filter(p => p.y < g.height && !p.collected);
-
-                  g.bullets.forEach(b => {
-                      if (b.owner === 'player') {
-                          const playerDmg = (b.dmg || 75) * Math.pow(2.7, g.level - 1) * (p.damageMultiplier || 1);
-
-                          g.enemies.forEach(e => {
-                              if (!b.hit && rectIntersect(b, e)) {
-                                  if (b.behavior !== 'beam') b.hit = true;
-                                  e.health -= playerDmg;
-                                  createExplosion(b.x, b.y, '#fb923c', 3);
-                                  if(e.health <= 0) {
-                                      const earnedPoints = (e.points || 100); 
-                                      g.score += earnedPoints;
-                                      g.levelScore += earnedPoints;
-                                      
-                                      g.sessionScore += earnedPoints;
-                                      if (g.sessionScore >= 1000) {
-                                          const coinsToAdd = Math.floor(g.sessionScore / 1000);
-                                          g.earnedCoins += coinsToAdd;
-                                          g.sessionScore %= 1000;
-                                      }
-
-                                      createExplosion(e.x + e.w/2, e.y + e.h/2, '#fdba74', 10);
-                                      playSound('explosion');
-                                      spawnPowerup(e.x, e.y);
-                                      if (e.type === 'cube') {
-                                           createExplosion(e.x+e.w/2, e.y+e.h/2, '#a855f7', 30);
-                                           for(let i=0; i<6; i++) {
-                                              const a = (i/6)*Math.PI*2;
-                                              g.bullets.push({x: e.x+e.w/2, y: e.y+e.h/2, w:6, h:6, owner:'player', vx: Math.cos(a)*5, vy: Math.sin(a)*5, color: '#a855f7', dmg:5});
-                                           }
-                                      }
-                                  }
-                              }
-                          });
-                          if (g.boss && !b.hit && rectIntersect(b, g.boss)) {
-                              if (b.behavior !== 'beam') b.hit = true;
-                              g.boss.health -= playerDmg;
-                              createExplosion(b.x, b.y, '#f87171', 5);
-                              if (g.boss.health <= 0) {
-                                  playSound('explosion');
-                                  const bossPoints = g.bossTarget;
-                                  g.score += bossPoints;
-                                  
-                                  g.sessionScore += bossPoints;
-                                  if (g.sessionScore >= 1000) {
-                                      const coinsToAdd = Math.floor(g.sessionScore / 1000);
-                                      g.earnedCoins += coinsToAdd;
-                                      g.sessionScore %= 1000;
-                                  }
-
-                                  g.gameState = 'level-up';
-                                  g.boss = null;
-                                  g.bullets = []; 
-                                  
-                                  setTimeout(() => { 
-                                      g.level++; 
-                                      g.levelScore = 0; 
-                                      g.bossTarget = 5000 * Math.pow(3, g.level - 1);
-                                      g.gameState = 'playing'; 
-                                  }, 3000);
-                              }
-                          }
-                      } else { 
-                          if (!b.hit && rectIntersect(b, p)) {
-                              b.hit = true;
-                              if (!p.shieldActive && p.invulnerable <= 0) {
-                                  p.health -= 10;
-                                  playSound('hit');
-                                  createExplosion(p.x, p.y, '#ef4444', 10);
-                                  if (p.health <= 0) {
-                                      p.lives--;
-                                      createExplosion(p.x + p.w/2, p.y + p.h/2, '#ef4444', 30);
-                                      playSound('explosion');
-                                      if (p.lives > 0) {
-                                          p.health = p.maxHealth;
-                                          p.x = g.width / 2 - p.w/2;
-                                          p.y = g.height - 100;
-                                          p.invulnerable = 2000;
-                                          g.bullets = g.bullets.filter(bullet => bullet.owner === 'player');
-                                      } else {
-                                          g.gameState = 'game-over';
-                                          setGameOver(true);
-                                          addCoins(g.earnedCoins); 
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                  });
-
-                  g.enemies.forEach(e => {
-                      if (rectIntersect(e, p)) {
-                          e.health = 0; 
-                          createExplosion(e.x + e.w/2, e.y + e.h/2, '#f00', 20);
-                          if (!p.shieldActive && p.invulnerable <= 0) {
-                              p.health -= 20;
-                              playSound('explosion');
-                              if (p.health <= 0) {
-                                  p.lives--;
-                                  createExplosion(p.x + p.w/2, p.y + p.h/2, '#ef4444', 30);
-                                  if (p.lives > 0) {
-                                      p.health = p.maxHealth;
-                                      p.x = g.width / 2 - p.w/2;
-                                      p.y = g.height - 100;
-                                      p.invulnerable = 2000;
-                                      g.bullets = g.bullets.filter(bullet => bullet.owner === 'player');
-                                  } else {
-                                      g.gameState = 'game-over';
-                                      setGameOver(true);
-                                      addCoins(g.earnedCoins);
-                                  }
-                              }
-                          }
-                      }
-                  });
-
-                  g.powerups.forEach(p => {
-                      if (!p.collected && rectIntersect(p, g.player)) {
-                          p.collected = true;
-                          playSound('powerup');
-                          if (p.type === 'weapon') g.player.weaponLevel = Math.min(10, g.player.weaponLevel + 1);
-                          else if (p.type === 'shield') { g.player.shieldActive = true; g.player.shieldTimer = 10000; g.player.damageMultiplier = 5; }
-                          else if (p.type === 'health') { g.player.health = Math.min(g.player.maxHealth, g.player.health + 30); createExplosion(p.x, p.y, '#ef4444', 10); }
-                          else if (p.type === 'life') { g.player.lives++; playSound('1up'); createExplosion(p.x, p.y, '#22c55e', 20); }
-                      }
-                  });
-
-                  if (g.levelScore >= g.bossTarget && !g.boss && g.gameState === 'playing') {
-                      spawnBoss();
-                  }
-              }
-
-              g.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
-              g.particles = g.particles.filter(p => p.life > 0);
-              spawnEnemy();
-          }, [spawnEnemy, spawnBoss, initGame, spawnPowerup, getClosestEnemy, addCoins]);
-
-          const draw = useCallback(() => {
-              const canvas = canvasRef.current;
-              if (!canvas) return;
-              const ctx = canvas.getContext('2d');
-              const g = game.current;
-              
-              ctx.fillStyle = '#000000';
-              ctx.fillRect(0, 0, g.width, g.height);
-              
-              ctx.fillStyle = '#ffffff';
-              g.stars.forEach(s => { ctx.globalAlpha = Math.random() * 0.5 + 0.3; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0; });
-
-              if (g.gameState !== 'game-over') {
-                  const p = g.player;
-
-                  if (p.invulnerable > 0) {
-                      ctx.globalAlpha = Math.floor(Date.now() / 100) % 2 === 0 ? 0.4 : 1.0;
-                  }
-
-                  if (p.shieldActive) {
-                      const pulse = Math.sin(Date.now() / 100) * 5;
-                      ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = '#8b5cf6'; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w + 10 + pulse, 0, Math.PI * 2); ctx.stroke();
-                      ctx.fillStyle = 'rgba(139, 92, 246, 0.3)'; ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-                  }
-
-                  if (g.playerSprite) {
-                      ctx.save();
-                      const glowScale = 0.8 + Math.random() * 0.4;
-                      const cx = p.x + p.w / 2;
-                      const by = p.y + p.h - 5;
-                      const gradient = ctx.createRadialGradient(cx, by, 2, cx, by + 15, 15);
-                      gradient.addColorStop(0, '#60a5fa');
-                      gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
-                      ctx.fillStyle = gradient;
-                      ctx.globalCompositeOperation = 'lighter';
-                      ctx.beginPath();
-                      ctx.ellipse(cx, by + 5, 6 * glowScale, 15 * glowScale, 0, 0, Math.PI * 2);
-                      ctx.fill();
-                      ctx.restore();
-
-                      ctx.imageSmoothingEnabled = false; 
-                      ctx.drawImage(g.playerSprite, p.x, p.y, p.w, p.h);
-                  } else {
-                      ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
-                      ctx.beginPath(); ctx.moveTo(p.x + p.w/2, p.y); ctx.lineTo(p.x + p.w, p.y + p.h); ctx.lineTo(p.x + p.w/2, p.y + p.h - 10); ctx.lineTo(p.x, p.y + p.h); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
-                  }
-
-                  ctx.globalAlpha = 1.0;
-              }
-
-              g.powerups.forEach(p => {
-                  ctx.save(); ctx.shadowBlur = 10; 
-                  let color = '#22c55e'; let label = 'UP';
-                  if (p.type === 'shield') { color = '#facc15'; label = 'SP'; }
-                  else if (p.type === 'health') { color = '#ef4444'; label = '❤'; }
-                  else if (p.type === 'life') { color = '#22c55e'; label = '1UP'; }
-
-                  ctx.shadowColor = color; ctx.fillStyle = color; 
-                  ctx.beginPath(); ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI*2); ctx.fill();
-                  ctx.fillStyle = '#000'; ctx.font = 'bold 8px Arial'; 
-                  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                  ctx.fillText(label, p.x + 10, p.y + 11); 
-                  ctx.restore();
-              });
-
-              g.bullets.forEach(b => {
-                  ctx.save();
-                  ctx.shadowBlur = b.glow ? 20 : 5; ctx.shadowColor = b.color; ctx.fillStyle = b.color || '#fff';
-                  if (b.behavior === 'homing') { ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + b.w, b.y + b.h); ctx.lineTo(b.x - b.w, b.y + b.h); ctx.fill(); } 
-                  else if (b.behavior === 'beam') { const grad = ctx.createLinearGradient(b.x, b.y, b.x + b.w, b.y); grad.addColorStop(0, 'rgba(255,255,255,0)'); grad.addColorStop(0.5, b.color); grad.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = grad; ctx.fillRect(b.x, b.y, b.w, b.h); } 
-                  else { ctx.fillRect(b.x, b.y, b.w, b.h); }
-                  ctx.restore();
-              });
-
-              g.enemies.forEach(e => {
-                  ctx.save();
-                  const cx = e.x + e.w/2; const cy = e.y + e.h/2;
-                  
-                  if (e.type === 'drone') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#f00'; ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, e.y + e.h); ctx.lineTo(e.x, e.y); ctx.lineTo(e.x + e.w, e.y); ctx.closePath(); ctx.stroke(); ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.fill();
-                  } else if (e.type === 'snake') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#0ff'; ctx.fillStyle = '#0ff'; if (e.trail) e.trail.forEach(t => { ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(t.x + e.w/2, t.y + e.h/2, e.w/3, 0, Math.PI*2); ctx.fill(); }); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(cx, cy, e.w/2, 0, Math.PI*2); ctx.fill();
-                  } else if (e.type === 'tower') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#ff0'; ctx.strokeStyle = '#ff0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, e.w/2, 0, Math.PI*2); ctx.stroke(); ctx.fillStyle = '#ff0'; ctx.beginPath(); ctx.arc(cx, cy, e.w/4, 0, Math.PI*2); ctx.fill(); ctx.save(); ctx.translate(cx, cy); ctx.rotate(e.tick); ctx.moveTo(-e.w/2, 0); ctx.lineTo(e.w/2, 0); ctx.moveTo(0, -e.h/2); ctx.lineTo(0, e.h/2); ctx.stroke(); ctx.restore();
-                  } else if (e.type === 'spider') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#0f0'; ctx.fillStyle = '#0f0'; ctx.beginPath(); ctx.arc(cx, cy, e.w/3, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#0f0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - 20, cy - 10); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 20, cy - 10); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - 20, cy + 20); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 20, cy + 20); ctx.stroke();
-                  } else if (e.type === 'satellite') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#aaf'; ctx.fillStyle = '#aaf'; ctx.save(); ctx.translate(cx, cy); ctx.rotate(e.tick); ctx.fillRect(-e.w/2, -5, e.w, 10); ctx.fillRect(-5, -e.h/2, 10, e.h); ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill(); ctx.restore();
-                  } else if (e.type === 'cube') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#a855f7'; ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; ctx.strokeRect(e.x, e.y, e.w, e.h); ctx.fillStyle = 'rgba(168, 85, 247, 0.2)'; ctx.fillRect(e.x, e.y, e.w, e.h); ctx.fillStyle = '#fff'; ctx.fillRect(cx-2, cy-2, 4, 4);
-                  } else if (e.type === 'specter') {
-                      ctx.shadowBlur = 20; ctx.shadowColor = '#fff'; ctx.fillStyle = `rgba(200,200,255,${e.opacity})`; ctx.beginPath(); ctx.arc(cx, cy, e.w/2, Math.PI, 0); ctx.lineTo(e.x + e.w, e.y + e.h); ctx.lineTo(cx, e.y + e.h - 10); ctx.lineTo(e.x, e.y + e.h); ctx.closePath(); ctx.fill();
-                  } else if (e.type === 'kamikaze') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#f00'; ctx.fillStyle = '#f00'; ctx.beginPath(); ctx.moveTo(cx, e.y + e.h); ctx.lineTo(e.x, e.y); ctx.lineTo(e.x + e.w, e.y); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.moveTo(cx, e.y); ctx.lineTo(cx-5, e.y-10); ctx.lineTo(cx+5, e.y-10); ctx.fill();
-                  } else if (e.type === 'disc') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#f0f'; ctx.fillStyle = '#222'; ctx.beginPath(); ctx.ellipse(cx, cy, e.w/2, e.h/2, 0, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#f0f'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(cx, cy-5, 5, 0, Math.PI*2); ctx.fill();
-                  } else if (e.type === 'hive') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#f97316'; ctx.strokeStyle = '#f97316'; ctx.lineWidth = 3; ctx.beginPath(); const r = e.w/2; for(let i=0; i<6; i++) { const a = i * Math.PI / 3; const x = cx + Math.cos(a)*r; const y = cy + Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); ctx.stroke(); ctx.fillStyle = '#fb923c'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.fill();
-                  } else {
-                      ctx.fillStyle = '#fff'; ctx.fillRect(e.x, e.y, e.w, e.h);
-                  }
-                  ctx.fillStyle = 'red'; ctx.fillRect(e.x, e.y - 6, e.w, 2); ctx.fillStyle = 'lime'; ctx.fillRect(e.x, e.y - 6, e.w * (e.health/e.maxHealth), 2);
-                  ctx.restore();
-              });
-
-              if (g.boss) {
-                  const boss = g.boss;
-                  const cx = boss.x + boss.w/2;
-                  const cy = boss.y + boss.h/2;
-                  ctx.save(); 
-                  
-                  // Boss drawing based on type (reusing previous logic)
-                  if (boss.type === 'pyramid') {
-                      ctx.shadowBlur = 20; ctx.shadowColor = '#eab308'; ctx.fillStyle = '#eab308';
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y); ctx.lineTo(boss.x + boss.w, boss.y + boss.h); ctx.lineTo(boss.x, boss.y + boss.h); ctx.closePath(); ctx.fill();
-                      ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2; ctx.stroke();
-                      ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(cx, cy + 20, 15, 0, Math.PI*2); ctx.fill();
-                  } else if (boss.type === 'hydra') {
-                      ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 8; ctx.lineCap = 'round';
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.quadraticCurveTo(cx-30, cy, boss.x + 20, boss.y+boss.h); ctx.stroke();
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.lineTo(cx, cy); ctx.stroke();
-                      ctx.beginPath(); ctx.moveTo(cx, boss.y+boss.h); ctx.quadraticCurveTo(cx+30, cy, boss.x + boss.w - 20, boss.y+boss.h); ctx.stroke();
-                      const heads = [[boss.x + 20, '#60a5fa'], [cx, '#34d399'], [boss.x + boss.w - 20, '#f87171']];
-                      heads.forEach(h => { ctx.shadowBlur = 15; ctx.shadowColor = h[1]; ctx.fillStyle = h[1]; ctx.beginPath(); ctx.arc(h[0], boss.y + boss.h, 15, 0, Math.PI*2); ctx.fill(); });
-                  } else if (boss.type === 'orb') {
-                      ctx.shadowBlur = 30; ctx.shadowColor = '#3b82f6'; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.stroke();
-                      ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick); ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, 0, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0, 70, 20, Math.PI/2, 0, Math.PI*2); ctx.stroke(); ctx.restore();
-                  } else if (boss.type === 'dragon') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444'; for(let i=0; i<5; i++) { const size = 20 - i*2; ctx.fillStyle = i===0 ? '#fecaca' : '#ef4444'; ctx.beginPath(); ctx.arc(cx, boss.y + 20 + i*30, size, 0, Math.PI*2); ctx.fill(); }
-                      ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x-20, boss.y+60); ctx.lineTo(boss.x, boss.y+80); ctx.fill(); ctx.beginPath(); ctx.moveTo(cx, boss.y+40); ctx.lineTo(boss.x+boss.w+20, boss.y+60); ctx.lineTo(boss.x+boss.w, boss.y+80); ctx.fill();
-                  } else if (boss.type === 'spider') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#a855f7'; ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; for(let i=0; i<4; i++) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x - 20, boss.y + i*30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(boss.x + boss.w + 20, boss.y + i*30); ctx.stroke(); }
-                      ctx.fillStyle = '#581c87'; ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#4ade80'; ctx.beginPath(); ctx.arc(cx-10, cy+10, 5, 0, Math.PI*2); ctx.arc(cx+10, cy+10, 5, 0, Math.PI*2); ctx.fill();
-                  } else if (boss.type === 'cube') {
-                      ctx.shadowBlur = 20; ctx.shadowColor = '#d8b4fe'; ctx.strokeStyle = '#d8b4fe'; ctx.lineWidth = 4; ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); ctx.strokeRect(boss.x, boss.y, boss.w, boss.h); ctx.beginPath(); ctx.moveTo(boss.x, boss.y); ctx.lineTo(boss.x+boss.w, boss.y+boss.h); ctx.stroke(); ctx.beginPath(); ctx.moveTo(boss.x+boss.w, boss.y); ctx.lineTo(boss.x, boss.y+boss.h); ctx.stroke();
-                  } else if (boss.type === 'parasite') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#f472b6'; ctx.fillStyle = '#be185d'; ctx.beginPath(); ctx.arc(cx, cy, 40 + Math.sin(boss.tick)*5, 0, Math.PI*2); ctx.fill();
-                      ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 4; for(let i=0; i<6; i++) { const angle = (i/6)*Math.PI*2 + boss.tick; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx + Math.cos(angle)*60, cy + Math.sin(angle)*60, cx + Math.cos(angle)*80, cy + Math.sin(angle)*80); ctx.stroke(); }
-                  } else if (boss.type === 'star') {
-                      ctx.shadowBlur = 25; ctx.shadowColor = '#fbbf24'; ctx.fillStyle = '#fbbf24'; ctx.save(); ctx.translate(cx, cy); ctx.rotate(boss.tick * 0.5); ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * 60, -Math.sin((18 + i * 72) / 180 * Math.PI) * 60); ctx.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * 25, -Math.sin((54 + i * 72) / 180 * Math.PI) * 25); } ctx.closePath(); ctx.fill(); ctx.restore();
-                  } else if (boss.type === 'tank') {
-                      ctx.shadowBlur = 10; ctx.shadowColor = '#9ca3af'; ctx.fillStyle = '#374151'; ctx.fillRect(boss.x, boss.y, boss.w, boss.h); ctx.fillStyle = '#1f2937'; ctx.fillRect(boss.x-10, boss.y, 20, boss.h); ctx.fillRect(boss.x+boss.w-10, boss.y, 20, boss.h); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx, boss.y+boss.h/2, 20, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#6b7280'; ctx.fillRect(cx-10, boss.y+boss.h/2, 20, 40);
-                  } else if (boss.type === 'clock') {
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#06b6d4'; ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 3; ctx.stroke();
-                      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.save(); ctx.translate(cx, cy); ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick); ctx.lineTo(0, -40); ctx.stroke(); ctx.restore(); ctx.save(); ctx.translate(cx, cy); ctx.beginPath(); ctx.moveTo(0,0); ctx.rotate(boss.tick * 0.1); ctx.lineTo(0, -25); ctx.stroke(); ctx.restore();
-                  } else {
-                      ctx.fillStyle = '#ff0055'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y); ctx.lineTo(boss.x + boss.w, boss.y); ctx.lineTo(boss.x + boss.w/2, boss.y + boss.h); ctx.closePath(); ctx.fill();
-                  }
-                  ctx.restore();
-                  
-                  // Boss HP Bar
-                  ctx.fillStyle = '#330033'; ctx.fillRect(10, 80, g.width - 20, 10); ctx.fillStyle = '#ff00ff'; ctx.fillRect(10, 80, (g.width - 20) * (boss.health / boss.maxHealth), 10);
-              }
-
-              g.particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
-
-              // HUD
-              ctx.font = 'bold 16px "Courier New"'; 
-              ctx.textAlign = 'left';
-              
-              // Move Level/Weapon to Top Left
-              ctx.fillStyle = 'white';
-              ctx.fillText(`LVL: ${g.level} | WPN: ${g.player.weaponLevel}`, 10, 25);
-              
-              // Level Progress Bar
-              const levelProgress = Math.min(1, g.levelScore / g.bossTarget);
-              ctx.textAlign = 'center';
-              ctx.font = '12px "Courier New"';
-              ctx.fillText(`BOSS TARGET: ${g.levelScore.toLocaleString()} / ${g.bossTarget.toLocaleString()}`, g.width/2, 60);
-              ctx.fillStyle = '#333'; ctx.fillRect(g.width/2 - 100, 65, 200, 6);
-              ctx.fillStyle = '#0ff'; ctx.fillRect(g.width/2 - 100, 65, 200 * levelProgress, 6);
-              ctx.textAlign = 'left';
-
-              // Lives
-              ctx.fillStyle = '#ef4444';
-              ctx.font = 'bold 20px Arial';
-              ctx.fillText(`❤ x ${g.player.lives}`, 10, g.height - 40);
-
-              // Player Health Bar
-              const hpPercent = Math.max(0, g.player.health / g.player.maxHealth);
-              ctx.fillStyle = '#333'; ctx.fillRect(10, g.height - 30, 150, 15);
-              ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : (hpPercent > 0.2 ? '#eab308' : '#ef4444');
-              ctx.fillRect(10, g.height - 30, 150 * hpPercent, 15);
-              ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(10, g.height - 30, 150, 15);
-
-              // SCORE & COINS (Moved to Bottom, Next to HP Bar)
-              const currentTotalCoins = currentCoins + g.earnedCoins + Math.floor(g.sessionScore / 1000);
-
-              // Coins (Bottom Left, aligned with Lives Y-axis)
-              ctx.fillStyle = '#fbbf24';
-              ctx.font = 'bold 16px "Courier New"';
-              ctx.fillText(`${currentTotalCoins} COINS`, 170, g.height - 40);
-
-              // Score (Bottom Left, aligned with HP Bar Y-axis)
-              ctx.fillStyle = 'white';
-              ctx.fillText(`SCORE: ${g.score.toLocaleString()}`, 170, g.height - 18);
-
-              if (g.player.shieldActive) {
-                  ctx.fillStyle = '#facc15'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.shadowBlur = 10; ctx.shadowColor = '#facc15';
-                  ctx.fillText(`SPECIAL ACTIVE: CHAOS BLOSSOM (${Math.ceil(g.player.shieldTimer/1000)}s)`, g.width/2, g.height - 18); ctx.shadowBlur = 0; ctx.textAlign = 'left';
-              }
-
-              if (g.gameState === 'level-up') {
-                  ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0,0,g.width,g.height);
-                  ctx.fillStyle = '#0ff'; ctx.font = 'bold 30px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('LEVEL COMPLETED', g.width/2, g.height/2 - 20);
-                  ctx.fillStyle = 'white'; ctx.font = '20px "Courier New"'; ctx.fillText(`NEXT LEVEL: ${g.level + 1}`, g.width/2, g.height/2 + 30);
-              }
-
-              if (g.gameState === 'game-over') {
-                  ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0,0,g.width,g.height);
-                  ctx.fillStyle = '#ff0055'; ctx.font = 'bold 40px "Courier New"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', g.width/2, g.height/2 - 40);
-                  
-                  ctx.fillStyle = '#fbbf24'; ctx.font = '20px "Courier New"'; 
-                  ctx.fillText(`+${g.earnedCoins} COINS`, g.width/2, g.height/2);
-                  
-                  ctx.fillStyle = 'white'; ctx.font = '20px "Courier New"'; ctx.fillText('Tap to Restart', g.width/2, g.height/2 + 40);
-              }
-          }, [currentCoins]);
-
-          useEffect(() => {
-              initGame();
-              const canvas = canvasRef.current;
-              const g = game.current;
-              const resizeCanvas = () => { if(canvas && canvas.parentElement) { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; g.width = canvas.width; g.height = canvas.height; } };
-              resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-              let animationFrameId; const gameLoop = () => { update(); draw(); animationFrameId = window.requestAnimationFrame(gameLoop); }; gameLoop();
-              const handleMove = (e) => {
-                  if (g.gameState !== 'playing' && g.gameState !== 'boss') return;
-                  if(e.cancelable) e.preventDefault();
-                  const rect = canvas.getBoundingClientRect();
-                  const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                  const x = clientX - rect.left; const y = clientY - rect.top;
-                  g.player.x = Math.max(0, Math.min(g.width - g.player.w, x - g.player.w / 2)); g.player.y = Math.max(0, Math.min(g.height - g.player.h, y - g.player.h / 2));
-              };
-              const handleClick = (e) => { 
-                if (g.gameState === 'game-over') { 
-                  triggerAd(e); 
-                  initGame(); 
-                } else {
-                  if (e && e.stopPropagation) e.stopPropagation();
-                }
-              };
-              canvas.addEventListener('mousemove', handleMove); canvas.addEventListener('touchmove', handleMove, { passive: false }); canvas.addEventListener('click', handleClick);
-              return () => { window.cancelAnimationFrame(animationFrameId); window.removeEventListener('resize', resizeCanvas); canvas.removeEventListener('mousemove', handleMove); canvas.removeEventListener('touchmove', handleMove); canvas.removeEventListener('click', handleClick); };
-          }, [draw, update, initGame, triggerAd]);
-
-          return (
-              <div className="w-full h-full relative flex flex-col items-center justify-center bg-transparent">
-                  <canvas ref={canvasRef} className="w-full h-full block" />
-                  <div className="absolute top-4 left-4 z-10 flex gap-4">
-                    <button onClick={onBack} className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20"><ChevronLeft size={24} /></button>
-                  </div>
-                  <button onClick={toggleFullScreen} className="absolute top-4 right-4 p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition border border-white/20"><Maximize size={24} /></button>
-              </div>
-          );
-      };
-
       // --- Farm Game ("Fazendinha") ---
       const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
           const CROPS = {
@@ -1735,12 +539,8 @@
               "Ouvi dizer que morangos dão muito lucro.",
               "Precisa de moedas? Continue colhendo!",
               "O segredo é ter paciência... e adubo!",
-              "Cuidado com as pragas! (Brincadeira, não tem pragas aqui)",
               "Eu compraria suas abóboras por um bom preço.",
-              "Quer expandir? Junte moedas!",
-              "Nada como o cheiro de terra molhada.",
-              "Você é um fazendeiro nato!",
-              "Já regou suas plantas hoje?"
+              "Quer expandir? Junte moedas!"
           ];
 
           const MISSION_TEMPLATES = [
@@ -1752,72 +552,67 @@
               { type: 'earn', count: 200, desc: 'Lucre 200 Moedas', reward: 50 }
           ];
 
+          // States
+          const [activeModal, setActiveModal] = useState(null); // 'shop', 'missions', 'expand', null
           const [landLevel, setLandLevel] = useState(() => {
               const saved = safeStorage.getItem('farm_land_level');
               return saved ? parseInt(saved) : 0;
           });
-
           const [grid, setGrid] = useState(() => {
               const saved = safeStorage.getItem('farm_grid');
               return saved ? JSON.parse(saved) : [];
           });
-          
           const [missions, setMissions] = useState(() => {
               const saved = safeStorage.getItem('farm_missions');
               return saved ? JSON.parse(saved) : [];
           });
-
-          const [selectedCrop, setSelectedCrop] = useState(null);
+          const [selectedCrop, setSelectedCrop] = useState('wheat');
           const [now, setNow] = useState(Date.now());
           const [farmerPos, setFarmerPos] = useState({ col: 1, row: 1 });
           const [merchantQuote, setMerchantQuote] = useState("");
           const [showQuote, setShowQuote] = useState(false);
 
-          // Generate Missions if empty
+          // Logic
           const generateMissions = useCallback(() => {
               const newMissions = [];
               for(let i=0; i<3; i++) {
                   const template = MISSION_TEMPLATES[Math.floor(Math.random() * MISSION_TEMPLATES.length)];
-                  newMissions.push({
-                      id: Date.now() + i,
-                      ...template,
-                      progress: 0,
-                      completed: false
-                  });
+                  newMissions.push({ id: Date.now() + i, ...template, progress: 0, completed: false });
               }
               setMissions(newMissions);
           }, []);
 
-          useEffect(() => {
-              if (missions.length === 0) generateMissions();
-          }, [missions, generateMissions]);
+          useEffect(() => { if (missions.length === 0) generateMissions(); }, [missions, generateMissions]);
+          useEffect(() => { safeStorage.setItem('farm_missions', JSON.stringify(missions)); }, [missions]);
+          useEffect(() => { safeStorage.setItem('farm_land_level', landLevel); }, [landLevel]);
+          useEffect(() => { if (grid.length > 0) safeStorage.setItem('farm_grid', JSON.stringify(grid)); }, [grid]);
+          useEffect(() => { const interval = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(interval); }, []);
 
+          // Initialize Grid
           useEffect(() => {
-              safeStorage.setItem('farm_missions', JSON.stringify(missions));
-          }, [missions]);
+              const targetCount = LAND_LEVELS[landLevel].count;
+              setGrid(prev => {
+                  if (prev.length === targetCount) return prev;
+                  if (prev.length < targetCount) {
+                      const newGrid = [...prev];
+                      while(newGrid.length < targetCount) newGrid.push({ id: newGrid.length, crop: null, plantedAt: null });
+                      return newGrid;
+                  }
+                  return prev.slice(0, targetCount); 
+              });
+          }, [landLevel]);
 
           const updateMissionProgress = (type, amount, targetId = null) => {
-              setMissions(prev => {
-                  let allCompleted = true;
-                  const updated = prev.map(m => {
-                      if (m.completed) return m;
-                      
-                      let match = false;
-                      if (m.type === type) {
-                          if (m.target === 'any' || !m.target) match = true;
-                          else if (m.target === targetId) match = true;
-                      }
-
-                      if (match) {
-                          const newProgress = Math.min(m.goal || m.count, m.progress + amount);
-                          if (newProgress < (m.goal || m.count)) allCompleted = false;
-                          return { ...m, progress: newProgress };
-                      }
-                      allCompleted = false;
-                      return m;
-                  });
-                  return updated;
-              });
+              setMissions(prev => prev.map(m => {
+                  if (m.completed) return m;
+                  let match = false;
+                  if (m.type === type) {
+                      if (m.target === 'any' || !m.target) match = true;
+                      else if (m.target === targetId) match = true;
+                  }
+                  if (match) return { ...m, progress: Math.min(m.goal || m.count, m.progress + amount) };
+                  return m;
+              }));
           };
 
           const claimMission = (id) => {
@@ -1825,46 +620,13 @@
               if (mission && !mission.completed && mission.progress >= mission.count) {
                   addCoins(mission.reward);
                   playSound('powerup');
-                  
-                  // Mark as completed or remove? Let's remove and if all removed, regen.
-                  // Actually, keeping them as 'completed' then regen all 3 when all 3 done is more satisfying.
                   const newMissions = missions.map(m => m.id === id ? { ...m, completed: true } : m);
                   setMissions(newMissions);
-
                   if (newMissions.every(m => m.completed)) {
-                      setTimeout(() => {
-                          generateMissions();
-                          playSound('1up');
-                      }, 1000);
+                      setTimeout(() => { generateMissions(); playSound('1up'); }, 1000);
                   }
               }
           };
-
-          // Initialize Grid Size based on Land Level
-          useEffect(() => {
-              const targetCount = LAND_LEVELS[landLevel].count;
-              setGrid(prev => {
-                  if (prev.length === targetCount) return prev;
-                  if (prev.length < targetCount) {
-                      const newGrid = [...prev];
-                      while(newGrid.length < targetCount) {
-                          newGrid.push({ id: newGrid.length, crop: null, plantedAt: null });
-                      }
-                      return newGrid;
-                  }
-                  return prev.slice(0, targetCount); 
-              });
-              safeStorage.setItem('farm_land_level', landLevel);
-          }, [landLevel]);
-
-          useEffect(() => {
-              const interval = setInterval(() => setNow(Date.now()), 1000);
-              return () => clearInterval(interval);
-          }, []);
-
-          useEffect(() => {
-              if (grid.length > 0) safeStorage.setItem('farm_grid', JSON.stringify(grid));
-          }, [grid]);
 
           const handlePlotClick = (plot, index) => {
               const cols = grid.length < 6 ? 2 : 3;
@@ -1881,9 +643,7 @@
                       updateMissionProgress('harvest', 1, plot.crop);
                       updateMissionProgress('earn', cropDef.reward);
                       setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: null, plantedAt: null } : p));
-                  } else {
-                      playSound('wrong'); 
-                  }
+                  } else { playSound('wrong'); }
               } else {
                   if (selectedCrop) {
                       const cropDef = CROPS[selectedCrop];
@@ -1892,9 +652,7 @@
                           addCoins(-cropDef.cost);
                           updateMissionProgress('plant', 1, selectedCrop);
                           setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: selectedCrop, plantedAt: Date.now() } : p));
-                      } else {
-                          playSound('wrong');
-                      }
+                      } else { playSound('wrong'); }
                   }
               }
           };
@@ -1913,9 +671,8 @@
                       addCoins(-cost);
                       setLandLevel(nextLevel);
                       playSound('buy');
-                  } else {
-                      playSound('wrong');
-                  }
+                      setActiveModal(null);
+                  } else { playSound('wrong'); }
               }
           };
 
@@ -1927,70 +684,65 @@
               setTimeout(() => setShowQuote(false), 4000);
           };
 
-          const nextLand = landLevel < LAND_LEVELS.length - 1 ? LAND_LEVELS[landLevel + 1] : null;
+          // Reusable Modal Component
+          const Modal = ({ title, onClose, children }) => (
+              <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+                  <div className="bg-slate-800 w-full max-w-sm rounded-2xl border-2 border-slate-600 shadow-2xl overflow-hidden flex flex-col max-h-[80%]" onClick={e => e.stopPropagation()}>
+                      <div className="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
+                          <h2 className="text-xl font-bold text-white">{title}</h2>
+                          <button onClick={onClose}><X className="text-gray-400 hover:text-white" /></button>
+                      </div>
+                      <div className="p-4 overflow-y-auto flex-1">{children}</div>
+                  </div>
+              </div>
+          );
+
           const gridColsClass = grid.length < 6 ? 'grid-cols-2' : 'grid-cols-3';
+          const nextLand = landLevel < LAND_LEVELS.length - 1 ? LAND_LEVELS[landLevel + 1] : null;
 
           return (
-              <div className="w-full h-full flex flex-col items-center bg-green-900 text-white relative">
+              <div className="w-full h-full flex flex-col bg-green-900 text-white relative overflow-hidden">
                   {/* Header */}
-                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-green-800 z-10">
+                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-green-800 z-10 absolute top-0 left-0 right-0">
                       <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold text-green-300 drop-shadow-md flex items-center gap-2"><Sprout /> FAZENDINHA</h1>
+                      <div className="flex flex-col items-center">
+                          <h1 className="text-xl font-bold text-green-300 drop-shadow-md flex items-center gap-2"><Sprout /> FAZENDINHA</h1>
+                          {selectedCrop && (
+                              <div className="text-xs text-green-200 bg-black/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  Plantando: {CROPS[selectedCrop].icon} {CROPS[selectedCrop].name}
+                              </div>
+                          )}
+                      </div>
                       <div className="flex items-center gap-2 bg-yellow-600/20 px-3 py-1 rounded-full border border-yellow-500/50">
                           <Coins size={16} className="text-yellow-400" />
                           <span className="font-bold text-yellow-400">{coins}</span>
                       </div>
                   </div>
 
-                  {/* Game Area */}
-                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-start gap-6 overflow-y-auto pb-24">
-                      
-                      {/* Grid Container */}
+                  {/* Main Game Area - Centered Grid */}
+                  <div className="flex-1 w-full flex items-center justify-center p-6 relative">
                       <div className={`grid ${gridColsClass} gap-4 bg-green-800/50 p-6 rounded-2xl border-4 border-green-700 shadow-2xl relative transition-all duration-500`}>
-                          
-                          {/* Merchant NPC */}
-                          <div className="absolute -bottom-8 -right-4 z-30 flex flex-col items-end">
+                          {/* Merchant */}
+                          <div className="absolute -bottom-10 -right-6 z-30 flex flex-col items-end pointer-events-auto">
                               {showQuote && (
-                                  <div className="bg-white text-black p-2 rounded-lg rounded-br-none mb-2 shadow-lg text-xs font-bold max-w-[150px] animate-fade-in relative border-2 border-gray-300">
+                                  <div className="bg-white text-black p-2 rounded-lg rounded-br-none mb-2 shadow-lg text-xs font-bold max-w-[120px] animate-fade-in relative border-2 border-gray-300">
                                       {merchantQuote}
                                       <div className="absolute -bottom-2 right-4 w-0 h-0 border-l-8 border-l-transparent border-t-[10px] border-t-white border-r-0"></div>
                                   </div>
                               )}
-                              <button 
-                                  onClick={handleMerchantClick}
-                                  className="text-5xl filter drop-shadow-xl hover:scale-110 transition-transform active:scale-95"
-                                  title="Falar com Vendedor"
-                              >
-                                  🧑‍💼
-                              </button>
+                              <button onClick={handleMerchantClick} className="text-5xl filter drop-shadow-xl hover:scale-110 transition-transform active:scale-95">🧑‍💼</button>
                           </div>
 
-                          <div 
-                              className="absolute w-20 h-20 pointer-events-none transition-all duration-700 z-20 flex items-center justify-center text-5xl filter drop-shadow-lg"
-                              style={{
-                                  gridColumn: farmerPos.col,
-                                  gridRow: farmerPos.row
-                              }}
-                          >
-                              👨‍🌾
-                          </div>
+                          {/* Farmer */}
+                          <div className="absolute w-20 h-20 pointer-events-none transition-all duration-700 z-20 flex items-center justify-center text-5xl filter drop-shadow-lg" style={{ gridColumn: farmerPos.col, gridRow: farmerPos.row }}>👨‍🌾</div>
 
+                          {/* Plots */}
                           {grid.map((plot, index) => {
                               const cropDef = plot.crop ? CROPS[plot.crop] : null;
                               const progress = cropDef ? Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100) : 0;
                               const isReady = progress >= 100;
-
                               return (
-                                  <button 
-                                      key={plot.id}
-                                      onClick={() => handlePlotClick(plot, index)}
-                                      className={`w-20 h-20 md:w-24 md:h-24 rounded-xl flex flex-col items-center justify-center relative transition-all transform active:scale-95
-                                          ${plot.crop 
-                                              ? (isReady ? 'bg-amber-200 border-yellow-400 animate-bounce' : 'bg-amber-700 border-amber-800') 
-                                              : 'bg-green-700 border-green-600 hover:bg-green-600'}
-                                          border-b-4
-                                      `}
-                                  >
+                                  <button key={plot.id} onClick={() => handlePlotClick(plot, index)} className={`w-20 h-20 md:w-24 md:h-24 rounded-xl flex flex-col items-center justify-center relative transition-all transform active:scale-95 ${plot.crop ? (isReady ? 'bg-amber-200 border-yellow-400 animate-bounce' : 'bg-amber-700 border-amber-800') : 'bg-green-700 border-green-600 hover:bg-green-600'} border-b-4`}>
                                       {plot.crop ? (
                                           <>
                                               <div className="text-3xl md:text-4xl drop-shadow-md">{cropDef.icon}</div>
@@ -2000,106 +752,104 @@
                                                   </div>
                                               )}
                                           </>
-                                      ) : (
-                                          <div className="w-4 h-4 bg-green-900/30 rounded-full"></div>
-                                      )}
+                                      ) : <div className="w-4 h-4 bg-green-900/30 rounded-full"></div>}
                                   </button>
                               );
                           })}
                       </div>
+                  </div>
 
-                      {/* Expand Land Button */}
-                      {nextLand && (
-                          <button 
-                              onClick={handleExpand}
-                              disabled={coins < nextLand.cost}
-                              className={`w-full py-3 rounded-xl border-2 border-dashed border-green-400/50 flex flex-col items-center justify-center gap-1 transition-all
-                                  ${coins >= nextLand.cost ? 'bg-green-800/50 hover:bg-green-700/50 text-green-200' : 'bg-black/20 text-gray-500 cursor-not-allowed'}
-                              `}
-                          >
-                              <div className="flex items-center gap-2 font-bold">
-                                  <Pickaxe size={18} /> EXPANDIR TERRENO (+{nextLand.count - grid.length} Plots)
-                              </div>
-                              <div className="text-xs flex items-center gap-1">
-                                  Custo: <Coins size={10} /> {nextLand.cost}
-                              </div>
+                  {/* Bottom Dock Menu */}
+                  <div className="w-full bg-slate-900 border-t border-slate-700 p-2 safe-area-bottom z-40">
+                      <div className="max-w-md mx-auto flex justify-around items-center">
+                          <button onClick={() => setActiveModal('shop')} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-green-400 transition-colors active:scale-95">
+                              <Store size={24} />
+                              <span className="text-[10px] font-bold uppercase">Loja</span>
                           </button>
-                      )}
+                          <button onClick={() => setActiveModal('missions')} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-yellow-400 transition-colors active:scale-95 relative">
+                              <ClipboardList size={24} />
+                              <span className="text-[10px] font-bold uppercase">Missões</span>
+                              {missions.some(m => !m.completed && m.progress >= m.count) && (
+                                  <div className="absolute top-1 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
+                              )}
+                          </button>
+                          <button onClick={() => setActiveModal('expand')} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-blue-400 transition-colors active:scale-95">
+                              <Pickaxe size={24} />
+                              <span className="text-[10px] font-bold uppercase">Expandir</span>
+                          </button>
+                          <button onClick={handleFertilizer} className="flex flex-col items-center gap-1 p-2 text-gray-400 hover:text-purple-400 transition-colors active:scale-95">
+                              <Zap size={24} className="fill-current" />
+                              <span className="text-[10px] font-bold uppercase">Adubo</span>
+                          </button>
+                      </div>
+                  </div>
 
-                      {/* Controls */}
-                      <div className="w-full flex flex-col gap-4">
-                          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  {/* Modals */}
+                  {activeModal === 'shop' && (
+                      <Modal title="Loja de Sementes" onClose={() => setActiveModal(null)}>
+                          <div className="grid grid-cols-2 gap-3">
                               {Object.values(CROPS).map(crop => (
-                                  <button 
-                                      key={crop.id}
-                                      onClick={() => setSelectedCrop(crop.id)}
-                                      className={`flex-shrink-0 p-3 rounded-xl border-2 flex flex-col items-center gap-1 min-w-[80px] transition-all
-                                          ${selectedCrop === crop.id 
-                                              ? 'bg-white/20 border-white scale-105' 
-                                              : 'bg-black/30 border-white/10 hover:bg-white/10'}
-                                          ${coins < crop.cost ? 'opacity-50' : ''}
-                                      `}
-                                  >
-                                      <div className="text-2xl">{crop.icon}</div>
-                                      <div className="text-xs font-bold">{crop.name}</div>
-                                      <div className="flex items-center gap-1 text-xs text-yellow-400 font-bold">
-                                          <Coins size={10} /> {crop.cost}
+                                  <button key={crop.id} onClick={() => { setSelectedCrop(crop.id); setActiveModal(null); }} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${selectedCrop === crop.id ? 'bg-green-600/30 border-green-500' : 'bg-black/30 border-slate-700 hover:border-slate-500'} ${coins < crop.cost ? 'opacity-50' : ''}`}>
+                                      <div className="text-4xl">{crop.icon}</div>
+                                      <div className="w-full text-center">
+                                          <div className="font-bold text-sm">{crop.name}</div>
+                                          <div className="flex items-center justify-center gap-1 text-xs text-yellow-400 font-bold mt-1">
+                                              <Coins size={12} /> {crop.cost}
+                                          </div>
                                       </div>
                                   </button>
                               ))}
                           </div>
+                      </Modal>
+                  )}
 
-                          <button 
-                              onClick={handleFertilizer}
-                              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 flex items-center justify-center gap-2"
-                          >
-                              <Zap size={20} className="text-yellow-300 fill-yellow-300" />
-                              ADUBO MÁGICO (Ver Ad)
-                          </button>
-                      </div>
-
-                      {/* Missions Board */}
-                      <div className="w-full bg-slate-800/80 rounded-2xl p-4 border border-slate-600 shadow-xl">
-                          <div className="flex items-center gap-2 mb-3 text-yellow-400 font-bold">
-                              <ClipboardList /> MISSÕES DIÁRIAS
-                          </div>
+                  {activeModal === 'missions' && (
+                      <Modal title="Missões Diárias" onClose={() => setActiveModal(null)}>
                           <div className="flex flex-col gap-3">
                               {missions.map(mission => (
                                   <div key={mission.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center justify-between gap-3 border border-slate-600">
                                       <div className="flex-1">
                                           <div className="text-sm font-bold text-gray-200">{mission.desc}</div>
                                           <div className="w-full bg-slate-900 h-2 rounded-full mt-1 overflow-hidden">
-                                              <div 
-                                                  className="h-full bg-green-500 transition-all duration-500" 
-                                                  style={{ width: `${Math.min(100, (mission.progress / mission.count) * 100)}%` }}
-                                              ></div>
+                                              <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min(100, (mission.progress / mission.count) * 100)}%` }}></div>
                                           </div>
                                           <div className="text-xs text-gray-400 mt-1">{mission.progress} / {mission.count}</div>
                                       </div>
                                       {mission.completed ? (
-                                          <div className="text-green-400 font-bold text-xs flex flex-col items-center">
-                                              <CheckCircle size={20} />
-                                              <span>FEITO</span>
-                                          </div>
+                                          <div className="text-green-400 font-bold text-xs flex flex-col items-center"><CheckCircle size={20} /><span>FEITO</span></div>
                                       ) : (
                                           mission.progress >= mission.count ? (
-                                              <button 
-                                                  onClick={() => claimMission(mission.id)}
-                                                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-3 py-1 rounded-lg text-xs animate-bounce"
-                                              >
-                                                  COLETAR<br/>+{mission.reward} 💰
-                                              </button>
-                                          ) : (
-                                              <div className="text-xs font-bold text-yellow-500/50 border border-yellow-500/20 px-2 py-1 rounded">
-                                                  +{mission.reward} 💰
-                                              </div>
-                                          )
+                                              <button onClick={() => claimMission(mission.id)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-3 py-1 rounded-lg text-xs animate-bounce">COLETAR<br/>+{mission.reward} 💰</button>
+                                          ) : <div className="text-xs font-bold text-yellow-500/50 border border-yellow-500/20 px-2 py-1 rounded">+{mission.reward} 💰</div>
                                       )}
                                   </div>
                               ))}
                           </div>
-                      </div>
-                  </div>
+                      </Modal>
+                  )}
+
+                  {activeModal === 'expand' && (
+                      <Modal title="Expandir Terreno" onClose={() => setActiveModal(null)}>
+                          {nextLand ? (
+                              <div className="flex flex-col items-center gap-6 py-4">
+                                  <div className="text-6xl animate-bounce">🚜</div>
+                                  <div className="text-center">
+                                      <p className="text-gray-300">Aumente sua fazenda para</p>
+                                      <p className="text-2xl font-bold text-green-400">{nextLand.count} Blocos</p>
+                                  </div>
+                                  <button onClick={handleExpand} disabled={coins < nextLand.cost} className={`w-full py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all ${coins >= nextLand.cost ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
+                                      <span className="text-lg">COMPRAR TERRENO</span>
+                                      <div className="flex items-center gap-1 text-sm"><Coins size={14} /> {nextLand.cost}</div>
+                                  </button>
+                              </div>
+                          ) : (
+                              <div className="text-center py-10 text-gray-400">
+                                  <div className="text-4xl mb-4">🏆</div>
+                                  <p>Você atingiu o tamanho máximo da fazenda!</p>
+                              </div>
+                          )}
+                      </Modal>
+                  )}
               </div>
           );
       };
