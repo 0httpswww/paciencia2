@@ -100,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -251,6 +251,15 @@
                     gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
                     osc.start(now);
                     osc.stop(now + 0.2);
+                    break;
+                case 'talk':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
                     break;
             }
           } catch(e) {}
@@ -1721,6 +1730,28 @@
               { count: 12, cost: 1000 }
           ];
 
+          const MERCHANT_QUOTES = [
+              "Hoje o dia está ótimo para plantar!",
+              "Ouvi dizer que morangos dão muito lucro.",
+              "Precisa de moedas? Continue colhendo!",
+              "O segredo é ter paciência... e adubo!",
+              "Cuidado com as pragas! (Brincadeira, não tem pragas aqui)",
+              "Eu compraria suas abóboras por um bom preço.",
+              "Quer expandir? Junte moedas!",
+              "Nada como o cheiro de terra molhada.",
+              "Você é um fazendeiro nato!",
+              "Já regou suas plantas hoje?"
+          ];
+
+          const MISSION_TEMPLATES = [
+              { type: 'plant', target: 'any', count: 5, desc: 'Plante 5 Sementes', reward: 20 },
+              { type: 'harvest', target: 'wheat', count: 5, desc: 'Colha 5 Trigos', reward: 30 },
+              { type: 'harvest', target: 'corn', count: 3, desc: 'Colha 3 Milhos', reward: 50 },
+              { type: 'harvest', target: 'strawberry', count: 2, desc: 'Colha 2 Morangos', reward: 100 },
+              { type: 'earn', count: 50, desc: 'Lucre 50 Moedas', reward: 20 },
+              { type: 'earn', count: 200, desc: 'Lucre 200 Moedas', reward: 50 }
+          ];
+
           const [landLevel, setLandLevel] = useState(() => {
               const saved = safeStorage.getItem('farm_land_level');
               return saved ? parseInt(saved) : 0;
@@ -1731,16 +1762,89 @@
               return saved ? JSON.parse(saved) : [];
           });
           
+          const [missions, setMissions] = useState(() => {
+              const saved = safeStorage.getItem('farm_missions');
+              return saved ? JSON.parse(saved) : [];
+          });
+
           const [selectedCrop, setSelectedCrop] = useState(null);
           const [now, setNow] = useState(Date.now());
           const [farmerPos, setFarmerPos] = useState({ col: 1, row: 1 });
+          const [merchantQuote, setMerchantQuote] = useState("");
+          const [showQuote, setShowQuote] = useState(false);
+
+          // Generate Missions if empty
+          const generateMissions = useCallback(() => {
+              const newMissions = [];
+              for(let i=0; i<3; i++) {
+                  const template = MISSION_TEMPLATES[Math.floor(Math.random() * MISSION_TEMPLATES.length)];
+                  newMissions.push({
+                      id: Date.now() + i,
+                      ...template,
+                      progress: 0,
+                      completed: false
+                  });
+              }
+              setMissions(newMissions);
+          }, []);
+
+          useEffect(() => {
+              if (missions.length === 0) generateMissions();
+          }, [missions, generateMissions]);
+
+          useEffect(() => {
+              safeStorage.setItem('farm_missions', JSON.stringify(missions));
+          }, [missions]);
+
+          const updateMissionProgress = (type, amount, targetId = null) => {
+              setMissions(prev => {
+                  let allCompleted = true;
+                  const updated = prev.map(m => {
+                      if (m.completed) return m;
+                      
+                      let match = false;
+                      if (m.type === type) {
+                          if (m.target === 'any' || !m.target) match = true;
+                          else if (m.target === targetId) match = true;
+                      }
+
+                      if (match) {
+                          const newProgress = Math.min(m.goal || m.count, m.progress + amount);
+                          if (newProgress < (m.goal || m.count)) allCompleted = false;
+                          return { ...m, progress: newProgress };
+                      }
+                      allCompleted = false;
+                      return m;
+                  });
+                  return updated;
+              });
+          };
+
+          const claimMission = (id) => {
+              const mission = missions.find(m => m.id === id);
+              if (mission && !mission.completed && mission.progress >= mission.count) {
+                  addCoins(mission.reward);
+                  playSound('powerup');
+                  
+                  // Mark as completed or remove? Let's remove and if all removed, regen.
+                  // Actually, keeping them as 'completed' then regen all 3 when all 3 done is more satisfying.
+                  const newMissions = missions.map(m => m.id === id ? { ...m, completed: true } : m);
+                  setMissions(newMissions);
+
+                  if (newMissions.every(m => m.completed)) {
+                      setTimeout(() => {
+                          generateMissions();
+                          playSound('1up');
+                      }, 1000);
+                  }
+              }
+          };
 
           // Initialize Grid Size based on Land Level
           useEffect(() => {
               const targetCount = LAND_LEVELS[landLevel].count;
               setGrid(prev => {
                   if (prev.length === targetCount) return prev;
-                  // If resizing up
                   if (prev.length < targetCount) {
                       const newGrid = [...prev];
                       while(newGrid.length < targetCount) {
@@ -1748,9 +1852,6 @@
                       }
                       return newGrid;
                   }
-                  // If existing save has more (e.g. from older version), keep it or truncate? 
-                  // Let's keep data safe, but only render up to count. 
-                  // Actually, strictly syncing to level is better for mechanic consistency.
                   return prev.slice(0, targetCount); 
               });
               safeStorage.setItem('farm_land_level', landLevel);
@@ -1766,34 +1867,33 @@
           }, [grid]);
 
           const handlePlotClick = (plot, index) => {
-              // Calculate col/row for farmer movement
-              // Grid cols logic: <6 plots = 2 cols, >=6 plots = 3 cols
               const cols = grid.length < 6 ? 2 : 3;
               const col = (index % cols) + 1;
               const row = Math.floor(index / cols) + 1;
               setFarmerPos({ col, row });
 
               if (plot.crop) {
-                  // Harvest if ready
                   const cropDef = CROPS[plot.crop];
                   const progress = Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100);
                   if (progress >= 100) {
                       playSound('harvest');
                       addCoins(cropDef.reward);
+                      updateMissionProgress('harvest', 1, plot.crop);
+                      updateMissionProgress('earn', cropDef.reward);
                       setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: null, plantedAt: null } : p));
                   } else {
-                      playSound('wrong'); // Not ready
+                      playSound('wrong'); 
                   }
               } else {
-                  // Plant if crop selected
                   if (selectedCrop) {
                       const cropDef = CROPS[selectedCrop];
                       if (coins >= cropDef.cost) {
                           playSound('plant');
                           addCoins(-cropDef.cost);
+                          updateMissionProgress('plant', 1, selectedCrop);
                           setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: selectedCrop, plantedAt: Date.now() } : p));
                       } else {
-                          playSound('wrong'); // Not enough money
+                          playSound('wrong');
                       }
                   }
               }
@@ -1801,7 +1901,6 @@
 
           const handleFertilizer = () => {
               window.open('https://otieu.com/4/10270523', '_blank');
-              // Instant grow all
               setGrid(prev => prev.map(p => p.crop ? { ...p, plantedAt: Date.now() - CROPS[p.crop].time } : p));
               playSound('powerup');
           };
@@ -1820,6 +1919,14 @@
               }
           };
 
+          const handleMerchantClick = () => {
+              const randomQuote = MERCHANT_QUOTES[Math.floor(Math.random() * MERCHANT_QUOTES.length)];
+              setMerchantQuote(randomQuote);
+              setShowQuote(true);
+              playSound('talk');
+              setTimeout(() => setShowQuote(false), 4000);
+          };
+
           const nextLand = landLevel < LAND_LEVELS.length - 1 ? LAND_LEVELS[landLevel + 1] : null;
           const gridColsClass = grid.length < 6 ? 'grid-cols-2' : 'grid-cols-3';
 
@@ -1836,39 +1943,31 @@
                   </div>
 
                   {/* Game Area */}
-                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-start gap-6 overflow-y-auto">
+                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-start gap-6 overflow-y-auto pb-24">
                       
                       {/* Grid Container */}
                       <div className={`grid ${gridColsClass} gap-4 bg-green-800/50 p-6 rounded-2xl border-4 border-green-700 shadow-2xl relative transition-all duration-500`}>
-                          {/* Animated Farmer Overlay */}
-                          <div 
-                              className="absolute z-20 pointer-events-none transition-all duration-1000 ease-in-out flex items-center justify-center -translate-y-4"
-                              style={{ 
-                                  gridColumnStart: farmerPos.col, 
-                                  gridRowStart: farmerPos.row,
-                                  width: '5rem', 
-                                  height: '5rem',
-                                  // We use simple offsets assuming standard cell sizes, but grid placement is safer
-                                  left: grid.length < 6 ? `${(farmerPos.col - 1) * 50 + 25}%` : `${(farmerPos.col - 1) * 33.3 + 16.6}%`,
-                                  top: `${(farmerPos.row - 1) * 6 + 2}%`, // Approximate vertical pos
-                                  transform: `translate(${grid.length < 6 ? (farmerPos.col===1?20:-20) : 0}px, ${farmerPos.row * 100}px)` // Fallback manual positioning not ideal for responsive grid
-                              }}
-                          >
-                              {/* Better Approach: Place farmer inside the grid flow but absolutely positioned relative to container using calc */}
-                          </div>
                           
-                          {/* Actually simpler: Render farmer inside the specific cell conditionally? No, animation requires it to be independent.
-                              Let's stick to Grid layout. The grid items dictate the flow.
-                              We can put the farmer in a 1x1 div that changes its grid-area.
-                          */}
+                          {/* Merchant NPC */}
+                          <div className="absolute -bottom-8 -right-4 z-30 flex flex-col items-end">
+                              {showQuote && (
+                                  <div className="bg-white text-black p-2 rounded-lg rounded-br-none mb-2 shadow-lg text-xs font-bold max-w-[150px] animate-fade-in relative border-2 border-gray-300">
+                                      {merchantQuote}
+                                      <div className="absolute -bottom-2 right-4 w-0 h-0 border-l-8 border-l-transparent border-t-[10px] border-t-white border-r-0"></div>
+                                  </div>
+                              )}
+                              <button 
+                                  onClick={handleMerchantClick}
+                                  className="text-5xl filter drop-shadow-xl hover:scale-110 transition-transform active:scale-95"
+                                  title="Falar com Vendedor"
+                              >
+                                  🧑‍💼
+                              </button>
+                          </div>
+
                           <div 
                               className="absolute w-20 h-20 pointer-events-none transition-all duration-700 z-20 flex items-center justify-center text-5xl filter drop-shadow-lg"
                               style={{
-                                  // Using manual offsets based on cell size + gap is tricky responsively.
-                                  // Best CSS Grid trick: make container 'display: grid', put items in flow, put farmer in same grid but explicit col/row.
-                                  // BUT React maps items.
-                                  // We will rely on the fact that we can overlay a grid on top of a grid?
-                                  // Let's keep it simple: Render Farmer inside the grid as a sibling to buttons, with explicit grid styles.
                                   gridColumn: farmerPos.col,
                                   gridRow: farmerPos.row
                               }}
@@ -1957,6 +2056,48 @@
                               <Zap size={20} className="text-yellow-300 fill-yellow-300" />
                               ADUBO MÁGICO (Ver Ad)
                           </button>
+                      </div>
+
+                      {/* Missions Board */}
+                      <div className="w-full bg-slate-800/80 rounded-2xl p-4 border border-slate-600 shadow-xl">
+                          <div className="flex items-center gap-2 mb-3 text-yellow-400 font-bold">
+                              <ClipboardList /> MISSÕES DIÁRIAS
+                          </div>
+                          <div className="flex flex-col gap-3">
+                              {missions.map(mission => (
+                                  <div key={mission.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center justify-between gap-3 border border-slate-600">
+                                      <div className="flex-1">
+                                          <div className="text-sm font-bold text-gray-200">{mission.desc}</div>
+                                          <div className="w-full bg-slate-900 h-2 rounded-full mt-1 overflow-hidden">
+                                              <div 
+                                                  className="h-full bg-green-500 transition-all duration-500" 
+                                                  style={{ width: `${Math.min(100, (mission.progress / mission.count) * 100)}%` }}
+                                              ></div>
+                                          </div>
+                                          <div className="text-xs text-gray-400 mt-1">{mission.progress} / {mission.count}</div>
+                                      </div>
+                                      {mission.completed ? (
+                                          <div className="text-green-400 font-bold text-xs flex flex-col items-center">
+                                              <CheckCircle size={20} />
+                                              <span>FEITO</span>
+                                          </div>
+                                      ) : (
+                                          mission.progress >= mission.count ? (
+                                              <button 
+                                                  onClick={() => claimMission(mission.id)}
+                                                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-3 py-1 rounded-lg text-xs animate-bounce"
+                                              >
+                                                  COLETAR<br/>+{mission.reward} 💰
+                                              </button>
+                                          ) : (
+                                              <div className="text-xs font-bold text-yellow-500/50 border border-yellow-500/20 px-2 py-1 rounded">
+                                                  +{mission.reward} 💰
+                                              </div>
+                                          )
+                                      )}
+                                  </div>
+                              ))}
+                          </div>
                       </div>
                   </div>
               </div>
