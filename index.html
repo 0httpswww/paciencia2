@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
+    <meta name='admaven-placement' content='BqjwGrds9'>
     
     <!-- Monetag Popunder Script -->
     <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
@@ -99,7 +100,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Languages, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain } from 'lucide-react';
 
       // --- Helpers for Safe Storage ---
       const safeStorage = {
@@ -233,18 +234,24 @@
                     osc.start(now);
                     osc.stop(now + 0.2);
                     break;
-            }
-          } catch(e) {}
-      };
-
-      const speakText = (text) => {
-          try {
-            if ('speechSynthesis' in window) {
-                 window.speechSynthesis.cancel();
-                 const utterance = new SpeechSynthesisUtterance(text);
-                 utterance.lang = 'en-US';
-                 utterance.rate = 0.9;
-                 window.speechSynthesis.speak(utterance);
+                case 'plant':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'harvest':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                    break;
             }
           } catch(e) {}
       };
@@ -1698,6 +1705,151 @@
           );
       };
 
+      // --- Farm Game ("Fazendinha") ---
+      const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
+          const CROPS = {
+              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, time: 5000, icon: '🌾', color: '#fef08a' },
+              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, time: 10000, icon: '🌽', color: '#facc15' },
+              'strawberry': { id: 'strawberry', name: 'Morango', cost: 50, reward: 120, time: 30000, icon: '🍓', color: '#fca5a5' },
+              'pumpkin': { id: 'pumpkin', name: 'Abóbora', cost: 200, reward: 500, time: 60000, icon: '🎃', color: '#fdba74' },
+          };
+
+          const [grid, setGrid] = useState(() => {
+              const saved = safeStorage.getItem('farm_grid');
+              return saved ? JSON.parse(saved) : Array(9).fill(null).map((_, i) => ({ id: i, crop: null, plantedAt: null }));
+          });
+          const [selectedCrop, setSelectedCrop] = useState(null);
+          const [now, setNow] = useState(Date.now());
+
+          useEffect(() => {
+              const interval = setInterval(() => setNow(Date.now()), 1000);
+              return () => clearInterval(interval);
+          }, []);
+
+          useEffect(() => {
+              safeStorage.setItem('farm_grid', JSON.stringify(grid));
+          }, [grid]);
+
+          const handlePlotClick = (plot) => {
+              if (plot.crop) {
+                  // Harvest if ready
+                  const cropDef = CROPS[plot.crop];
+                  const progress = Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100);
+                  if (progress >= 100) {
+                      playSound('harvest');
+                      addCoins(cropDef.reward);
+                      setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: null, plantedAt: null } : p));
+                  } else {
+                      playSound('wrong'); // Not ready
+                  }
+              } else {
+                  // Plant if crop selected
+                  if (selectedCrop) {
+                      const cropDef = CROPS[selectedCrop];
+                      if (coins >= cropDef.cost) {
+                          playSound('plant');
+                          addCoins(-cropDef.cost);
+                          setGrid(prev => prev.map(p => p.id === plot.id ? { ...p, crop: selectedCrop, plantedAt: Date.now() } : p));
+                      } else {
+                          playSound('wrong'); // Not enough money
+                      }
+                  }
+              }
+          };
+
+          const handleFertilizer = () => {
+              window.open('https://otieu.com/4/10270523', '_blank');
+              // Instant grow all
+              setGrid(prev => prev.map(p => p.crop ? { ...p, plantedAt: Date.now() - CROPS[p.crop].time } : p));
+              playSound('powerup');
+          };
+
+          return (
+              <div className="w-full h-full flex flex-col items-center bg-green-900 text-white relative">
+                  {/* Header */}
+                  <div className="w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md border-b border-green-800 z-10">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold text-green-300 drop-shadow-md flex items-center gap-2"><Sprout /> FAZENDINHA</h1>
+                      <div className="flex items-center gap-2 bg-yellow-600/20 px-3 py-1 rounded-full border border-yellow-500/50">
+                          <Coins size={16} className="text-yellow-400" />
+                          <span className="font-bold text-yellow-400">{coins}</span>
+                      </div>
+                  </div>
+
+                  {/* Game Area */}
+                  <div className="flex-1 w-full max-w-md p-6 flex flex-col items-center justify-center gap-6 overflow-y-auto">
+                      
+                      {/* Grid */}
+                      <div className="grid grid-cols-3 gap-4 bg-green-800/50 p-6 rounded-2xl border-4 border-green-700 shadow-2xl">
+                          {grid.map(plot => {
+                              const cropDef = plot.crop ? CROPS[plot.crop] : null;
+                              const progress = cropDef ? Math.min(100, ((now - plot.plantedAt) / cropDef.time) * 100) : 0;
+                              const isReady = progress >= 100;
+
+                              return (
+                                  <button 
+                                      key={plot.id}
+                                      onClick={() => handlePlotClick(plot)}
+                                      className={`w-20 h-20 md:w-24 md:h-24 rounded-xl flex flex-col items-center justify-center relative transition-all transform active:scale-95
+                                          ${plot.crop 
+                                              ? (isReady ? 'bg-amber-200 border-yellow-400 animate-bounce' : 'bg-amber-700 border-amber-800') 
+                                              : 'bg-green-700 border-green-600 hover:bg-green-600'}
+                                          border-b-4
+                                      `}
+                                  >
+                                      {plot.crop ? (
+                                          <>
+                                              <div className="text-3xl md:text-4xl drop-shadow-md">{cropDef.icon}</div>
+                                              {!isReady && (
+                                                  <div className="absolute bottom-1 left-1 right-1 h-1.5 bg-black/30 rounded-full overflow-hidden">
+                                                      <div className="h-full bg-green-400 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                                  </div>
+                                              )}
+                                          </>
+                                      ) : (
+                                          <div className="w-4 h-4 bg-green-900/30 rounded-full"></div>
+                                      )}
+                                  </button>
+                              );
+                          })}
+                      </div>
+
+                      {/* Controls */}
+                      <div className="w-full flex flex-col gap-4">
+                          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                              {Object.values(CROPS).map(crop => (
+                                  <button 
+                                      key={crop.id}
+                                      onClick={() => setSelectedCrop(crop.id)}
+                                      className={`flex-shrink-0 p-3 rounded-xl border-2 flex flex-col items-center gap-1 min-w-[80px] transition-all
+                                          ${selectedCrop === crop.id 
+                                              ? 'bg-white/20 border-white scale-105' 
+                                              : 'bg-black/30 border-white/10 hover:bg-white/10'}
+                                          ${coins < crop.cost ? 'opacity-50' : ''}
+                                      `}
+                                  >
+                                      <div className="text-2xl">{crop.icon}</div>
+                                      <div className="text-xs font-bold">{crop.name}</div>
+                                      <div className="flex items-center gap-1 text-xs text-yellow-400 font-bold">
+                                          <Coins size={10} /> {crop.cost}
+                                      </div>
+                                  </button>
+                              ))}
+                          </div>
+
+                          <button 
+                              onClick={handleFertilizer}
+                              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 flex items-center justify-center gap-2"
+                          >
+                              <Zap size={20} className="text-yellow-300 fill-yellow-300" />
+                              ADUBO MÁGICO (Ver Ad)
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          );
+      };
+
       // --- Main App ---
       const App = () => {
           const [currentScreen, setCurrentScreen] = useState('home');
@@ -1812,7 +1964,7 @@
                           currentCoins={coins}
                       />
                   );
-                  case 'lingua-quest': return <LinguaQuest onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} />;
+                  case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
                   case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
                   case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
                   default: return (
@@ -1839,10 +1991,10 @@
                                               <Worm size={32} className="text-pink-400" />
                                           </div>
                                       </button>
-                                      <button onClick={(e) => startGame('lingua-quest', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
+                                      <button onClick={(e) => startGame('farm', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
                                           <div className="relative z-10 flex items-center justify-between p-6 h-full text-white">
-                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">LINGUA QUEST</span><span className="text-xs text-gray-400">Learn English</span></div>
-                                              <Languages size={32} className="text-green-400" />
+                                              <div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">FAZENDINHA</span><span className="text-xs text-gray-400">Farm Idle</span></div>
+                                              <Sprout size={32} className="text-green-400" />
                                           </div>
                                       </button>
                                       <button onClick={(e) => startGame('hangman', e)} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden">
@@ -1854,7 +2006,7 @@
                                   </div>
                               </div>
                               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
-                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.7.0</div>
+                              <div className="absolute bottom-4 text-gray-700 text-xs">v4.8.0</div>
                           </div>
                       );
               }
