@@ -70,6 +70,17 @@
             color: #fbbf24;
             text-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
         }
+
+        /* Hangman Animation */
+        @keyframes swing {
+            0% { transform: rotate(2deg); }
+            50% { transform: rotate(-2deg); }
+            100% { transform: rotate(2deg); }
+        }
+        .hangman-swing {
+            transform-origin: 140px 20px;
+            animation: swing 3s infinite ease-in-out;
+        }
     </style>
     <script type="importmap">
     {
@@ -1007,74 +1018,125 @@
       };
 
       // --- Hangman Game ---
-      const HangmanGame = ({ onBack, addCoins }) => {
-          const WORDS = ['APPLE', 'BANANA', 'ORANGE', 'GRAPE', 'LEMON', 'MANGO', 'PEACH', 'CHERRY', 'MELON', 'BERRY'];
-          const [word, setWord] = useState('');
+      const HangmanGame = ({ onBack, addCoins, triggerAd }) => {
+          const WORD_DATA = [
+              { word: 'ABACAXI', category: 'FRUTA' }, { word: 'BANANA', category: 'FRUTA' }, { word: 'MORANGO', category: 'FRUTA' },
+              { word: 'LARANJA', category: 'FRUTA' }, { word: 'UVA', category: 'FRUTA' }, { word: 'MELANCIA', category: 'FRUTA' },
+              { word: 'ELEFANTE', category: 'ANIMAL' }, { word: 'GIRAFA', category: 'ANIMAL' }, { word: 'CACHORRO', category: 'ANIMAL' },
+              { word: 'GATO', category: 'ANIMAL' }, { word: 'LEAO', category: 'ANIMAL' }, { word: 'TIGRE', category: 'ANIMAL' },
+              { word: 'BRASIL', category: 'PAÍS' }, { word: 'JAPAO', category: 'PAÍS' }, { word: 'CANADA', category: 'PAÍS' },
+              { word: 'ALEMANHA', category: 'PAÍS' }, { word: 'FRANCA', category: 'PAÍS' }, { word: 'ITALIA', category: 'PAÍS' },
+              { word: 'FUTEBOL', category: 'ESPORTE' }, { word: 'VOLEI', category: 'ESPORTE' }, { word: 'BASQUETE', category: 'ESPORTE' },
+              { word: 'COMPUTADOR', category: 'OBJETO' }, { word: 'CELULAR', category: 'OBJETO' }, { word: 'CADEIRA', category: 'OBJETO' }
+          ];
+          
+          const [currentData, setCurrentData] = useState(null);
           const [guessed, setGuessed] = useState([]);
           const [mistakes, setMistakes] = useState(0);
           const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
 
-          useEffect(() => {
-              setWord(WORDS[Math.floor(Math.random() * WORDS.length)]);
+          const startNewGame = useCallback(() => {
+              const random = WORD_DATA[Math.floor(Math.random() * WORD_DATA.length)];
+              setCurrentData(random);
+              setGuessed([]);
+              setMistakes(0);
+              setGameStatus('playing');
           }, []);
+
+          useEffect(() => {
+              startNewGame();
+          }, [startNewGame]);
 
           const handleGuess = (letter) => {
               if (gameStatus !== 'playing' || guessed.includes(letter)) return;
               setGuessed(prev => [...prev, letter]);
               
-              if (!word.includes(letter)) {
+              if (!currentData.word.includes(letter)) {
                   const newMistakes = mistakes + 1;
                   setMistakes(newMistakes);
                   playSound('lose');
                   if (newMistakes >= 6) setGameStatus('lost');
               } else {
-                  playSound('win');
-                  const isWon = word.split('').every(l => guessed.includes(l) || l === letter);
+                  playSound('correct');
+                  const isWon = currentData.word.split('').every(l => guessed.includes(l) || l === letter);
                   if (isWon) {
                       setGameStatus('won');
+                      playSound('win');
                       addCoins(50);
                   }
               }
           };
 
+          const handleTip = () => {
+              if (gameStatus !== 'playing') return;
+              
+              // Open Direct Link Ad
+              window.open('https://otieu.com/4/10270523', '_blank');
+              
+              // Find unrevealed letters
+              const unrevealed = currentData.word.split('').filter(char => !guessed.includes(char));
+              if (unrevealed.length > 0) {
+                  const randomChar = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+                  setGuessed(prev => [...prev, randomChar]);
+                  // Check win condition after tip
+                  const isWon = currentData.word.split('').every(l => [...guessed, randomChar].includes(l));
+                  if (isWon) {
+                      setGameStatus('won');
+                      playSound('win');
+                      addCoins(50);
+                  }
+              }
+          };
+
+          if (!currentData) return null;
+
           return (
-             <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center relative">
-                  <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full"><ChevronLeft color="white" /></button>
-                  <h1 className="text-2xl font-bold text-white mb-8">HANGMAN</h1>
+             <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden">
+                  <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition"><ChevronLeft color="white" /></button>
                   
-                  <div className="mb-8">
-                      <svg width="200" height="250" viewBox="0 0 200 250" className="stroke-white stroke-4 fill-none">
-                          <line x1="20" y1="230" x2="100" y2="230" />
-                          <line x1="60" y1="230" x2="60" y2="20" />
-                          <line x1="60" y1="20" x2="140" y2="20" />
-                          <line x1="140" y1="20" x2="140" y2="50" />
-                          {mistakes >= 1 && <circle cx="140" cy="80" r="30" />}
-                          {mistakes >= 2 && <line x1="140" y1="110" x2="140" y2="170" />}
-                          {mistakes >= 3 && <line x1="140" y1="130" x2="110" y2="150" />}
-                          {mistakes >= 4 && <line x1="140" y1="130" x2="170" y2="150" />}
-                          {mistakes >= 5 && <line x1="140" y1="170" x2="120" y2="210" />}
-                          {mistakes >= 6 && <line x1="140" y1="170" x2="160" y2="210" />}
+                  <div className="flex flex-col items-center mb-6">
+                      <h1 className="text-2xl font-bold text-white mb-1 neon-title">FORCA</h1>
+                      <div className="bg-blue-600/20 px-4 py-1 rounded-full border border-blue-500/50 text-blue-300 text-sm font-bold tracking-widest">
+                          {currentData.category}
+                      </div>
+                  </div>
+                  
+                  <div className="mb-8 relative h-[250px] w-[200px]">
+                      {/* Character SVG with Animation */}
+                      <svg width="200" height="250" viewBox="0 0 200 250" className="stroke-white stroke-4 fill-none drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                          {/* Gallows */}
+                          <path d="M20,230 L100,230 M60,230 L60,20 L140,20 L140,40" strokeWidth="4" strokeLinecap="round" />
+                          
+                          {/* Animated Group for the Person */}
+                          <g className={mistakes > 0 ? "hangman-swing" : ""}>
+                              {mistakes >= 1 && <circle cx="140" cy="70" r="20" strokeWidth="3" />} {/* Head */}
+                              {mistakes >= 2 && <line x1="140" y1="90" x2="140" y2="150" strokeWidth="3" />} {/* Body */}
+                              {mistakes >= 3 && <line x1="140" y1="110" x2="110" y2="140" strokeWidth="3" />} {/* Left Arm */}
+                              {mistakes >= 4 && <line x1="140" y1="110" x2="170" y2="140" strokeWidth="3" />} {/* Right Arm */}
+                              {mistakes >= 5 && <line x1="140" y1="150" x2="120" y2="190" strokeWidth="3" />} {/* Left Leg */}
+                              {mistakes >= 6 && <line x1="140" y1="150" x2="160" y2="190" strokeWidth="3" />} {/* Right Leg */}
+                          </g>
                       </svg>
                   </div>
 
-                  <div className="flex gap-2 text-4xl font-mono text-white mb-8">
-                      {word.split('').map((char, i) => (
-                          <span key={i} className="border-b-4 border-white min-w-[30px] text-center">
+                  <div className="flex flex-wrap justify-center gap-2 text-3xl md:text-4xl font-mono text-white mb-8 px-4">
+                      {currentData.word.split('').map((char, i) => (
+                          <span key={i} className={`border-b-4 ${gameStatus === 'lost' && !guessed.includes(char) ? 'border-red-500 text-red-500' : 'border-white'} min-w-[30px] text-center transition-colors`}>
                               {guessed.includes(char) || gameStatus === 'lost' ? char : ''}
                           </span>
                       ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2 max-w-sm">
+                  <div className="grid grid-cols-7 gap-1 md:gap-2 max-w-sm px-2">
                       {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => (
                           <button
                               key={letter}
                               onClick={() => handleGuess(letter)}
                               disabled={guessed.includes(letter) || gameStatus !== 'playing'}
-                              className={`p-2 rounded font-bold ${
+                              className={`p-2 rounded font-bold text-sm md:text-base transition-all transform active:scale-95 ${
                                   guessed.includes(letter) 
-                                  ? (word.includes(letter) ? 'bg-green-600' : 'bg-red-600 opacity-50') 
-                                  : 'bg-blue-600 hover:bg-blue-500'
+                                  ? (currentData.word.includes(letter) ? 'bg-green-600' : 'bg-red-600 opacity-50') 
+                                  : 'bg-slate-700 hover:bg-blue-600'
                               } text-white`}
                           >
                               {letter}
@@ -1082,17 +1144,41 @@
                       ))}
                   </div>
                   
+                  {/* Tip Button */}
+                  <div className="absolute top-4 right-4">
+                      <button 
+                          onClick={handleTip}
+                          disabled={gameStatus !== 'playing'}
+                          className="flex items-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg border border-yellow-400 animate-pulse disabled:opacity-50 disabled:animate-none"
+                      >
+                          <Lightbulb size={16} /> DICA (VER AD)
+                      </button>
+                  </div>
+                  
+                  {/* Victory/Defeat Modal */}
                   {gameStatus !== 'playing' && (
-                      <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
-                          <h2 className={`text-4xl font-bold mb-4 ${gameStatus === 'won' ? 'text-green-500' : 'text-red-500'}`}>
-                              {gameStatus === 'won' ? 'YOU WON!' : 'GAME OVER'}
-                          </h2>
-                          <button onClick={() => {
-                              setWord(WORDS[Math.floor(Math.random() * WORDS.length)]);
-                              setGuessed([]);
-                              setMistakes(0);
-                              setGameStatus('playing');
-                          }} className="px-6 py-3 bg-white text-black font-bold rounded-full">PLAY AGAIN</button>
+                      <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in p-6">
+                          <div className={`p-6 rounded-2xl border-2 ${gameStatus === 'won' ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'} flex flex-col items-center gap-4 max-w-xs w-full shadow-2xl`}>
+                              {gameStatus === 'won' ? (
+                                  <>
+                                      <Star size={64} className="text-yellow-400 animate-spin-slow" />
+                                      <h2 className="text-3xl font-bold text-green-400">VITÓRIA!</h2>
+                                      <div className="text-white">Você ganhou <span className="text-yellow-400 font-bold">+50 Moedas</span></div>
+                                  </>
+                              ) : (
+                                  <>
+                                      <Skull size={64} className="text-red-500 animate-pulse" />
+                                      <h2 className="text-3xl font-bold text-red-500">DERROTA</h2>
+                                      <div className="text-gray-300">A palavra era:</div>
+                                      <div className="text-2xl font-bold text-white tracking-widest">{currentData.word}</div>
+                                  </>
+                              )}
+                              
+                              <div className="flex flex-col w-full gap-2 mt-4">
+                                  <button onClick={startNewGame} className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition">JOGAR NOVAMENTE</button>
+                                  <button onClick={onBack} className="w-full py-3 bg-black/50 text-white font-bold rounded-xl hover:bg-black/70 border border-white/10">MENU PRINCIPAL</button>
+                              </div>
+                          </div>
                       </div>
                   )}
              </div>
@@ -1747,7 +1833,7 @@
                       />
                   );
                   case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
-                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} />;
+                  case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
                   case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} />;
                   default: return (
                           <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
