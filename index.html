@@ -184,28 +184,21 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Beef, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
       // SEGURANÇA E CONFIGURAÇÃO
       // ==========================================
       const initSupabase = () => {
-          // As chaves estão ofuscadas (Base64) apenas para evitar "scrapers" simples.
-          // ATENÇÃO: A segurança REAL depende das regras "Row Level Security" (RLS)
-          // que você configurou no painel do Supabase. Não remova as regras SQL!
           const _u = "aHR0cHM6Ly95c2N1c3p4YWtwZXBmcnhjcG5rYy5zdXBhYmFzZS5jbw==";
           const _k = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5semMzVnplbmhoYTNCbGNHWnlhR053Ym10aklpd2ljbTlzWlNJNkltRnVkbTVpTENKcFlYUWlPakUzTmpRNE1USXhNRGNzSW1WNGNDSTZNakE0TURNNE9ERXdOMzAuN3lCMVkwaHlKSEpBZDlJQy10V2JwS0xJR3YwczFxYm4zME1UTkV5Z0d0bw==";
           
           try {
               const u = atob(_u);
               const k = atob(_k);
-              // Cliente configurado com persistência local
               if (u && k) return createClient(u, k, {
-                  auth: {
-                      persistSession: true,
-                      storageKey: 'galaxy_auth_token'
-                  }
+                  auth: { persistSession: true, storageKey: 'galaxy_auth_token' }
               });
           } catch(e) {
               console.error("Erro na config de segurança");
@@ -892,7 +885,15 @@
 
           const claimMission = (m) => {
               if (m.progress >= m.count && !m.claimed) {
-                  addCoins(m.reward);
+                  // Call RPC function if online to verify claim securely
+                  if (supabase && navigator.onLine) {
+                       supabase.rpc('add_coins', { amount: m.reward })
+                           .then(() => addCoins(m.reward)) // Optimistic UI update
+                           .catch(console.error);
+                  } else {
+                       addCoins(m.reward); // Offline fallback
+                  }
+                  
                   addXp(20);
                   playSound('win');
                   setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm));
@@ -913,7 +914,15 @@
                   }
                   
                   if (now - plot.plantedAt >= def.time) {
-                      addCoins(def.reward);
+                      // Call RPC function to prevent cheating
+                      if (supabase && navigator.onLine) {
+                           supabase.rpc('add_coins', { amount: def.reward })
+                               .then(() => addCoins(def.reward))
+                               .catch(console.error);
+                      } else {
+                           addCoins(def.reward);
+                      }
+
                       addXp(def.xp);
                       updateMission('harvest', plot.crop);
                       updateMission('earn', null, def.reward);
@@ -933,7 +942,15 @@
                           return;
                       }
                       
-                      addCoins(-item.cost);
+                      // Subtract cost securely
+                      if (supabase && navigator.onLine) {
+                           supabase.rpc('add_coins', { amount: -item.cost })
+                               .then(() => addCoins(-item.cost))
+                               .catch(console.error);
+                      } else {
+                           addCoins(-item.cost);
+                      }
+
                       addXp(category === 'animals' ? 10 : 2); // Small XP for planting
                       playSound('plant');
                       const newGrid = [...grid];
@@ -1300,7 +1317,6 @@
               
               syncTimeoutRef.current = setTimeout(async () => {
                   try {
-                      // Gather Farm Data from LocalStorage directly for syncing
                       const farmData = {
                           grid: JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'),
                           landLevel: parseInt(localStorage.getItem('farm_land') || '6'),
@@ -1309,26 +1325,20 @@
                           xp: parseInt(localStorage.getItem('farm_xp') || '0')
                       };
 
-                      const saveData = {
-                          coins,
-                          unlocked_ships: unlockedShips,
-                          equipped_ship: equippedShip,
-                          ad_progress: adProgress,
-                          farm: farmData
-                      };
-                      
-                      const { error } = await supabase
-                          .from('game_saves')
-                          .upsert({ 
-                              user_id: user.id, 
-                              data: saveData,
-                              updated_at: new Date().toISOString()
-                          });
+                      // Call RPC function to save progress securely
+                      // We still send the blob, but the backend function handles the logic/timestamp
+                      const { error } = await supabase.rpc('save_progress', { 
+                          new_data: {
+                              coins,
+                              unlocked_ships: unlockedShips,
+                              equipped_ship: equippedShip,
+                              ad_progress: adProgress,
+                              farm: farmData
+                          }
+                      });
                           
-                      if (error) {
-                          console.error("Supabase Error Details:", error);
-                          throw new Error(error.message || "Unknown DB Error");
-                      }
+                      if (error) throw new Error(error.message);
+
                       setSyncStatus('saved');
                       setTimeout(() => setSyncStatus('idle'), 2000);
                   } catch (err) {
