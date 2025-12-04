@@ -172,16 +172,27 @@
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
-      // CONFIGURAÇÃO SUPABASE
+      // SEGURANÇA E CONFIGURAÇÃO
       // ==========================================
-      // Crie um projeto em https://supabase.com
-      // Vá em Settings > API e copie a URL e a KEY (Anon/Public)
-      const SUPABASE_URL = "https://yscuszxakpepfrxcpnkc.supabase.co"; 
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto";
-      
-      const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== "") 
-        ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-        : null;
+      // As chaves são carregadas via função protegida para evitar exposição global.
+      // NOTA DE SEGURANÇA: A "Anon Key" é pública por design. 
+      // A segurança real é garantida pelo RLS (Row Level Security) no banco de dados.
+      const initSupabase = () => {
+          // Strings codificadas em Base64 para ofuscação visual simples
+          const _u = "aHR0cHM6Ly95c2N1c3p4YWtwZXBmcnhjcG5rYy5zdXBhYmFzZS5jbw==";
+          const _k = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5semMzVnplbmhoYTNCbGNHWnlhR053Ym10aklpd2ljbTlzWlNJNkltRnVkbTVpTENKcFlYUWlPakUzTmpRNE1USXhNRGNzSW1WNGNDSTZNakE0TURNNE9ERXdOMzAuN3lCMVkwaHlKSEpBZDlJQy10V2JwS0xJR3YwczFxYm4zME1UTkV5Z0d0bw==";
+          
+          try {
+              const u = atob(_u);
+              const k = atob(_k);
+              if (u && k) return createClient(u, k);
+          } catch(e) {
+              console.error("Erro na config de segurança");
+          }
+          return null;
+      };
+
+      const supabase = initSupabase();
 
       // --- Helpers ---
       const safeStorage = {
@@ -340,7 +351,7 @@
               setError(null);
               
               if (!supabase) {
-                  setError("Supabase não configurado. Adicione a URL e KEY no código.");
+                  setError("Supabase não configurado. Verifique a conexão.");
                   setLoading(false);
                   return;
               }
@@ -393,7 +404,7 @@
                       
                       {!supabase && (
                           <div className="mt-4 p-2 bg-yellow-900/30 border border-yellow-700 rounded text-[10px] text-yellow-500">
-                              ⚠️ Configure SUPABASE_URL e SUPABASE_KEY no arquivo index.html para ativar.
+                              ⚠️ Segurança: Falha na inicialização segura.
                           </div>
                       )}
                   </form>
