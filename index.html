@@ -743,7 +743,7 @@
                       const farmData = { grid: JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'), landLevel: parseInt(localStorage.getItem('farm_land') || '6'), missions: JSON.parse(localStorage.getItem('farm_missions') || '[]'), level: parseInt(localStorage.getItem('farm_level') || '1'), xp: parseInt(localStorage.getItem('farm_xp') || '0') };
                       let { error } = await supabase.rpc('save_progress', { new_data: { coins, unlocked_ships: unlockedShips, equipped_ship: equippedShip, ad_progress: adProgress, farm: farmData } });
                       if (error && (error.code === '42883' || error.message.includes('function'))) { const { error: upsertError } = await supabase.from('game_saves').upsert({ user_id: user.id, data: { coins, unlocked_ships: unlockedShips, equipped_ship: equippedShip, ad_progress: adProgress, farm: farmData }, updated_at: new Date().toISOString() }); error = upsertError; }
-                      if (error && (error.code === 'PGRST301' || error.message.includes('relation "public.game_saves" does not exist'))) { setSyncStatus('offline'); return; }
+                      if (error && (error.code === 'PGRST301' || error.message.includes('relation "public.game_saves" does not exist') || error.message.includes('Could not find the table'))) { setSyncStatus('offline'); return; }
                       if (error) throw new Error(error.message || JSON.stringify(error));
                       setSyncStatus('saved'); setTimeout(() => setSyncStatus('idle'), 2000);
                   } catch (err) { console.error("Sync failed:", err.message || JSON.stringify(err)); setSyncStatus('error'); }
@@ -753,7 +753,11 @@
           const loadCloudData = async (userId) => {
               try {
                   const { data, error } = await supabase.from('game_saves').select('data').eq('user_id', userId).single();
-                  if (error) { if (error.code === 'PGRST116') return; if (error.code === 'PGRST301') { setSyncStatus('offline'); return; } console.error("Load Error:", error.message); return; }
+                  if (error) { 
+                      if (error.code === 'PGRST116') return; 
+                      if (error.code === 'PGRST301' || error.message.includes('Could not find the table')) { setSyncStatus('offline'); return; } 
+                      console.error("Load Error:", error.message); return; 
+                  }
                   if (data?.data) {
                       const d = data.data;
                       if (d.coins !== undefined) { setCoins(d.coins); localStorage.setItem('galaxy_coins', d.coins); }
