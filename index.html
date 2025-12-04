@@ -183,7 +183,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Shield, Skull, Gamepad2 } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Shield, Skull } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -560,6 +560,81 @@
                <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
           </div>
       );
+
+      // --- COMPONENT: Shop Screen ---
+      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => {
+          const ShipCard = ({ ship }) => {
+              const isUnlocked = unlockedShips.includes(ship.id);
+              const isEquipped = equippedShip === ship.id;
+              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+              const currentAds = adProgress[ship.id] || 0;
+              const reqAds = ship.adCost;
+
+              const handleAction = () => {
+                  if (isUnlocked) {
+                      equipShip(ship.id);
+                      playSound('powerup');
+                  } else {
+                      handleShipAdWatch(ship.id, reqAds);
+                      playSound('buy');
+                  }
+              };
+
+              return (
+                  <div className={`premium-btn relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
+                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
+                           {!isUnlocked && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                   <Lock size={20} className="text-gray-400" />
+                               </div>
+                           )}
+                      </div>
+                      
+                      {isUnlocked ? (
+                          <button 
+                              onClick={handleAction}
+                              disabled={isEquipped}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                          >
+                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
+                          </button>
+                      ) : (
+                          <div className="w-full flex flex-col gap-1">
+                              <button 
+                                  onClick={handleAction}
+                                  className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white`}
+                              >
+                                  <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
+                              </button>
+                              <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                  <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#050505] flex flex-col premium-bg">
+                   <div className="scanlines"></div>
+                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold hero-title">HANGAR SHOP</h1>
+                      <div className="w-10"></div>
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                       {SHIPS.map(ship => (
+                           <ShipCard key={ship.id} ship={ship} />
+                       ))}
+                   </div>
+              </div>
+          );
+      };
 
       // --- GAME 2: FARM GAME (Updated UI Logic for Dark Mode) ---
       const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
