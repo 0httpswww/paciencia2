@@ -181,8 +181,8 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      // Cleaned imports: only items actually used in the code
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Worm, Zap, Download, PlayCircle, ClipboardList, X, Map, Save, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      // Aliased Map to MapIcon to avoid conflict with global Map constructor
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Worm, Zap, Download, PlayCircle, ClipboardList, X, Map as MapIcon, Save, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -845,15 +845,23 @@
               });
           };
 
-          // Daily Missions State
+          // Daily Missions State (With Safe Parse)
           const [missions, setMissions] = useState(() => {
-              const saved = safeStorage.getItem('farm_missions');
-              const defaultMissions = [
-                  { id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false },
-                  { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false },
-                  { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }
-              ];
-              return saved ? JSON.parse(saved) : defaultMissions;
+              try {
+                  const saved = safeStorage.getItem('farm_missions');
+                  const defaultMissions = [
+                      { id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false },
+                      { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false },
+                      { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }
+                  ];
+                  return saved ? JSON.parse(saved) : defaultMissions;
+              } catch (e) {
+                  return [
+                      { id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false },
+                      { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false },
+                      { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }
+                  ];
+              }
           });
 
           useEffect(() => {
@@ -892,8 +900,11 @@
                   // Call RPC function if online to verify claim securely
                   if (supabase && navigator.onLine) {
                        supabase.rpc('add_coins', { amount: m.reward })
-                           .then(() => addCoins(m.reward)) // Optimistic UI update
-                           .catch(console.error);
+                           .then(({ error }) => {
+                                if (error) console.error("Coin error", error);
+                                // Always update local UI immediately for responsiveness
+                                addCoins(m.reward);
+                           });
                   } else {
                        addCoins(m.reward); // Offline fallback
                   }
@@ -921,8 +932,10 @@
                       // Call RPC function to prevent cheating
                       if (supabase && navigator.onLine) {
                            supabase.rpc('add_coins', { amount: def.reward })
-                               .then(() => addCoins(def.reward))
-                               .catch(console.error);
+                               .then(({ error }) => {
+                                    if (error) console.error("Coin error", error);
+                                    addCoins(def.reward);
+                               });
                       } else {
                            addCoins(def.reward);
                       }
@@ -949,8 +962,10 @@
                       // Subtract cost securely
                       if (supabase && navigator.onLine) {
                            supabase.rpc('add_coins', { amount: -item.cost })
-                               .then(() => addCoins(-item.cost))
-                               .catch(console.error);
+                               .then(({ error }) => {
+                                    if (error) console.error("Coin error", error);
+                                    addCoins(-item.cost);
+                               });
                       } else {
                            addCoins(-item.cost);
                       }
@@ -1100,7 +1115,7 @@
                            })}
                            {/* Expand Button inside list */}
                            <button onClick={() => setShowExpand(true)} className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border border-dashed border-green-500/50 bg-green-900/10 hover:bg-green-900/20 text-green-400">
-                               <Map size={24} className="mb-2" />
+                               <MapIcon size={24} className="mb-2" />
                                <span className="text-[10px] font-bold uppercase">Expandir</span>
                            </button>
                        </div>
@@ -1331,7 +1346,7 @@
 
                       // Call RPC function to save progress securely
                       // We still send the blob, but the backend function handles the logic/timestamp
-                      const { error } = await supabase.rpc('save_progress', { 
+                      let { error } = await supabase.rpc('save_progress', { 
                           new_data: {
                               coins,
                               unlocked_ships: unlockedShips,
@@ -1340,6 +1355,25 @@
                               farm: farmData
                           }
                       });
+                      
+                      // Fallback: Se a função RPC não existir (usuário não rodou o SQL), tenta salvar direto na tabela
+                      if (error && (error.code === '42883' || error.message.includes('function'))) {
+                          console.warn("RPC function missing, falling back to direct upsert");
+                          const { error: upsertError } = await supabase
+                              .from('game_saves')
+                              .upsert({ 
+                                  user_id: user.id, 
+                                  data: {
+                                      coins,
+                                      unlocked_ships: unlockedShips,
+                                      equipped_ship: equippedShip,
+                                      ad_progress: adProgress,
+                                      farm: farmData
+                                  },
+                                  updated_at: new Date().toISOString()
+                              });
+                          error = upsertError;
+                      }
                           
                       if (error) throw new Error(error.message);
 
