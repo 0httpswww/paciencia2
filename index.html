@@ -7,17 +7,8 @@
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
     <meta name="theme-color" content="#0a0a0a">
     
-    <!-- SEGURANÇA: Content Security Policy (CSP) -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self' https://*.supabase.co https://*.supabase.in;
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://aistudiocdn.com https://al5sm.com https://gizokraijaw.net https://cdn.jsdelivr.net;
-        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
-        img-src 'self' data: https://r2.erweima.ai;
-        connect-src 'self' https://*.supabase.co https://*.supabase.in https://al5sm.com https://gizokraijaw.net;
-        font-src 'self';
-        object-src 'none';
-        base-uri 'self';
-    ">
+    <!-- SEGURANÇA: Content Security Policy (CSP) - Permissive for Ads -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data: blob: 'unsafe-inline';">
 
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
