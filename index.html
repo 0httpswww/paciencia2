@@ -7,10 +7,7 @@
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
     <meta name="theme-color" content="#000000">
     
-    <!-- SEGURANÇA: Content Security Policy (CSP) 
-         Isso impede que scripts não autorizados rodem ou enviem dados para fora.
-         Permitimos: Self (nosso site), Supabase, CDNs usados e os domínios de Ads.
-    -->
+    <!-- SEGURANÇA: Content Security Policy (CSP) -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self' https://*.supabase.co https://*.supabase.in;
         script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://aistudiocdn.com https://al5sm.com https://gizokraijaw.net https://cdn.jsdelivr.net;
@@ -184,7 +181,8 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      // Cleaned imports: only items actually used in the code
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Worm, Zap, Download, PlayCircle, ClipboardList, X, Map, Save, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -246,6 +244,8 @@
                 case 'harvest': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
                 case 'buy': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); break;
                 case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
+                case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'correct': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(900, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
             }
           } catch(e) {}
       };
@@ -904,7 +904,7 @@
               const plot = grid[index];
               if (plot.crop) {
                   const isAnimal = ANIMALS[plot.crop];
-                  const def = isAnimal ? ANIMALS[plot.crop] : CROPS[plot.crop];
+                  const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null);
                   
                   if (!def) { 
                        const newGrid = [...grid];
