@@ -186,20 +186,24 @@
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
-      // SEGURANÇA E CONFIGURAÇÃO
+      // SEGURANÇA E CONFIGURAÇÃO DO SUPABASE
       // ==========================================
       const initSupabase = () => {
-          const _u = "aHR0cHM6Ly95c2N1c3p4YWtwZXBmcnhjcG5rYy5zdXBhYmFzZS5jbw==";
-          const _k = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5semMzVnplbmhoYTNCbGNHWnlhR053Ym10aklpd2ljbTlzWlNJNkltRnVkbTVpTENKcFlYUWlPakUzTmpRNE1USXhNRGNzSW1WNGNDSTZNakE0TURNNE9ERXdOMzAuN3lCMVkwaHlKSEpBZDlJQy10V2JwS0xJR3YwczFxYm4zME1UTkV5Z0d0bw==";
+          // CREDENCIAIS PÚBLICAS (Frontend Only)
+          // A chave 'ANON' é feita para ser usada aqui. A segurança é feita pelas regras RLS no Banco de Dados.
+          // NUNCA coloque a chave 'SERVICE_ROLE' aqui.
+          
+          const supabaseUrl = 'https://yscuszxakpepfrxcpnkc.supabase.co';
+          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto';
           
           try {
-              const u = atob(_u);
-              const k = atob(_k);
-              if (u && k) return createClient(u, k, {
-                  auth: { persistSession: true, storageKey: 'galaxy_auth_token' }
-              });
+              if (supabaseUrl && supabaseKey) {
+                  return createClient(supabaseUrl, supabaseKey, {
+                      auth: { persistSession: true, storageKey: 'galaxy_auth_token' }
+                  });
+              }
           } catch(e) {
-              console.error("Erro na config de segurança");
+              console.error("Erro na inicialização do Supabase:", e);
           }
           return null;
       };
