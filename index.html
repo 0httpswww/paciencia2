@@ -23,12 +23,6 @@
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     <meta name='admaven-placement' content='BqjwGrds9'>
     
-    <!-- Monetag Popunder Script (Zone: 10264533) -->
-    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-    
-    <!-- Monetag Vignette Script (Zone: 10273879) -->
-    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -184,12 +178,18 @@
     </script>
 </head>
 <body>
+    <!-- Monetag Popunder (Zone: 10264533) -->
+    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})(document.body.appendChild(document.createElement('script')))</script>
+    
+    <!-- Monetag Vignette (Zone: 10273879) -->
+    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})(document.body.appendChild(document.createElement('script')))</script>
+
     <div id="root" class="h-[100dvh] w-full overflow-hidden flex flex-col"></div>
 
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Shield, Skull } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RotateCcw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Shield, Skull } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -529,7 +529,7 @@
                           <div className="text-2xl text-white mb-8">Final Score: <span className="text-yellow-400">{stats.score}</span></div>
                           <div className="flex flex-col gap-4 w-64">
                               <button onClick={() => { playSound('ui_click'); handleRespawn(); }} className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><PlayCircle size={24} /> REVIVE (WATCH AD)</button>
-                              <button onClick={() => { playSound('ui_click'); setStats({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 }); setGameState('playing'); }} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white flex items-center justify-center gap-2"><RefreshCcw size={20} /> RESTART MISSION</button>
+                              <button onClick={() => { playSound('ui_click'); setStats({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 }); setGameState('playing'); }} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white flex items-center justify-center gap-2"><RotateCcw size={20} /> RESTART MISSION</button>
                               <button onClick={() => { playSound('ui_click'); onBack(); }} className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-gray-300">RETURN TO BASE</button>
                           </div>
                       </div>
@@ -779,7 +779,7 @@
           const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
           const handleShipAdWatch = (shipId, reqAds) => { window.open('https://otieu.com/4/10270523', '_blank'); const next = (adProgress[shipId] || 0) + 1; setAdProgress(p => ({ ...p, [shipId]: next })); if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } };
           const triggerAd = (e) => { if (Date.now() - lastAdTime < 180000) return; setLastAdTime(Date.now()); window.open('https://otieu.com/4/10270523', '_blank'); };
-          const startGame = (name) => { playSound('ui_click'); if (!document.fullscreenElement && document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(() => {}); } triggerAd(); setCurrentScreen(name); };
+          const startGame = (name) => { playSound('ui_click'); triggerAd(); setCurrentScreen(name); };
           const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); playSound('ui_click'); };
 
           switch(currentScreen) {
