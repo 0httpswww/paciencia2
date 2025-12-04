@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>JoGos Online</title>
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
-    <meta name="theme-color" content="#0a0a0a">
+    <meta name="theme-color" content="#050505">
     
     <!-- SEGURANÇA: Content Security Policy (CSP) - Permissive for Ads -->
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data: blob: 'unsafe-inline';">
@@ -19,6 +19,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;800&display=swap');
 
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+            --sar: env(safe-area-inset-right);
+        }
+
         body { 
             overscroll-behavior: none; 
             touch-action: none; 
@@ -29,11 +36,23 @@
             user-select: none; 
             -webkit-user-select: none; 
             overflow: hidden;
-            /* Safe area for notched phones */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Safe Area Utility Class */
+        .safe-area-padding {
+            padding-top: max(1rem, var(--sat));
+            padding-bottom: max(1rem, var(--sab));
+            padding-left: max(1rem, var(--sal));
+            padding-right: max(1rem, var(--sar));
+        }
+        
+        /* Top Safe Area Only */
+        .safe-pt {
+            padding-top: max(1rem, var(--sat));
         }
 
         /* --- PREMIUM DARK GRID BACKGROUND --- */
@@ -57,7 +76,7 @@
         /* --- VIGNETTE & SCANLINES --- */
         .scanlines {
             position: fixed;
-            top: 0; left: 0; w-full; h-full;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
             background-size: 100% 4px;
             pointer-events: none;
@@ -90,22 +109,6 @@
             transform: translateY(1px) scale(0.98);
         }
 
-        /* White Shine Effect */
-        .premium-btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: 0.5s;
-        }
-
-        .premium-btn:hover::after {
-            left: 100%;
-        }
-
         /* --- TYPOGRAPHY & TITLES --- */
         .hero-title {
             font-family: 'Rajdhani', sans-serif;
@@ -128,8 +131,8 @@
         @keyframes gridMove { 0% { transform: rotateX(60deg) translateY(0); } 100% { transform: rotateX(60deg) translateY(80px); } }
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-        @keyframes swing { 0% { transform: rotate(2deg); } 50% { transform: rotate(-2deg); } 100% { transform: rotate(2deg); } }
-        .hangman-swing { transform-origin: top center; animation: swing 3s infinite ease-in-out; }
+        
+        /* Farm Styles */
         .farm-scene { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
         .farm-perspective { perspective: 1000px; }
         .farm-grid-3d { transform-style: preserve-3d; transition: transform 0.1s ease-out; }
@@ -138,20 +141,36 @@
         .farm-plot.ready { border-color: #facc15; box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
         @keyframes walker { 0% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } 50% { transform: translateZ(50px) rotateX(-45deg) rotateY(45deg) translateY(-5px); } 100% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } }
         .farmer-anim { animation: walker 1.5s infinite ease-in-out; transform-style: preserve-3d; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
-        .level-up-anim { animation: levelUp 2s ease-out forwards; }
-        @keyframes levelUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
         
-        /* New Animations */
+        /* Hangman Styles */
+        .hangman-neon-text {
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #a855f7,
+                0 0 30px #a855f7,
+                0 0 40px #a855f7;
+        }
+        .hangman-key {
+            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .hangman-key:active:not(:disabled) {
+            transform: scale(0.95);
+            background: rgba(168, 85, 247, 0.2);
+        }
+
+        /* Animations */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         .neon-text { text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.5); }
-        .neon-box { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), inset 0 0 15px rgba(139, 92, 246, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); }
         
-        /* Responsive Container */
         .app-container {
             width: 100%;
-            height: 100dvh; /* Dynamic viewport height */
+            height: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -170,22 +189,19 @@
     </script>
 </head>
 <body>
-    <!-- Monetag Popunder (Zone: 10264533) - ACTIVATED -->
+    <!-- Monetag Popunder (Zone: 10264533) -->
     <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     
-    <!-- Monetag Vignette (Zone: 10273879) -->
-    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
     <div id="root" class="app-container"></div>
 
     <script type="text/babel" data-type="module" data-presets="typescript,react">
-      import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+      import React, { useState, useEffect, useRef, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
       import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, User } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
-      // MONETAG ADS CONFIGURATION
+      // MONETAG CONFIG
       // ==========================================
       const MONETAG_DIRECT_LINK = 'https://al5sm.com/4/10264533'; 
 
@@ -215,838 +231,927 @@
           setItem: (key, value) => { try { localStorage.setItem(key, value); } catch(e) {} }
       };
 
-      let audioContext = null;
+      // ==========================================
+      // AUDIO SYSTEM
+      // ==========================================
+      let audioCtx = null;
       const getAudioContext = () => {
-          try {
-            if (!audioContext) {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) audioContext = new AudioCtx();
-            }
-            return audioContext;
-          } catch (e) { return null; }
+          if (!audioCtx) {
+              const AudioContext = window.AudioContext || window.webkitAudioContext;
+              if (AudioContext) audioCtx = new AudioContext();
+          }
+          return audioCtx;
       };
 
-      // --- SOUND ENGINE ---
       const playSound = (type) => {
           const ctx = getAudioContext();
           if (!ctx) return;
-          try {
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-            const osc = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(ctx.destination);
-            const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
 
-            switch(type) {
-                case 'ui_hover': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gainNode.gain.setValueAtTime(0.02, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05); break;
-                case 'ui_click': osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
-                case 'shoot': osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
-                case 'explosion': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); break;
-                case 'powerup': osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
-                case 'win': osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1000, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
-                case 'lose': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
-                case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
-                case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
-                case 'buy': osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
-                case 'plant': osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.15); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15); osc.start(now); osc.stop(now + 0.15); break;
-                case 'harvest': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
-                case 'key_press': osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05); break;
+          const now = ctx.currentTime;
+          
+          if (type === 'shoot') {
+              osc.type = 'square';
+              osc.frequency.setValueAtTime(800, now);
+              osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+              gain.gain.setValueAtTime(0.1, now);
+              gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+              osc.start(now);
+              osc.stop(now + 0.1);
+          } else if (type === 'explosion') {
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(100, now);
+              osc.frequency.exponentialRampToValueAtTime(10, now + 0.3);
+              gain.gain.setValueAtTime(0.2, now);
+              gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+              osc.start(now);
+              osc.stop(now + 0.3);
+          } else if (type === 'ui_click') {
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(600, now);
+              gain.gain.setValueAtTime(0.05, now);
+              gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+              osc.start(now);
+              osc.stop(now + 0.1);
+          } else if (type === 'plant') { // Digging sound
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(150, now);
+              osc.frequency.linearRampToValueAtTime(100, now + 0.1);
+              gain.gain.setValueAtTime(0.1, now);
+              gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+              osc.start(now);
+              osc.stop(now + 0.15);
+          } else if (type === 'harvest') { // Satisfying pop
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(400, now);
+              osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+              gain.gain.setValueAtTime(0.1, now);
+              gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+              osc.start(now);
+              osc.stop(now + 0.2);
+          } else if (type === 'win') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+            osc.frequency.setValueAtTime(600, now + 0.1);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.3);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+          } else if (type === 'lose') {
+             osc.type = 'sawtooth';
+             osc.frequency.setValueAtTime(200, now);
+             osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+             gain.gain.setValueAtTime(0.2, now);
+             gain.gain.linearRampToValueAtTime(0, now + 0.5);
+             osc.start(now);
+             osc.stop(now + 0.5);
+          }
+      };
+
+      // ==========================================
+      // SHARED COMPONENTS
+      // ==========================================
+      const InstallButton = () => <div className="hidden"></div>; // Placeholder
+
+      const AuthModal = ({ onClose, onUserChange }) => {
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState(null);
+        const [mode, setMode] = useState('login');
+
+        const handleAuth = async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            setError(null);
+            
+            try {
+                if (!supabase) throw new Error("Serviço indisponível");
+                let result;
+                if (mode === 'signup') {
+                    result = await supabase.auth.signUp({ email, password });
+                } else {
+                    result = await supabase.auth.signInWithPassword({ email, password });
+                }
+
+                if (result.error) throw result.error;
+                
+                if (onUserChange) onUserChange(result.data.user);
+                onClose();
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
-          } catch(e) {}
+        };
+
+        return (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-2xl p-6 relative">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
+                    <h2 className="text-2xl font-bold text-white mb-6 text-center font-[Rajdhani]">
+                        {mode === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
+                    </h2>
+                    
+                    {error && <div className="bg-red-900/50 text-red-200 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+
+                    <form onSubmit={handleAuth} className="space-y-4">
+                        <input 
+                            type="email" 
+                            placeholder="Email" 
+                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-3 focus:outline-none focus:border-blue-500"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                        <input 
+                            type="password" 
+                            placeholder="Senha" 
+                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-3 focus:outline-none focus:border-blue-500"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <button 
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2"
+                        >
+                            {loading && <Loader2 className="animate-spin" size={20}/>}
+                            {mode === 'login' ? 'ACESSAR' : 'CADASTRAR'}
+                        </button>
+                    </form>
+
+                    <div className="mt-4 text-center">
+                        <button 
+                            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                            className="text-gray-400 text-sm hover:text-white"
+                        >
+                            {mode === 'login' ? 'Não tem conta? Crie agora' : 'Já tem conta? Entrar'}
+                        </button>
+                    </div>
+                </div>
+             </div>
+        );
       };
 
-      const toggleFullScreen = (e) => {
-        if (e) e.stopPropagation();
-        playSound('ui_click');
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(err => console.log(err));
-        } else if (document.exitFullscreen) document.exitFullscreen();
-      };
-
-      // --- Install Button & Modals ---
-      const InstallButton = () => { /* ... existing implementation ... */ return null; };
-      const Modal = ({ title, onClose, children }) => (
-          <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
-              <div className="bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col max-h-[80%] relative">
-                  <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#151515]">
-                      <h2 className="text-xl font-bold text-white hero-title">{title}</h2>
-                      <button onClick={() => { playSound('ui_click'); onClose(); }}><X className="text-gray-400 hover:text-white" /></button>
-                  </div>
-                  <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
-              </div>
-          </div>
-      );
-
-      // --- AUTH MODAL ---
-      const AuthModal = ({ onClose, onLogin }) => {
-          const [isLogin, setIsLogin] = useState(true);
-          const [email, setEmail] = useState('');
-          const [password, setPassword] = useState('');
-          const [loading, setLoading] = useState(false);
-          const [error, setError] = useState(null);
-
-          const handleAuth = async () => {
-              if (!email || !password) return;
-              setLoading(true);
-              setError(null);
-              
-              try {
-                  let result;
-                  if (isLogin) {
-                      result = await supabase.auth.signInWithPassword({ email, password });
-                  } else {
-                      result = await supabase.auth.signUp({ email, password });
-                  }
-                  
-                  if (result.error) throw result.error;
-                  if (result.data.user) {
-                      onLogin(result.data.user);
-                      onClose();
-                  }
-              } catch (e) {
-                  setError(e.message);
-              } finally {
-                  setLoading(false);
-              }
-          };
-
-          return (
-              <Modal title={isLogin ? "LOGIN" : "CRIAR CONTA"} onClose={onClose}>
-                  <div className="flex flex-col gap-4">
-                      {error && <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-xs">{error}</div>}
-                      <input 
-                          type="email" 
-                          placeholder="Email" 
-                          className="p-3 bg-black/50 border border-gray-700 rounded text-white focus:border-blue-500 outline-none"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                      />
-                      <input 
-                          type="password" 
-                          placeholder="Senha" 
-                          className="p-3 bg-black/50 border border-gray-700 rounded text-white focus:border-blue-500 outline-none"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <button 
-                          onClick={handleAuth} 
-                          disabled={loading}
-                          className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded font-bold text-white flex justify-center items-center"
-                      >
-                          {loading ? <Loader2 className="animate-spin" /> : (isLogin ? "ENTRAR" : "CADASTRAR")}
-                      </button>
-                      <button onClick={() => setIsLogin(!isLogin)} className="text-xs text-center text-gray-400 hover:text-white underline">
-                          {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entre"}
-                      </button>
-                  </div>
-              </Modal>
-          );
-      };
-
-      // --- GAME 1: GALAXY INVADER 3D ---
-      const SHIPS = [
-          { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
-          { id: 'blue', name: 'Interceptor', adCost: 5, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
-          { id: 'purple', name: 'Void Walker', adCost: 10, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
-          { id: 'green', name: 'Venom Striker', adCost: 15, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
-          { id: 'yellow', name: 'Solar Flare', adCost: 20, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
-          { id: 'red', name: 'Crimson Fury', adCost: 25, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
-          { id: 'legendary', name: 'Abyssal King', adCost: 30, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
+      // ==========================================
+      // HANGMAN GAME (FORCA) - PROFESSIONAL 3D DARK
+      // ==========================================
+      const WORDS = [
+        { word: 'REACT', hint: 'Biblioteca JavaScript' },
+        { word: 'GALAXY', hint: 'Sistema estelar gigante' },
+        { word: 'FARMING', hint: 'Cultivar a terra' },
+        { word: 'JAVASCRIPT', hint: 'Linguagem da web' },
+        { word: 'APPLE', hint: 'Fruta ou empresa de tecnologia' },
+        { word: 'COMPONENT', hint: 'Bloco de construção de UI' },
+        { word: 'INTERNET', hint: 'Rede mundial de computadores' },
+        { word: 'PYTHON', hint: 'Cobra ou linguagem' },
+        { word: 'BRASIL', hint: 'Maior país da América do Sul' },
+        { word: 'FUTEBOL', hint: 'Esporte popular' }
       ];
-      
-      const generatePlayerSprite = (palette) => {
-          const canvas = document.createElement('canvas');
-          const size = 32; canvas.width = size; canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          const P = palette.main; const D = palette.dark; const L = palette.light;
-          const C = palette.cockpit; const W = '#ffffff'; const B = palette.engine;
-          const pixelSize = 2;
-          const grid = ["      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ", "   12233221   ", "   12233221   ", "  1222222221  ", "  1222222221  ", " 122114411221 ", " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "];
-          const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
-          for(let y=0; y<grid.length; y++) { for(let x=0; x<grid[y].length; x++) { const char = grid[y][x]; if(colorMap[char]) { ctx.fillStyle = colorMap[char]; ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } }
-          const img = new Image(); img.src = canvas.toDataURL(); return img;
+
+      const HangmanGame = ({ onBack }) => {
+        const [currentWord, setCurrentWord] = useState(WORDS[0]);
+        const [guessedLetters, setGuessedLetters] = useState(new Set());
+        const [wrongGuesses, setWrongGuesses] = useState(0);
+        const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
+
+        const MAX_ERRORS = 6;
+
+        useEffect(() => {
+            startNewGame();
+        }, []);
+
+        const startNewGame = () => {
+            const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+            setCurrentWord(randomWord);
+            setGuessedLetters(new Set());
+            setWrongGuesses(0);
+            setGameStatus('playing');
+        };
+
+        const handleGuess = (letter) => {
+            if (gameStatus !== 'playing' || guessedLetters.has(letter)) return;
+
+            const newGuessed = new Set(guessedLetters);
+            newGuessed.add(letter);
+            setGuessedLetters(newGuessed);
+
+            if (!currentWord.word.includes(letter)) {
+                const newErrors = wrongGuesses + 1;
+                setWrongGuesses(newErrors);
+                playSound('lose');
+                if (newErrors >= MAX_ERRORS) setGameStatus('lost');
+            } else {
+                playSound('ui_click');
+                const isWon = currentWord.word.split('').every(l => newGuessed.has(l));
+                if (isWon) {
+                    setGameStatus('won');
+                    playSound('win');
+                }
+            }
+        };
+
+        const handleHint = () => {
+            triggerAd(() => {
+                const hiddenLetters = currentWord.word.split('').filter(l => !guessedLetters.has(l));
+                if (hiddenLetters.length > 0) {
+                    const randomLetter = hiddenLetters[Math.floor(Math.random() * hiddenLetters.length)];
+                    handleGuess(randomLetter);
+                }
+            });
+        };
+
+        // Keyboard layout
+        const keyboard = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
+
+        return (
+            <div className="w-full h-full bg-slate-950 text-white flex flex-col relative overflow-hidden font-[Rajdhani]">
+                {/* 3D Background */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#2e1065_0%,_#020617_100%)] z-0"></div>
+                
+                {/* Header */}
+                <div className="relative z-10 flex justify-between items-center px-4 safe-pt pb-2 bg-black/20 backdrop-blur-md border-b border-white/10">
+                    <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft /></button>
+                    <h1 className="text-2xl font-bold tracking-widest text-purple-400 neon-text">HANGMAN 3D</h1>
+                    <div className="w-10"></div>
+                </div>
+
+                {/* Main Game Area */}
+                <div className="flex-1 relative z-10 flex flex-col items-center justify-center p-4">
+                    
+                    {/* 3D Scene Container */}
+                    <div className="relative w-full max-w-md aspect-square bg-black/40 rounded-3xl border border-white/10 backdrop-blur-sm shadow-2xl overflow-hidden flex flex-col items-center justify-center mb-6">
+                        {/* Floor Grid */}
+                        <div className="absolute inset-0 opacity-30 bg-[linear-gradient(rgba(168,85,247,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.1)_1px,transparent_1px)] bg-[size:40px_40px] [transform:perspective(500px)_rotateX(60deg)_translateY(100px)] pointer-events-none"></div>
+
+                        {/* Neon Gallows */}
+                        <div className="relative mb-8 transform-style-3d">
+                           <svg width="200" height="240" viewBox="0 0 200 240" className="drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]">
+                                {/* Base */}
+                                <line x1="20" y1="230" x2="180" y2="230" stroke="#a855f7" strokeWidth="4" strokeLinecap="round" />
+                                <line x1="50" y1="230" x2="50" y2="20" stroke="#a855f7" strokeWidth="4" strokeLinecap="round" />
+                                <line x1="50" y1="20" x2="140" y2="20" stroke="#a855f7" strokeWidth="4" strokeLinecap="round" />
+                                <line x1="140" y1="20" x2="140" y2="50" stroke="#a855f7" strokeWidth="4" strokeLinecap="round" />
+                                
+                                {/* Man */}
+                                {wrongGuesses > 0 && <circle cx="140" cy="70" r="20" stroke="#f472b6" strokeWidth="4" fill="transparent" className="animate-fade-in" />}
+                                {wrongGuesses > 1 && <line x1="140" y1="90" x2="140" y2="150" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
+                                {wrongGuesses > 2 && <line x1="140" y1="110" x2="110" y2="130" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" className="animate-fade-in" />}
+                                {wrongGuesses > 3 && <line x1="140" y1="110" x2="170" y2="130" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" className="animate-fade-in" />}
+                                {wrongGuesses > 4 && <line x1="140" y1="150" x2="110" y2="190" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" className="animate-fade-in" />}
+                                {wrongGuesses > 5 && <line x1="140" y1="150" x2="170" y2="190" stroke="#f472b6" strokeWidth="4" strokeLinecap="round" className="animate-fade-in" />}
+                           </svg>
+                        </div>
+
+                        {/* Word Display */}
+                        <div className="flex gap-2 flex-wrap justify-center px-4">
+                            {currentWord.word.split('').map((letter, i) => (
+                                <div key={i} className={`w-10 h-12 flex items-center justify-center text-2xl font-bold border-b-4 rounded bg-white/5 backdrop-blur shadow-lg transition-all ${guessedLetters.has(letter) ? 'border-purple-500 text-purple-200' : 'border-gray-600 text-transparent'}`}>
+                                    {guessedLetters.has(letter) || gameStatus === 'lost' ? letter : ''}
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Hint Text */}
+                        <div className="mt-4 text-gray-400 text-sm italic bg-black/50 px-3 py-1 rounded-full border border-white/10">
+                            Dica: {currentWord.hint}
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-4 w-full max-w-md justify-center mb-4">
+                         <button 
+                            onClick={handleHint}
+                            className="flex items-center gap-2 px-4 py-2 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-full text-sm font-bold hover:bg-yellow-600/40 transition-all"
+                            disabled={gameStatus !== 'playing'}
+                        >
+                            <Lightbulb size={16} /> DICA (Ad)
+                        </button>
+                    </div>
+
+                    {/* Keyboard */}
+                    <div className="w-full max-w-md flex flex-wrap justify-center gap-1.5 safe-area-padding">
+                        {keyboard.map(key => {
+                            const isGuessed = guessedLetters.has(key);
+                            const isWrong = isGuessed && !currentWord.word.includes(key);
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => handleGuess(key)}
+                                    disabled={isGuessed || gameStatus !== 'playing'}
+                                    className={`w-9 h-12 rounded font-bold text-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:transform-none
+                                        ${isGuessed 
+                                            ? (isWrong ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-green-500/20 border-green-500 text-green-300')
+                                            : 'bg-white/5 border border-white/10 hover:bg-white/10 text-white shadow-lg'
+                                        }
+                                        border
+                                    `}
+                                >
+                                    {key}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Game Over Modal */}
+                {gameStatus !== 'playing' && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 animate-fade-in">
+                        <div className="bg-gray-900 border border-purple-500/30 p-8 rounded-3xl shadow-2xl shadow-purple-900/20 text-center max-w-sm w-full">
+                            {gameStatus === 'won' ? (
+                                <div className="text-green-400 mb-4 flex flex-col items-center">
+                                    <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-4 ring-2 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                                        <Check size={48} />
+                                    </div>
+                                    <h2 className="text-3xl font-bold">VENCEU!</h2>
+                                </div>
+                            ) : (
+                                <div className="text-red-400 mb-4 flex flex-col items-center">
+                                    <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-4 ring-2 ring-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                                        <X size={48} />
+                                    </div>
+                                    <h2 className="text-3xl font-bold">GAME OVER</h2>
+                                    <p className="text-white/60 mt-2">A palavra era: <span className="text-white font-bold">{currentWord.word}</span></p>
+                                </div>
+                            )}
+                            <button 
+                                onClick={startNewGame}
+                                className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-900/50 transition-all transform hover:scale-105"
+                            >
+                                JOGAR NOVAMENTE
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
       };
 
-      const GalaxyInvader = ({ onBack, equippedShipId, addCoins, currentCoins }) => {
-          const canvasRef = useRef(null);
-          const [gameState, setGameState] = useState('playing'); 
-          const [stats, setStats] = useState({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 });
-          const [shake, setShake] = useState(false);
-          const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
+      // ==========================================
+      // GALAXY INVADER COMPONENTS (Updated Physics)
+      // ==========================================
+      const SHIPS = [
+        { id: 'starter', name: 'Explorer', cost: 0, speed: 1, color: '#3b82f6' },
+        { id: 'speed', name: 'Interceptor', cost: 500, speed: 1.3, color: '#f59e0b' },
+        { id: 'tank', name: 'Destroyer', cost: 1000, speed: 0.8, color: '#ef4444' }
+      ];
 
-          const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
-          
-          const handleRespawn = () => { 
-              triggerAd(() => {
-                setStats(prev => ({ ...prev, hp: 100 })); 
-                setGameState('playing'); 
-                playSound('powerup');
-              });
-          };
-          
-          useEffect(() => {
-              const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
-              let animationFrameId; let lastTime = 0;
-              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
-              const playerImg = generatePlayerSprite(shipDef.palette);
-              
-              // --- PHYSICS CONSTANTS ---
-              const ACCEL = 1.2;
-              const FRICTION = 0.90;
-              const MAX_SPEED = 15;
-              
-              let player = { x: canvas.width/2, y: canvas.height - 100, vx: 0, vy: 0, width: 40, height: 40, hp: 100, weaponLevel: 1, lastShot: 0, score: 0, level: 1, xp: 0 };
-              let bullets = [], enemies = [], particles = [], powerups = [], boss = null;
-              let input = { x: null, y: null, active: false };
-              const getScale = (y) => 0.6 + (y / canvas.height) * 0.4;
-              
-              const spawnEnemy = (isBoss = false) => {
-                  if (boss && !isBoss) return;
-                  const typeRoll = Math.random(); const startX = Math.random() * (canvas.width - 60) + 30;
-                  let enemy = { x: startX, y: -50, z: 0, width: 40, height: 40, hp: 2 + player.level, type: 'drone', vy: 3 + Math.random(), vx: Math.sin(Date.now()/500), color: '#ef4444' };
-                  if (stats.wave > 2 && typeRoll > 0.7) enemy = { ...enemy, type: 'interceptor', hp: 5, vy: 5, color: '#f59e0b', width: 30 };
-                  if (stats.wave > 4 && typeRoll > 0.9) enemy = { ...enemy, type: 'tank', hp: 20, vy: 1, width: 60, height: 60, color: '#3b82f6' };
-                  enemies.push(enemy);
-              };
-              const spawnBoss = () => { boss = { x: canvas.width/2, y: -100, width: 120, height: 100, hp: 100 * stats.wave, maxHp: 100 * stats.wave, phase: 'enter', vx: 2, vy: 1 }; playSound('levelup'); };
-
-              const update = (time) => {
-                  if (gameStateRef.current !== 'playing') { animationFrameId = requestAnimationFrame(() => update(Date.now())); return; }
-                  const dt = time - lastTime; lastTime = time;
-                  
-                  // --- PHYSICS IMPLEMENTATION ---
-                  if (input.active) {
-                      const dx = input.x - player.x;
-                      const dy = input.y - player.y;
-                      const dist = Math.sqrt(dx*dx + dy*dy);
-                      const angle = Math.atan2(dy, dx);
-                      
-                      // Deadzone to prevent jittering
-                      if (dist > 10) {
-                          // Apply acceleration towards input
-                          player.vx += Math.cos(angle) * ACCEL;
-                          player.vy += Math.sin(angle) * ACCEL;
-                      } else {
-                          // Dampen when very close to target
-                           player.vx *= 0.8;
-                           player.vy *= 0.8;
-                      }
-                  } else {
-                      // No input: apply friction
-                      player.vx *= FRICTION;
-                      player.vy *= FRICTION;
-                  }
-
-                  // Cap Max Speed
-                  const speed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
-                  if (speed > MAX_SPEED) {
-                      const ratio = MAX_SPEED / speed;
-                      player.vx *= ratio;
-                      player.vy *= ratio;
-                  }
-
-                  // Apply velocity to position
-                  player.x += player.vx;
-                  player.y += player.vy;
-
-                  // Boundary Check with Bounce
-                  if (player.x < 20) { player.x = 20; player.vx *= -0.5; }
-                  if (player.x > canvas.width - 20) { player.x = canvas.width - 20; player.vx *= -0.5; }
-                  if (player.y < 50) { player.y = 50; player.vy *= -0.5; }
-                  if (player.y > canvas.height - 20) { player.y = canvas.height - 20; player.vy *= -0.5; }
-
-                  if (time - player.lastShot > 250 - (player.weaponLevel * 20)) {
-                      const scale = getScale(player.y); const bSpeed = -10 * scale;
-                      bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: 0, type: 'player', width: 4*scale, height: 10*scale, color: '#38bdf8' });
-                      if (player.weaponLevel >= 2) { bullets.push({ x: player.x - 10, y: player.y, vy: bSpeed * 0.9, vx: -1, type: 'player', width: 3*scale, height: 8*scale, color: '#38bdf8' }); bullets.push({ x: player.x + 10, y: player.y, vy: bSpeed * 0.9, vx: 1, type: 'player', width: 3*scale, height: 8*scale, color: '#38bdf8' }); }
-                      playSound('shoot'); player.lastShot = time;
-                  }
-
-                  if (Math.random() < 0.02 + (stats.wave * 0.005) && !boss) spawnEnemy();
-                  if (player.score > stats.wave * 2500 && !boss) spawnBoss();
-
-                  for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; b.y += b.vy; b.x += b.vx; if (b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1); }
-
-                  for (let i = enemies.length - 1; i >= 0; i--) {
-                      let e = enemies[i]; const scale = getScale(e.y);
-                      e.y += e.vy * scale; e.x += e.vx * scale; e.renderW = e.width * scale; e.renderH = e.height * scale;
-                      if (Math.random() < 0.01 * stats.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
-                      for (let j = bullets.length - 1; j >= 0; j--) {
-                          let b = bullets[j];
-                          if (b.type === 'player' && Math.abs(b.x - e.x) < e.renderW/2 + 10 && Math.abs(b.y - e.y) < e.renderH/2 + 10) {
-                              e.hp -= 1; bullets.splice(j, 1); for(let k=0; k<3; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: 'yellow' });
-                              if (e.hp <= 0) { enemies.splice(i, 1); player.score += (e.type === 'tank' ? 50 : 10); player.xp += (e.type === 'tank' ? 20 : 5); addCoins(1); playSound('explosion'); triggerShake(); for(let k=0; k<10; k++) particles.push({ x: e.x, y: e.y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 20, color: e.color }); if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon_up' }); break; }
-                          }
-                      }
-                      if (Math.abs(e.x - player.x) < (e.renderW + player.width)/2 && Math.abs(e.y - player.y) < (e.renderH + player.height)/2) { enemies.splice(i, 1); player.hp -= 20; triggerShake(); playSound('explosion'); }
-                      if (e.y > canvas.height + 50) enemies.splice(i, 1);
-                  }
-
-                  if (boss) {
-                      const scale = getScale(boss.y); boss.renderW = boss.width * scale; boss.renderH = boss.height * scale;
-                      if (boss.phase === 'enter') { boss.y += 1; if (boss.y > 100) boss.phase = 'attack'; } 
-                      else { boss.x += boss.vx; if (boss.x > canvas.width - 50 || boss.x < 50) boss.vx *= -1; if (Math.random() < 0.05) { const angle = Math.atan2(player.y - boss.y, player.x - boss.x); bullets.push({ x: boss.x, y: boss.y + 40, vy: Math.sin(angle)*6, vx: Math.cos(angle)*6, type: 'enemy', width: 8, height: 8, color: '#f0f' }); } }
-                      for (let j = bullets.length - 1; j >= 0; j--) { let b = bullets[j]; if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); if (boss.hp <= 0) { boss = null; player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); for(let k=0; k<50; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple' }); } } }
-                  }
-
-                  for (let i = powerups.length - 1; i >= 0; i--) { let p = powerups[i]; p.y += 2; if (Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) { player.weaponLevel = Math.min(3, player.weaponLevel + 1); player.hp = Math.min(100, player.hp + 20); powerups.splice(i, 1); playSound('powerup'); } }
-                  for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; if (b.type === 'enemy' && Math.abs(b.x - player.x) < player.width/2 && Math.abs(b.y - player.y) < player.height/2) { player.hp -= 10; bullets.splice(i, 1); triggerShake(); playSound('explosion'); } }
-
-                  if (player.xp >= player.level * 100) { player.xp -= player.level * 100; player.level++; playSound('levelup'); }
-                  if (time % 60 === 0) { setStats({ score: player.score, hp: player.hp, wave: stats.wave, level: player.level, xp: player.xp }); }
-                  if (player.hp <= 0) { setGameState('gameover'); }
-
-                  ctx.clearRect(0, 0, canvas.width, canvas.height);
-                  for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 4, 4); if (p.life <= 0) particles.splice(i, 1); } ctx.globalAlpha = 1;
-
-                  const pScale = getScale(player.y);
-                  
-                  // Thruster Flame Effect (scales with velocity)
-                  const speedMag = Math.sqrt(player.vx**2 + player.vy**2);
-                  if (speedMag > 1) {
-                      ctx.fillStyle = '#f59e0b';
-                      const flameLen = 10 + Math.random() * 5 + (speedMag * 2);
-                      const angle = Math.atan2(player.vy, player.vx);
-                      const oppAngle = angle + Math.PI;
-                      
-                      ctx.save();
-                      ctx.translate(player.x, player.y + 15*pScale);
-                      // Simple flame behind ship
-                      ctx.beginPath();
-                      ctx.moveTo(-5, 0);
-                      ctx.lineTo(5, 0);
-                      ctx.lineTo(0, flameLen);
-                      ctx.fill();
-                      ctx.restore();
-                  }
-
-                  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 30*pScale, 15*pScale, 5*pScale, 0, 0, Math.PI*2); ctx.fill();
-                  ctx.save(); ctx.translate(player.x, player.y); ctx.scale(pScale, pScale); 
-                  // Tilt ship based on horizontal velocity
-                  ctx.rotate(player.vx * 0.08); 
-                  if (playerImg.complete) ctx.drawImage(playerImg, -20, -20, 40, 40); ctx.restore();
-
-                  enemies.forEach(e => { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(e.x, e.y + e.renderH, e.renderW/3, e.renderH/5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = e.color; ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2, e.renderW, e.renderH); ctx.shadowBlur = 0; ctx.fillStyle = 'red'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW, 3); ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * (e.hp / (2+player.level)), 3); });
-                  if (boss) { ctx.fillStyle = 'rgba(128,0,128,0.8)'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y - boss.renderH/2); ctx.lineTo(boss.x + boss.renderW/2, boss.y + boss.renderH/2); ctx.lineTo(boss.x - boss.renderW/2, boss.y + boss.renderH/2); ctx.fill(); ctx.fillStyle = 'gray'; ctx.fillRect(boss.x - 50, boss.y - 70, 100, 8); ctx.fillStyle = '#d946ef'; ctx.fillRect(boss.x - 50, boss.y - 70, 100 * (boss.hp / boss.maxHp), 8); ctx.strokeStyle = 'white'; ctx.strokeRect(boss.x - 50, boss.y - 70, 100, 8); }
-                  bullets.forEach(b => { ctx.fillStyle = b.color; ctx.shadowBlur = 5; ctx.shadowColor = b.color; ctx.fillRect(b.x - b.width/2, b.y - b.height/2, b.width, b.height); ctx.shadowBlur = 0; });
-                  powerups.forEach(p => { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); });
-
-                  if (gameStateRef.current === 'playing') animationFrameId = requestAnimationFrame(() => update(Date.now()));
-              };
-
-              const handleResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }; window.addEventListener('resize', handleResize); handleResize(); update(Date.now());
-              const onTouchMove = (e) => { e.preventDefault(); input = { x: e.touches[0].clientX, y: e.touches[0].clientY, active: true }; };
-              const onMouseMove = (e) => { input = { x: e.clientX, y: e.clientY, active: true }; };
-              const onEnd = () => { input.active = false; };
-              canvas.addEventListener('touchmove', onTouchMove, { passive: false }); canvas.addEventListener('touchend', onEnd); canvas.addEventListener('mousemove', onMouseMove); canvas.addEventListener('mouseup', onEnd);
-              return () => { window.removeEventListener('resize', handleResize); cancelAnimationFrame(animationFrameId); canvas.removeEventListener('touchmove', onTouchMove); };
-          }, [equippedShipId, gameState]);
-
-          return (
-              <div className={`relative w-full h-full space-3d ${shake ? 'shake' : ''}`}>
-                  <div className="grid-floor"></div>
-                  <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
-                  <div className="absolute top-0 w-full p-4 flex justify-between items-start z-20 pointer-events-none safe-area-padding">
-                      <div className="flex flex-col gap-1">
-                          <div className="text-sm font-bold text-cyan-400 drop-shadow">SCORE: {stats.score}</div>
-                          <div className="flex items-center gap-1"><Heart size={16} className="text-green-400" /><div className="w-32 h-3 bg-gray-800 rounded border border-gray-600"><div className={`h-full transition-all ${stats.hp > 30 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${Math.max(0, stats.hp)}%` }}></div></div></div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                          <button onClick={() => { playSound('ui_click'); setGameState(g => g === 'paused' ? 'playing' : 'paused'); }} className="pointer-events-auto p-2 bg-white/10 rounded-full mb-2"><Pause size={20} /></button>
-                          <div className="text-xs font-bold text-purple-400">WAVE {stats.wave}</div>
-                          <div className="text-xs font-bold text-yellow-400">LVL {stats.level}</div>
-                          <div className="w-24 h-1 bg-gray-800 rounded"><div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (stats.xp / (stats.level*100))*100)}%` }}></div></div>
-                      </div>
-                  </div>
-                  {gameState === 'paused' && (
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-                          <h2 className="text-4xl font-bold text-white mb-6 tracking-widest">PAUSED</h2>
-                          <button onClick={() => { playSound('ui_click'); setGameState('playing'); }} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold mb-4 w-48">RESUME</button>
-                          <button onClick={() => { playSound('ui_click'); onBack(); }} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold w-48">EXIT</button>
-                      </div>
-                  )}
-                  {gameState === 'gameover' && (
-                      <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
-                          <Skull size={64} className="text-red-500 mb-4 animate-pulse" />
-                          <h2 className="text-5xl font-bold text-red-500 mb-2 neon-title">MISSION FAILED</h2>
-                          <div className="text-2xl text-white mb-8">Final Score: <span className="text-yellow-400">{stats.score}</span></div>
-                          <div className="flex flex-col gap-4 w-64">
-                              <button onClick={() => { playSound('ui_click'); handleRespawn(); }} className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><PlayCircle size={24} /> REVIVE (AD)</button>
-                              <button onClick={() => { playSound('ui_click'); setStats({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 }); setGameState('playing'); }} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white flex items-center justify-center gap-2"><RefreshCw size={20} /> RESTART MISSION</button>
-                              <button onClick={() => { playSound('ui_click'); onBack(); }} className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-gray-300">RETURN TO BASE</button>
-                          </div>
-                      </div>
-                  )}
-              </div>
-          );
+      const ShopScreen = ({ onClose, coins, setCoins, unlockedShips, setUnlockedShips, setShip }) => {
+        return (
+            <div className="fixed inset-0 z-50 bg-black/95 text-white p-6 safe-area-padding flex flex-col">
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-3xl font-bold font-[Rajdhani] text-blue-400">HANGAR</h2>
+                    <button onClick={onClose} className="p-2 bg-gray-800 rounded-full"><X/></button>
+                </div>
+                <div className="flex items-center gap-2 mb-6 bg-gray-900 p-3 rounded-lg border border-gray-800">
+                    <Coins className="text-yellow-400" />
+                    <span className="text-xl font-bold">{coins}</span>
+                </div>
+                <div className="grid gap-4 overflow-y-auto pb-20">
+                    {SHIPS.map(ship => {
+                        const isUnlocked = unlockedShips.includes(ship.id);
+                        return (
+                            <div key={ship.id} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-lg" style={{backgroundColor: ship.color}}></div>
+                                    <div>
+                                        <div className="font-bold text-lg">{ship.name}</div>
+                                        <div className="text-xs text-gray-400">Speed: {ship.speed * 100}%</div>
+                                    </div>
+                                </div>
+                                {isUnlocked ? (
+                                    <button onClick={() => { setShip(ship); onClose(); }} className="px-4 py-2 bg-green-600 rounded text-sm font-bold">EQUIP</button>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => {
+                                                if(coins >= ship.cost) {
+                                                    setCoins(c => c - ship.cost);
+                                                    setUnlockedShips(prev => [...prev, ship.id]);
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded text-sm font-bold flex items-center gap-1 ${coins >= ship.cost ? 'bg-blue-600' : 'bg-gray-700 opacity-50'}`}
+                                        >
+                                            <Coins size={14}/> {ship.cost}
+                                        </button>
+                                        <button 
+                                            onClick={() => triggerAd(() => {
+                                                // 3 ads to unlock logic could go here, for now simpler
+                                                setCoins(c => c + 100); 
+                                            })}
+                                            className="px-4 py-1 bg-yellow-600/30 text-yellow-400 border border-yellow-600 rounded text-xs"
+                                        >
+                                            WATCH AD (+100)
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        )
       };
 
-      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => {
-          const ShipCard = ({ ship }) => {
-              const isUnlocked = unlockedShips.includes(ship.id);
-              const isEquipped = equippedShip === ship.id;
-              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
-              const currentAds = adProgress[ship.id] || 0;
-              const reqAds = ship.adCost;
+      const GalaxyInvader = ({ onBack }) => {
+        const [score, setScore] = useState(0);
+        const [gameOver, setGameOver] = useState(false);
+        const [coins, setCoins] = useState(100);
+        const [showShop, setShowShop] = useState(false);
+        const [ship, setShip] = useState(SHIPS[0]);
+        const [unlockedShips, setUnlockedShips] = useState(['starter']);
+        
+        // Canvas Refs
+        const canvasRef = useRef(null);
+        const requestRef = useRef(null);
+        
+        // Game State Refs (for Loop)
+        const gameState = useRef({
+            player: { 
+                x: window.innerWidth / 2, 
+                y: window.innerHeight - 150, 
+                vx: 0, 
+                vy: 0, 
+                targetX: window.innerWidth / 2,
+                targetY: window.innerHeight - 150,
+                width: 50, 
+                height: 50,
+                isTouching: false
+            },
+            bullets: [],
+            enemies: [],
+            particles: [],
+            lastShot: 0,
+            lastEnemy: 0,
+            bgOffset: 0
+        });
 
-              const handleAction = () => {
-                  if (isUnlocked) {
-                      equipShip(ship.id);
-                      playSound('powerup');
-                  } else {
-                      triggerAd(() => {
-                          handleShipAdWatch(ship.id, reqAds);
-                          playSound('buy');
-                      });
-                  }
-              };
+        // Physics Constants
+        const ACCEL = 0.08;
+        const FRICTION = 0.92;
+        const MAX_SPEED = 15;
 
-              return (
-                  <div className={`premium-btn relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
-                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
-                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
-                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
-                           {!isUnlocked && (
-                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                   <Lock size={20} className="text-gray-400" />
-                               </div>
-                           )}
-                      </div>
-                      
-                      {isUnlocked ? (
-                          <button 
-                              onClick={handleAction}
-                              disabled={isEquipped}
-                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
-                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
-                          >
-                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
-                          </button>
-                      ) : (
-                          <div className="w-full flex flex-col gap-1">
-                              <button 
-                                  onClick={handleAction}
-                                  className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white`}
-                              >
-                                  <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
-                              </button>
-                              <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                  <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
-                              </div>
-                          </div>
-                      )}
-                  </div>
-              );
-          };
+        const spawnEnemy = (width) => {
+            const x = Math.random() * (width - 40);
+            gameState.current.enemies.push({ x, y: -50, width: 40, height: 40, hp: 1, type: 'basic' });
+        };
 
-          return (
-              <div className="w-full h-full bg-[#050505] flex flex-col premium-bg">
-                   <div className="scanlines"></div>
-                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800 safe-area-padding">
-                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
-                      <h1 className="text-xl font-bold hero-title">HANGAR SHOP</h1>
-                      <div className="w-10"></div>
-                   </div>
-                   
-                   <div className="flex-1 overflow-y-auto p-4 pb-20">
-                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-                           {SHIPS.map(ship => (
-                               <ShipCard key={ship.id} ship={ship} />
-                           ))}
-                       </div>
-                   </div>
-              </div>
-          );
+        const update = () => {
+            if (gameOver) return;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const { width, height } = canvas;
+            const state = gameState.current;
+            const now = Date.now();
+
+            // Clear
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+
+            // Background Starfield
+            state.bgOffset += 2;
+            if (state.bgOffset > height) state.bgOffset = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            for(let i=0; i<50; i++) {
+                ctx.fillRect( (i*67)%width, (state.bgOffset + i*50)%height, 2, 2);
+            }
+
+            // --- PHYSICS PLAYER UPDATE ---
+            const p = state.player;
+            
+            if (p.isTouching) {
+                // Accelerate towards finger
+                const dx = p.targetX - p.x;
+                const dy = p.targetY - p.y;
+                p.vx += dx * ACCEL;
+                p.vy += dy * ACCEL;
+            }
+
+            // Apply friction
+            p.vx *= FRICTION;
+            p.vy *= FRICTION;
+
+            // Cap speed
+            /* Optional: Clamp velocity if needed, but friction usually handles it naturally */
+            
+            // Move
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Bounds
+            if (p.x < 0) { p.x = 0; p.vx *= -0.5; } // Bounce off walls
+            if (p.x > width - p.width) { p.x = width - p.width; p.vx *= -0.5; }
+            if (p.y < 0) { p.y = 0; p.vy *= -0.5; }
+            if (p.y > height - p.height) { p.y = height - p.height; p.vy *= -0.5; }
+
+            // Draw Player (with tilt)
+            const tilt = Math.max(-0.4, Math.min(0.4, p.vx * 0.05));
+            ctx.save();
+            ctx.translate(p.x + p.width/2, p.y + p.height/2);
+            ctx.rotate(tilt);
+            
+            // Ship Body
+            ctx.fillStyle = ship.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = ship.color;
+            ctx.beginPath();
+            ctx.moveTo(0, -p.height/2);
+            ctx.lineTo(p.width/2, p.height/2);
+            ctx.lineTo(0, p.height/2 - 10);
+            ctx.lineTo(-p.width/2, p.height/2);
+            ctx.fill();
+            
+            // Engine Flame
+            if (p.isTouching) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#fbbf24';
+                ctx.beginPath();
+                ctx.moveTo(-5, p.height/2 - 5);
+                ctx.lineTo(5, p.height/2 - 5);
+                ctx.lineTo(0, p.height/2 + (Math.random()*20 + 10));
+                ctx.fill();
+            }
+            
+            ctx.restore();
+
+            // Shooting
+            if (p.isTouching && now - state.lastShot > 200) {
+                state.bullets.push({ x: p.x + p.width/2 - 2, y: p.y, w: 4, h: 10, vy: -10 });
+                state.lastShot = now;
+                playSound('shoot');
+            }
+
+            // Enemies
+            if (now - state.lastEnemy > 1000) {
+                spawnEnemy(width);
+                state.lastEnemy = now;
+            }
+
+            // Update Bullets
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffff00';
+            for (let i = state.bullets.length - 1; i >= 0; i--) {
+                const b = state.bullets[i];
+                b.y += b.vy;
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+                if (b.y < -10) state.bullets.splice(i, 1);
+            }
+
+            // Update Enemies
+            ctx.fillStyle = '#ef4444';
+            for (let i = state.enemies.length - 1; i >= 0; i--) {
+                const e = state.enemies[i];
+                e.y += 3;
+                
+                // Draw Enemy
+                ctx.fillRect(e.x, e.y, e.width, e.height);
+
+                // Collision Bullet-Enemy
+                for (let j = state.bullets.length - 1; j >= 0; j--) {
+                    const b = state.bullets[j];
+                    if (b.x < e.x + e.width && b.x + b.w > e.x && b.y < e.y + e.height && b.y + b.h > e.y) {
+                        state.bullets.splice(j, 1);
+                        state.enemies.splice(i, 1);
+                        setScore(s => s + 10);
+                        setCoins(c => c + 1);
+                        playSound('explosion');
+                        break;
+                    }
+                }
+
+                // Collision Player-Enemy
+                if (e.x < p.x + p.width && e.x + e.width > p.x && e.y < p.y + p.height && e.y + e.height > p.y) {
+                    setGameOver(true);
+                    playSound('lose');
+                }
+
+                if (e.y > height) state.enemies.splice(i, 1);
+            }
+
+            requestRef.current = requestAnimationFrame(update);
+        };
+
+        useEffect(() => {
+            if (canvasRef.current) {
+                canvasRef.current.width = window.innerWidth;
+                canvasRef.current.height = window.innerHeight;
+            }
+            requestRef.current = requestAnimationFrame(update);
+            return () => cancelAnimationFrame(requestRef.current);
+        }, [gameOver, ship]);
+
+        // Input Handlers
+        const handleTouchStart = (e) => {
+            const touch = e.touches[0];
+            const state = gameState.current;
+            state.player.isTouching = true;
+            state.player.targetX = touch.clientX - state.player.width/2;
+            state.player.targetY = touch.clientY - state.player.height/2;
+        };
+
+        const handleTouchMove = (e) => {
+            const touch = e.touches[0];
+            const state = gameState.current;
+            state.player.targetX = touch.clientX - state.player.width/2;
+            state.player.targetY = touch.clientY - state.player.height/2;
+        };
+
+        const handleTouchEnd = () => {
+            gameState.current.player.isTouching = false;
+        };
+
+        return (
+            <div className="w-full h-full bg-black relative overflow-hidden">
+                <canvas 
+                    ref={canvasRef}
+                    className="block touch-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={(e) => {
+                        const state = gameState.current;
+                        state.player.isTouching = true;
+                        state.player.targetX = e.clientX - state.player.width/2;
+                        state.player.targetY = e.clientY - state.player.height/2;
+                    }}
+                    onMouseMove={(e) => {
+                        if(gameState.current.player.isTouching) {
+                            const state = gameState.current;
+                            state.player.targetX = e.clientX - state.player.width/2;
+                            state.player.targetY = e.clientY - state.player.height/2;
+                        }
+                    }}
+                    onMouseUp={handleTouchEnd}
+                />
+                
+                {/* HUD */}
+                <div className="absolute top-0 left-0 w-full p-4 safe-area-padding flex justify-between items-start pointer-events-none">
+                    <button onClick={onBack} className="bg-white/10 p-2 rounded-full backdrop-blur pointer-events-auto"><ChevronLeft className="text-white"/></button>
+                    <div className="flex flex-col items-end">
+                        <div className="text-white font-[Rajdhani] font-bold text-2xl">SCORE: {score}</div>
+                        <div className="text-yellow-400 font-bold flex items-center gap-1"><Coins size={16}/> {coins}</div>
+                    </div>
+                </div>
+
+                {/* Shop Button */}
+                {!gameOver && (
+                    <div className="absolute bottom-6 right-6 safe-area-padding">
+                        <button 
+                            onClick={() => setShowShop(true)}
+                            className="bg-blue-600 p-4 rounded-full shadow-lg shadow-blue-500/50 hover:scale-110 transition-transform"
+                        >
+                            <ShoppingCart className="text-white" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Game Over Screen */}
+                {gameOver && (
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50 animate-fade-in">
+                        <h2 className="text-4xl text-red-500 font-bold mb-4 font-[Rajdhani]">MISSION FAILED</h2>
+                        <div className="text-2xl text-white mb-8">Score: {score}</div>
+                        <button 
+                            onClick={() => {
+                                setGameOver(false);
+                                setScore(0);
+                                gameState.current.enemies = [];
+                                gameState.current.bullets = [];
+                                gameState.current.player.x = window.innerWidth/2;
+                                gameState.current.player.y = window.innerHeight - 150;
+                                gameState.current.player.vx = 0;
+                                gameState.current.player.vy = 0;
+                            }}
+                            className="premium-btn px-8 py-3 rounded-full text-xl font-bold mb-4"
+                        >
+                            RETRY
+                        </button>
+                        <button 
+                            onClick={() => triggerAd(() => {
+                                setGameOver(false);
+                                gameState.current.enemies = []; // Clear immediate threats
+                            })}
+                            className="text-yellow-400 border border-yellow-400 px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-yellow-400/10"
+                        >
+                            <PlayCircle size={16}/> REVIVE (Watch Ad)
+                        </button>
+                    </div>
+                )}
+
+                {showShop && (
+                    <ShopScreen 
+                        onClose={() => setShowShop(false)} 
+                        coins={coins} 
+                        setCoins={setCoins} 
+                        unlockedShips={unlockedShips}
+                        setUnlockedShips={setUnlockedShips}
+                        setShip={setShip}
+                    />
+                )}
+            </div>
+        );
       };
 
-      // --- GAME 2: FARM GAME ---
-      const FarmGame = ({ onBack, addCoins, coins }) => {
-          const CROPS = { 'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, xp: 5, time: 5000, icon: '🌾', adCost: 0, reqLevel: 1 }, 'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, xp: 10, time: 10000, icon: '🌽', adCost: 0, reqLevel: 2 }, 'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, xp: 20, time: 20000, icon: '🥕', adCost: 1, reqLevel: 3 }, 'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, xp: 40, time: 45000, icon: '🍅', adCost: 2, reqLevel: 5 }, 'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, xp: 80, time: 90000, icon: '🍓', adCost: 3, reqLevel: 8 }, 'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, xp: 150, time: 180000, icon: '🍇', adCost: 5, reqLevel: 10 } };
-          const ANIMALS = { 'chicken': { id: 'chicken', name: 'Galinha', cost: 50, reward: 100, xp: 50, time: 30000, icon: '🐔', product: 'Ovo', adCost: 0, reqLevel: 2 }, 'pig': { id: 'pig', name: 'Porco', cost: 150, reward: 250, xp: 100, time: 60000, icon: '🐷', product: 'Bacon', adCost: 0, reqLevel: 4 }, 'cow': { id: 'cow', name: 'Vaca', cost: 500, reward: 800, xp: 250, time: 120000, icon: '🐮', product: 'Leite', adCost: 1, reqLevel: 7 }, 'sheep': { id: 'sheep', name: 'Ovelha', cost: 1000, reward: 1500, xp: 500, time: 300000, icon: '🐑', product: 'Lã', adCost: 2, reqLevel: 12 } };
-          
-          const [grid, setGrid] = useState(() => { try { return JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'); } catch { return []; } });
-          const [selectedItem, setSelectedItem] = useState('wheat'); 
-          const [category, setCategory] = useState('plants'); 
-          const [now, setNow] = useState(Date.now()); 
-          const [showMissions, setShowMissions] = useState(false); 
-          const [showExpand, setShowExpand] = useState(false);
-          const [pan, setPan] = useState({ x: 0, y: 0 });
-          const dragStatus = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, isDragging: false, hasMoved: false });
-          
-          const [landLevel, setLandLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; } });
-          const [level, setLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_level') || '1'); } catch { return 1; } });
-          const [xp, setXp] = useState(() => { try { return parseInt(localStorage.getItem('farm_xp') || '0'); } catch { return 0; } });
-          const [cropAdProgress, setCropAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('farm_crop_ads') || '{}'); } catch { return {}; } });
-          
-          const [levelUpNotif, setLevelUpNotif] = useState(false); const maxXp = level * 100;
-          
-          const addXp = (amount) => { setXp(prev => { const newXp = prev + amount; if (newXp >= maxXp) { setLevel(l => l + 1); setLevelUpNotif(true); playSound('levelup'); setTimeout(() => setLevelUpNotif(false), 3000); return newXp - maxXp; } return newXp; }); };
-          const [missions, setMissions] = useState(() => { try { const saved = safeStorage.getItem('farm_missions'); return saved ? JSON.parse(saved) : [{ id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false }, { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false }, { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }]; } catch { return []; } });
+      // ==========================================
+      // FARM GAME COMPONENT
+      // ==========================================
+      const FarmGame = ({ onBack }) => {
+        const [grid, setGrid] = useState(Array(16).fill(null)); // null, 'seed', 'growing', 'ready'
+        const [coins, setCoins] = useState(50);
+        const [pan, setPan] = useState({ x: 0, y: 0 });
+        const isDragging = useRef(false);
+        const lastPos = useRef({ x: 0, y: 0 });
+        const startPos = useRef({ x: 0, y: 0 }); // To distinguish click vs drag
 
-          useEffect(() => { if (grid.length < landLevel) { const newGrid = [...grid]; while(newGrid.length < landLevel) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null }); setGrid(newGrid); } const interval = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(interval); }, [landLevel]);
-          useEffect(() => safeStorage.setItem('farm_grid_v2', JSON.stringify(grid)), [grid]); useEffect(() => safeStorage.setItem('farm_land', landLevel.toString()), [landLevel]); useEffect(() => safeStorage.setItem('farm_missions', JSON.stringify(missions)), [missions]); useEffect(() => safeStorage.setItem('farm_level', level.toString()), [level]); useEffect(() => safeStorage.setItem('farm_xp', xp.toString()), [xp]);
-          useEffect(() => safeStorage.setItem('farm_crop_ads', JSON.stringify(cropAdProgress)), [cropAdProgress]);
+        const handlePointerDown = (e) => {
+            isDragging.current = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            lastPos.current = { x: clientX, y: clientY };
+            startPos.current = { x: clientX, y: clientY };
+        };
 
-          const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
-          const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
-          
-          const handlePlotClick = (index, e) => { 
-            if (dragStatus.current.hasMoved) return;
-            const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
-          };
-          
-          const handleExpand = () => { triggerAd(() => { setLandLevel(prev => prev + 2); setShowExpand(false); playSound('buy'); }); };
-          const handleTurbo = () => { triggerAd(() => { const SKIP_MS = 600000; setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); playSound('powerup'); }); };
-          const handleItemAdWatch = (id, cost) => { triggerAd(() => { const current = cropAdProgress[id] || 0; if (current < cost) { setCropAdProgress(prev => ({ ...prev, [id]: current + 1 })); playSound('buy'); } }); };
+        const handlePointerMove = (e) => {
+            if (!isDragging.current) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const dx = clientX - lastPos.current.x;
+            const dy = clientY - lastPos.current.y;
+            
+            setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+            lastPos.current = { x: clientX, y: clientY };
+        };
 
-          const handlePointerDown = (e) => { const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0); const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0); dragStatus.current = { startX: clientX, startY: clientY, lastX: clientX, lastY: clientY, isDragging: true, hasMoved: false }; };
-          const handlePointerMove = (e) => { if (!dragStatus.current.isDragging) return; const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0); const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0); const dx = clientX - dragStatus.current.lastX; const dy = clientY - dragStatus.current.lastY; if (Math.abs(clientX - dragStatus.current.startX) > 5 || Math.abs(clientY - dragStatus.current.startY) > 5) { dragStatus.current.hasMoved = true; } if (dragStatus.current.hasMoved) { setPan(p => ({ x: p.x + dx, y: p.y + dy })); dragStatus.current.lastX = clientX; dragStatus.current.lastY = clientY; } };
-          const handlePointerUp = () => { dragStatus.current.isDragging = false; };
-          const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
+        const handlePointerUp = () => {
+            isDragging.current = false;
+        };
 
-          return (
-              <div className="w-full h-full farm-scene flex flex-col overflow-hidden relative text-white font-sans">
-                   <div className="absolute top-0 w-full p-4 flex flex-col gap-2 z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none safe-area-padding">
-                       <div className="flex justify-between items-start w-full max-w-5xl mx-auto">
-                           <button onClick={() => { playSound('ui_click'); onBack(); }} className="pointer-events-auto p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur"><ChevronLeft /></button>
-                           <div className="flex flex-col items-center"><div className="flex items-center gap-2 mb-1"><div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-purple-400 shadow-lg z-10">{level}</div><div className="w-32 h-4 bg-slate-800 rounded-full border border-slate-600 overflow-hidden relative"><div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all duration-500" style={{ width: `${Math.min(100, (xp/maxXp)*100)}%` }}></div><div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow">{xp} / {maxXp} XP</div></div></div></div>
-                           <div className="flex items-center gap-2"><button onClick={() => setShowMissions(true)} className="pointer-events-auto bg-blue-600/80 p-2 rounded-full border border-blue-400 shadow-lg animate-pulse relative"><ClipboardList size={20} />{missions.some(m => m.progress >= m.count && !m.claimed) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>}</button><div className="bg-yellow-500/80 px-4 py-1.5 rounded-full font-bold text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-300 flex items-center gap-2"><Coins size={16} className="text-white fill-white" /> {coins}</div></div>
-                       </div>
-                   </div>
-                   {levelUpNotif && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center"><div className="text-6xl mb-2">⭐</div><h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2><p className="text-xl font-bold text-white">Nível {level}</p></div>}
-                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden cursor-move touch-none" onMouseDown={handlePointerDown} onMouseMove={handlePointerMove} onMouseUp={handlePointerUp} onMouseLeave={handlePointerUp} onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}>
-                       {pan.x === 0 && pan.y === 0 && (<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30 flex flex-col items-center"><Move size={48} className="animate-pulse" /><span className="text-[10px] uppercase tracking-widest mt-2">Arraste para mover</span></div>)}
-                       <div className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative origin-center" style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0) rotateX(45deg) rotateZ(-45deg) scale(0.8)` }}>
-                           <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
-                           <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
-                           {grid.map((plot, i) => { const isAnimal = plot.crop && ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0; const isReady = progress >= 100; return (<div key={i} onClick={(e) => { e.stopPropagation(); handlePlotClick(i, e); }} className={`w-28 h-28 rounded-xl farm-plot relative group cursor-pointer ${isReady ? 'ready' : ''}`}>{def && (<div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}><span className="text-5xl filter drop-shadow-md">{def.icon}</span></div>)}{def && !isReady && (<div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div></div>)}{!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}</div>); })}
-                       </div>
-                   </div>
-                   <button onClick={handleTurbo} className="absolute right-4 bottom-52 z-40 bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-full shadow-[0_0_20px_gold] animate-bounce border-2 border-white flex flex-col items-center"><Zap size={24} fill="black" /><span className="text-[10px] font-bold mt-1">TURBO</span><span className="text-[8px] bg-black text-yellow-500 px-1 rounded">AD</span></button>
-                   <div className="neon-bar h-48 w-full z-40 flex flex-col max-w-5xl mx-auto"><div className="flex w-full border-b border-white/10"><button onClick={() => { setCategory('plants'); setSelectedItem('wheat'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'plants' ? 'text-cyan-400 bg-white/5 border-b-2 border-cyan-400' : 'text-gray-500'}`}>Plantas</button><button onClick={() => { setCategory('animals'); setSelectedItem('chicken'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'animals' ? 'text-purple-400 bg-white/5 border-b-2 border-purple-400' : 'text-gray-500'}`}>Animais</button></div><div className="flex-1 overflow-x-auto flex gap-4 p-4 items-center">
-                           {availableItems.map(item => { const locked = level < item.reqLevel; const currentAds = cropAdProgress[item.id] || 0; const isAdLocked = item.adCost > currentAds; return (<button key={item.id} onClick={() => { if(locked) { playSound('ui_hover'); return; } if(isAdLocked) { handleItemAdWatch(item.id, item.adCost); return; } setSelectedItem(item.id); playSound('ui_click'); }} className={`flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border transition-all active:scale-95 relative overflow-hidden ${selectedItem === item.id ? 'border-cyan-400 bg-cyan-900/20 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-slate-700 bg-black/40 hover:border-slate-500'}`}>{locked && (<div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center text-gray-400"><Lock size={16} className="mb-1" /><span className="text-[10px] font-bold">NVL {item.reqLevel}</span></div>)}{!locked && isAdLocked && (<div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center text-yellow-400 hover:text-yellow-300"><PlayCircle size={20} className="mb-1" /><span className="text-[10px] font-bold">AD {currentAds}/{item.adCost}</span></div>)}<div className="text-4xl mb-2 filter drop-shadow-lg">{item.icon}</div><div className="text-[10px] font-bold text-gray-300 uppercase tracking-wide">{item.name}</div><div className="text-[10px] text-yellow-400 font-bold mt-1 bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">{item.cost} 💰</div>{category === 'animals' && <div className="text-[8px] text-purple-300 mt-0.5">{item.product}</div>}</button>); })}
-                           <button onClick={() => setShowExpand(true)} className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border border-dashed border-green-500/50 bg-green-900/10 hover:bg-green-900/20 text-green-400"><PlusCircle size={24} className="mb-2" /><span className="text-[10px] font-bold uppercase">Expandir</span></button></div></div>
-                   {showMissions && (
-                       <Modal title="MISSÕES DIÁRIAS" onClose={() => setShowMissions(false)}>
-                           <div className="flex flex-col gap-3">
-                               {missions.map(m => (
-                                   <div key={m.id} className="bg-white/5 p-3 rounded flex justify-between items-center border border-white/10">
-                                       <div><div className="font-bold text-sm text-gray-200">{m.text}</div><div className="text-xs text-gray-400">{m.progress}/{m.count}</div><div className="w-24 h-1 bg-gray-700 mt-1 rounded-full"><div className="h-full bg-green-500 transition-all" style={{width: `${(m.progress/m.count)*100}%`}}></div></div></div>
-                                       <button disabled={m.progress < m.count || m.claimed} onClick={() => claimMission(m)} className={`px-3 py-1 rounded text-xs font-bold ${m.claimed ? 'bg-gray-600 opacity-50' : (m.progress >= m.count ? 'bg-green-600 animate-pulse text-white' : 'bg-gray-700 text-gray-400')}`}>{m.claimed ? 'FEITO' : `${m.reward} 💰`}</button>
-                                   </div>
-                               ))}
-                           </div>
-                       </Modal>
-                   )}
-                   {showExpand && (
-                       <Modal title="EXPANDIR TERRENO" onClose={() => setShowExpand(false)}>
-                           <div className="text-center p-4">
-                               <div className="text-4xl mb-4">🚜</div>
-                               <h3 className="text-xl font-bold text-white mb-2">Mais Espaço?</h3>
-                               <p className="text-gray-400 text-sm mb-6">Assista um anúncio para desbloquear +2 lotes de terra na sua fazenda!</p>
-                               <button onClick={handleExpand} className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold flex items-center justify-center gap-2"><PlayCircle size={20}/> ASSISTIR (+2 Lotes)</button>
-                           </div>
-                       </Modal>
-                   )}
-              </div>
-          );
+        const handlePlotClick = (index) => {
+            // Check if it was a drag or a click
+            const dist = Math.hypot(lastPos.current.x - startPos.current.x, lastPos.current.y - startPos.current.y);
+            if (dist > 10) return; // Was a drag, ignore click
+
+            const state = grid[index];
+            if (!state && coins >= 10) {
+                // Plant
+                setCoins(c => c - 10);
+                const newGrid = [...grid];
+                newGrid[index] = 'seed';
+                setGrid(newGrid);
+                playSound('plant');
+                
+                // Growth logic
+                setTimeout(() => {
+                    setGrid(g => { const n = [...g]; if(n[index] === 'seed') n[index] = 'growing'; return n; });
+                    setTimeout(() => {
+                        setGrid(g => { const n = [...g]; if(n[index] === 'growing') n[index] = 'ready'; return n; });
+                    }, 3000);
+                }, 3000);
+
+            } else if (state === 'ready') {
+                // Harvest
+                setCoins(c => c + 20);
+                const newGrid = [...grid];
+                newGrid[index] = null;
+                setGrid(newGrid);
+                playSound('harvest');
+            }
+        };
+
+        return (
+            <div 
+                className="w-full h-full overflow-hidden relative farm-scene cursor-grab active:cursor-grabbing"
+                onMouseDown={handlePointerDown}
+                onMouseMove={handlePointerMove}
+                onMouseUp={handlePointerUp}
+                onMouseLeave={handlePointerUp}
+                onTouchStart={handlePointerDown}
+                onTouchMove={handlePointerMove}
+                onTouchEnd={handlePointerUp}
+            >
+                {/* UI Overlay */}
+                <div className="absolute top-0 left-0 w-full p-4 z-50 safe-area-padding pointer-events-none flex justify-between">
+                    <button onClick={onBack} className="bg-black/50 p-2 rounded-full text-white pointer-events-auto backdrop-blur"><ChevronLeft/></button>
+                    <div className="bg-black/50 px-4 py-2 rounded-full text-yellow-400 font-bold border border-yellow-500/30 backdrop-blur pointer-events-auto flex gap-2">
+                        <Coins size={20}/> {coins}
+                    </div>
+                </div>
+
+                {/* 3D World */}
+                <div className="absolute inset-0 flex items-center justify-center farm-perspective pointer-events-none">
+                    <div 
+                        className="farm-grid-3d grid grid-cols-4 gap-4"
+                        style={{ 
+                            transform: `translate3d(${pan.x}px, ${pan.y}px, 0) rotateX(60deg) rotateZ(-45deg)`,
+                            pointerEvents: 'auto' 
+                        }}
+                    >
+                        {grid.map((state, i) => (
+                            <div 
+                                key={i}
+                                onClick={() => handlePlotClick(i)}
+                                className={`w-24 h-24 farm-plot rounded-lg relative flex items-center justify-center ${state === 'ready' ? 'ready' : ''}`}
+                            >
+                                {state === 'seed' && <div className="w-3 h-3 bg-green-800 rounded-full"></div>}
+                                {state === 'growing' && <Sprout className="text-green-500 w-10 h-10 animate-pulse" />}
+                                {state === 'ready' && <div className="text-yellow-400 text-3xl drop-shadow-lg">🌽</div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Actions Bottom */}
+                <div className="absolute bottom-8 w-full flex justify-center gap-4 pointer-events-none z-50">
+                     <button 
+                        onClick={() => triggerAd(() => setCoins(c => c + 50))} 
+                        className="pointer-events-auto bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2"
+                    >
+                        <Zap size={18}/> FREE COINS (Ad)
+                    </button>
+                    <button 
+                        className="pointer-events-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2"
+                    >
+                        <Maximize size={18}/> EXPAND
+                    </button>
+                </div>
+            </div>
+        );
       };
 
-      // --- GAME 3: PROFESSIONAL 3D HANGMAN ---
-      const HangmanGame = ({ onBack, addCoins, coins }) => {
-          const WORDS = ["TECNOLOGIA", "DESENVOLVEDOR", "PROGRAMA", "INTERNET", "FUTEBOL", "BRASIL", "MUSICA", "COMPUTADOR", "AVENTURA", "GALAXY"];
-          const [word, setWord] = useState("");
-          const [guessed, setGuessed] = useState([]);
-          const [mistakes, setMistakes] = useState(0);
-          const [status, setStatus] = useState("playing");
-          const [hintUsed, setHintUsed] = useState(false);
+      // ==========================================
+      // MAIN APP COMPONENT
+      // ==========================================
+      const App = () => {
+        const [currentScreen, setCurrentScreen] = useState('menu');
+        const [user, setUser] = useState(null);
+        const [showAuth, setShowAuth] = useState(false);
 
-          useEffect(() => { startNewGame(); }, []);
+        useEffect(() => {
+            const checkUser = async () => {
+                if (supabase) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    setUser(session?.user ?? null);
+                }
+            };
+            checkUser();
+        }, []);
 
-          const startNewGame = () => {
-              const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-              setWord(randomWord);
-              setGuessed([]);
-              setMistakes(0);
-              setStatus("playing");
-              setHintUsed(false);
-          };
-
-          const handleGuess = (letter) => {
-              if (status !== "playing" || guessed.includes(letter)) return;
-              playSound('key_press');
-              setGuessed(prev => [...prev, letter]);
-              if (!word.includes(letter)) {
-                  const newMistakes = mistakes + 1;
-                  setMistakes(newMistakes);
-                  playSound('lose');
-                  if (newMistakes >= 6) setStatus("lost");
-              } else {
-                  const isWon = word.split('').every(l => guessed.includes(l) || l === letter);
-                  if (isWon) { 
-                      setStatus("won"); 
-                      playSound('win'); 
-                      addCoins(50);
-                  } else {
-                      playSound('powerup');
-                  }
-              }
-          };
-
-          const handleHint = () => {
-              triggerAd(() => {
-                  const unrevealed = word.split('').filter(l => !guessed.includes(l));
-                  if (unrevealed.length > 0) {
-                      const randomLetter = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-                      handleGuess(randomLetter);
-                      setHintUsed(true);
-                  }
-              });
-          };
-
-          const keyboard = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
-
-          return (
-              <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900 via-slate-900 to-black flex flex-col items-center justify-between p-4 relative overflow-hidden">
-                  <div className="scanlines"></div>
-                  
-                  {/* Header */}
-                  <div className="w-full flex justify-between items-center z-20 max-w-5xl mx-auto safe-area-padding">
-                      <button onClick={onBack} className="p-2 bg-white/10 rounded-full hover:bg-white/20"><ChevronLeft className="text-white"/></button>
-                      <div className="flex items-center gap-2 bg-black/40 px-4 py-1 rounded-full border border-purple-500/30">
-                          <Coins size={16} className="text-yellow-400"/>
-                          <span className="font-bold text-yellow-400">{coins}</span>
-                      </div>
-                      <button onClick={() => { playSound('ui_click'); startNewGame(); }} className="p-2 bg-white/10 rounded-full hover:bg-white/20"><RefreshCw className="text-white" size={20}/></button>
-                  </div>
-
-                  {/* 3D Stage */}
-                  <div className="flex-1 w-full flex flex-col items-center justify-center perspective-[1000px] z-10">
-                      {/* Gallows Holodeck */}
-                      <div className="relative w-64 h-64 mb-8 transform-style-3d group">
-                          {/* Base Glow */}
-                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-12 bg-purple-500/20 blur-xl rounded-full transform rotateX(60deg)"></div>
-                          
-                          {/* Neon SVG Gallows */}
-                          <svg viewBox="0 0 200 250" className="w-full h-full drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">
-                              <path d="M20,230 L180,230" stroke="#4c1d95" strokeWidth="4" strokeLinecap="round" />
-                              <path d="M50,230 L50,20 L140,20 L140,50" stroke="#8b5cf6" strokeWidth="4" fill="none" className="neon-path" />
-                              {/* Hangman Parts */}
-                              {mistakes >= 1 && <circle cx="140" cy="70" r="20" stroke="#f472b6" strokeWidth="4" fill="none" className="animate-fade-in neon-text" />}
-                              {mistakes >= 2 && <line x1="140" y1="90" x2="140" y2="150" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
-                              {mistakes >= 3 && <line x1="140" y1="110" x2="110" y2="130" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
-                              {mistakes >= 4 && <line x1="140" y1="110" x2="170" y2="130" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
-                              {mistakes >= 5 && <line x1="140" y1="150" x2="120" y2="190" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
-                              {mistakes >= 6 && <line x1="140" y1="150" x2="160" y2="190" stroke="#f472b6" strokeWidth="4" className="animate-fade-in" />}
-                          </svg>
-                      </div>
-
-                      {/* Word Display */}
-                      <div className="flex flex-wrap justify-center gap-2 mb-8 px-4">
-                          {word.split('').map((letter, i) => (
-                              <div key={i} className={`w-10 h-12 md:w-12 md:h-14 flex items-center justify-center rounded-lg text-2xl font-bold border-b-4 transition-all duration-300 transform ${guessed.includes(letter) || status === 'lost' ? 'bg-purple-600/20 border-purple-500 text-white rotate-x-0' : 'bg-slate-800 border-slate-600 rotate-x-90'}`}>
-                                  {(guessed.includes(letter) || status === 'lost') ? letter : ''}
-                              </div>
-                          ))}
-                      </div>
-
-                      {/* Status Messages */}
-                      {status === 'won' && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500/90 text-white px-8 py-4 rounded-xl text-2xl font-bold backdrop-blur animate-bounce z-50 whitespace-nowrap shadow-[0_0_30px_rgba(34,197,94,0.6)]">VITORIA! +50 💰</div>}
-                      {status === 'lost' && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-600/90 text-white px-8 py-4 rounded-xl text-2xl font-bold backdrop-blur animate-bounce z-50 whitespace-nowrap shadow-[0_0_30px_rgba(239,68,68,0.6)]">GAME OVER</div>}
-                  </div>
-
-                  {/* Keyboard Area */}
-                  <div className="w-full max-w-2xl bg-black/40 backdrop-blur-md rounded-t-3xl border-t border-white/10 p-4 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                      <div className="flex justify-between items-center mb-4 px-2">
-                         <div className="text-gray-400 text-sm font-bold tracking-wider">TENTATIVAS: <span className={`${mistakes > 4 ? 'text-red-500' : 'text-white'}`}>{6 - mistakes}</span></div>
-                         <button onClick={handleHint} disabled={status !== 'playing'} className="flex items-center gap-1 bg-yellow-600/80 hover:bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-[0_0_15px_rgba(202,138,4,0.4)]"><Lightbulb size={14}/> Dica (AD)</button>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-1.5">
-                          {keyboard.map((key) => {
-                              const isGuessed = guessed.includes(key);
-                              const isCorrect = word.includes(key);
-                              let keyClass = "bg-slate-700 hover:bg-slate-600 text-white border-slate-600";
-                              if (isGuessed) {
-                                  if (isCorrect) keyClass = "bg-green-600 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]";
-                                  else keyClass = "bg-slate-800 text-slate-500 border-slate-800 opacity-50";
-                              }
-                              return (
-                                  <button
-                                      key={key}
-                                      onClick={() => handleGuess(key)}
-                                      disabled={isGuessed || status !== "playing"}
-                                      className={`w-8 h-10 md:w-10 md:h-12 rounded md:rounded-lg font-bold text-sm md:text-lg border-b-4 active:border-b-0 active:translate-y-1 transition-all ${keyClass}`}
-                                  >
-                                      {key}
-                                  </button>
-                              );
-                          })}
-                      </div>
-                  </div>
-              </div>
-          );
-      };
-
-      const GalaxyMenu = ({ onStart, onShop, onBack, coins, onLoginClick, user }) => {
-          return (
-              <div className="w-full h-full bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,#1e1b4b,transparent)] opacity-50"></div>
-                  <div className="scanlines"></div>
-                  
-                  {/* Top Bar for Login */}
-                  <div className="absolute top-0 right-0 p-4 z-50 safe-area-padding">
+        const GalaxyMenu = () => (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black relative overflow-hidden">
+                <div className="premium-bg absolute inset-0 opacity-50"></div>
+                
+                {/* Auth Button */}
+                <div className="absolute top-4 right-4 safe-area-padding z-50">
                     {user ? (
-                        <div className="flex items-center gap-2 bg-slate-800/80 p-2 rounded-full border border-slate-600">
-                            <div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">{user.email[0].toUpperCase()}</div>
-                            <span className="text-xs hidden md:block">{user.email.split('@')[0]}</span>
-                            <button onClick={onLoginClick} className="bg-red-500/20 p-1 rounded-full hover:bg-red-500/40"><LogOut size={14} className="text-red-400" /></button>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-400 hidden sm:block">{user.email}</span>
+                            <button onClick={async () => { await supabase.auth.signOut(); setUser(null); }} className="p-2 bg-red-900/50 rounded-full hover:bg-red-900"><LogOut size={18}/></button>
                         </div>
                     ) : (
-                        <button onClick={onLoginClick} className="flex items-center gap-2 bg-blue-600/80 hover:bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-xs backdrop-blur transition-all">
-                            <User size={16} /> LOGIN
+                        <button onClick={() => setShowAuth(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/50 rounded-full text-blue-300 hover:bg-blue-900/50">
+                            <User size={18}/> LOGIN
                         </button>
                     )}
-                  </div>
+                </div>
 
-                  <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md animate-fade-in safe-area-padding">
-                      <div className="text-center mb-8">
-                           <h1 className="text-6xl font-bold hero-title text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">GALAXY<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">INVADER</span></h1>
-                           <div className="mt-2 text-blue-300 tracking-widest text-sm">DEFEND THE SECTOR</div>
-                      </div>
-                      
-                      <div className="bg-black/40 p-4 rounded-xl border border-white/10 backdrop-blur-sm flex items-center gap-3 mb-4">
-                          <Coins className="text-yellow-400" />
-                          <span className="text-2xl font-bold text-yellow-400">{coins}</span>
-                      </div>
+                <div className="z-10 text-center space-y-8 animate-fade-in px-4">
+                    <h1 className="hero-title text-5xl md:text-7xl mb-2">GALAXY<br/><span className="text-blue-500">INVADER</span></h1>
+                    <p className="text-gray-400 tracking-widest text-sm">PHYSICS UPDATE v2.1</p>
+                    
+                    <div className="flex flex-col gap-4 w-64 mx-auto">
+                        <button onClick={() => setCurrentScreen('galaxy')} className="premium-btn py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2">
+                            <Rocket size={24} /> PLAY
+                        </button>
+                        <button onClick={() => setCurrentScreen('farm')} className="premium-btn py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2 border-green-500/30 text-green-100">
+                            <Sprout size={24} /> FARM
+                        </button>
+                        <button onClick={() => setCurrentScreen('hangman')} className="premium-btn py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2 border-purple-500/30 text-purple-100">
+                            <Brain size={24} /> HANGMAN
+                        </button>
+                    </div>
+                </div>
+                
+                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onUserChange={setUser} />}
+            </div>
+        );
 
-                      <div className="flex flex-col gap-4 w-full">
-                          <button onClick={() => { playSound('ui_click'); onStart(); }} className="premium-btn p-6 rounded-2xl flex items-center justify-between group">
-                              <div className="flex items-center gap-4">
-                                  <div className="bg-blue-600/20 p-3 rounded-lg text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors"><Rocket size={32} /></div>
-                                  <div className="text-left"><div className="font-bold text-xl">START MISSION</div><div className="text-xs text-gray-400">Endless Arcade Mode</div></div>
-                              </div>
-                              <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white" />
-                          </button>
-                          
-                          <button onClick={() => { playSound('ui_click'); onShop(); }} className="premium-btn p-6 rounded-2xl flex items-center justify-between group">
-                              <div className="flex items-center gap-4">
-                                  <div className="bg-purple-600/20 p-3 rounded-lg text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors"><ShoppingCart size={32} /></div>
-                                  <div className="text-left"><div className="font-bold text-xl">HANGAR</div><div className="text-xs text-gray-400">Upgrade Your Ship</div></div>
-                              </div>
-                              <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white" />
-                          </button>
-
-                          <button onClick={() => { playSound('ui_click'); onBack(); }} className="premium-btn p-4 rounded-xl text-gray-400 hover:text-white text-sm font-bold">
-                              RETURN TO MAIN MENU
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          );
-      };
-
-      const App = () => {
-          const [currentScreen, setCurrentScreen] = useState('menu');
-          const [currentSubScreen, setCurrentSubScreen] = useState(null); // For Galaxy Menu vs Game
-          const [coins, setCoins] = useState(() => parseInt(localStorage.getItem('galaxy_coins') || '0'));
-          const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
-          const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'));
-          const [adProgress, setAdProgress] = useState(() => JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'));
-          const [user, setUser] = useState(null);
-          const [showAuth, setShowAuth] = useState(false);
-
-          useEffect(() => {
-              if (supabase) {
-                  supabase.auth.getSession().then(({ data: { session } }) => { if (session) setUser(session.user); });
-                  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
-                  return () => subscription.unsubscribe();
-              }
-          }, []);
-
-          const addCoins = (amount) => {
-              setCoins(prev => {
-                  const newVal = Math.max(0, prev + amount);
-                  localStorage.setItem('galaxy_coins', newVal.toString());
-                  return newVal;
-              });
-          };
-
-          const handleShipAdWatch = (shipId, required) => {
-              setAdProgress(prev => {
-                  const current = prev[shipId] || 0;
-                  const newCount = current + 1;
-                  const newProgress = { ...prev, [shipId]: newCount };
-                  localStorage.setItem('galaxy_ad_progress', JSON.stringify(newProgress));
-                  if (newCount >= required) {
-                      setUnlockedShips(u => {
-                          const newU = [...u, shipId];
-                          localStorage.setItem('galaxy_unlocked', JSON.stringify(newU));
-                          return newU;
-                      });
-                      playSound('levelup');
-                  }
-                  return newProgress;
-              });
-          };
-
-          const handleLogout = async () => {
-              if (supabase) await supabase.auth.signOut();
-          };
-
-          const renderScreen = () => {
-              // Main Hub
-              if (currentScreen === 'menu') {
-                  return (
-                      <div className="w-full h-full bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,#1e1b4b,transparent)] opacity-50"></div>
-                          <div className="scanlines"></div>
-                          
-                          <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md animate-fade-in safe-area-padding">
-                              <h1 className="text-6xl font-bold hero-title text-center drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">JOGOS<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">ONLINE</span></h1>
-                              
-                              <div className="flex flex-col gap-4 w-full">
-                                  <button onClick={() => { playSound('ui_click'); setCurrentScreen('galaxy_hub'); }} className="premium-btn p-6 rounded-2xl flex items-center gap-4 group">
-                                      <div className="bg-blue-600/20 p-3 rounded-lg text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-colors"><Rocket size={32} /></div>
-                                      <div className="text-left"><div className="font-bold text-xl">GALAXY INVADER</div><div className="text-xs text-gray-400">Ação Espacial 3D</div></div>
-                                  </button>
-                                  
-                                  <button onClick={() => { playSound('ui_click'); setCurrentScreen('farm'); }} className="premium-btn p-6 rounded-2xl flex items-center gap-4 group">
-                                      <div className="bg-green-600/20 p-3 rounded-lg text-green-400 group-hover:bg-green-600 group-hover:text-white transition-colors"><Sprout size={32} /></div>
-                                      <div className="text-left"><div className="font-bold text-xl">FAZENDA FELIZ</div><div className="text-xs text-gray-400">Gerencie sua Fazenda</div></div>
-                                  </button>
-                                  
-                                  <button onClick={() => { playSound('ui_click'); setCurrentScreen('hangman'); }} className="premium-btn p-6 rounded-2xl flex items-center gap-4 group">
-                                      <div className="bg-purple-600/20 p-3 rounded-lg text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition-colors"><Brain size={32} /></div>
-                                      <div className="text-left"><div className="font-bold text-xl">JOGO DA FORCA</div><div className="text-xs text-gray-400">Desafie seu Vocabulário</div></div>
-                                  </button>
-                              </div>
-                          </div>
-                          <InstallButton />
-                      </div>
-                  );
-              }
-
-              // Galaxy Hub (Menu or Game)
-              if (currentScreen === 'galaxy_hub') {
-                  if (currentSubScreen === 'game') return <GalaxyInvader onBack={() => setCurrentSubScreen(null)} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
-                  if (currentSubScreen === 'shop') return <ShopScreen adProgress={adProgress} handleShipAdWatch={handleShipAdWatch} equipShip={(id) => { setEquippedShip(id); localStorage.setItem('galaxy_equipped', id); }} unlockedShips={unlockedShips} equippedShip={equippedShip} onBack={() => setCurrentSubScreen(null)} />;
-                  return <GalaxyMenu onStart={() => setCurrentSubScreen('game')} onShop={() => setCurrentSubScreen('shop')} onBack={() => setCurrentScreen('menu')} coins={coins} onLoginClick={() => user ? handleLogout() : setShowAuth(true)} user={user} />;
-              }
-
-              // Other Games
-              if (currentScreen === 'farm') return <FarmGame onBack={() => setCurrentScreen('menu')} addCoins={addCoins} coins={coins} />;
-              if (currentScreen === 'hangman') return <HangmanGame onBack={() => setCurrentScreen('menu')} addCoins={addCoins} coins={coins} />;
-              
-              return null;
-          };
-
-          return (
-            <>
-                {renderScreen()}
-                {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
-            </>
-          );
+        return (
+            <div className="w-full h-full bg-black text-white">
+                {currentScreen === 'menu' && <GalaxyMenu />}
+                {currentScreen === 'galaxy' && <GalaxyInvader onBack={() => setCurrentScreen('menu')} />}
+                {currentScreen === 'farm' && <FarmGame onBack={() => setCurrentScreen('menu')} />}
+                {currentScreen === 'hangman' && <HangmanGame onBack={() => setCurrentScreen('menu')} />}
+            </div>
+        );
       };
 
       const root = createRoot(document.getElementById('root'));
