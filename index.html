@@ -610,8 +610,10 @@
                       playSound('powerup');
                   } else {
                       // Trigger Direct Link via click and give reward
-                      handleShipAdWatch(ship.id, reqAds);
-                      playSound('buy');
+                      triggerAd(() => {
+                          handleShipAdWatch(ship.id, reqAds);
+                          playSound('buy');
+                      });
                   }
               };
 
