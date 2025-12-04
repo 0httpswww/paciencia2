@@ -184,6 +184,34 @@
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
+      // MONETAG ADS CONFIGURATION
+      // ==========================================
+      // SUBSTITUA PELO SEU LINK DIRETO REAL DA MONETAG
+      const MONETAG_DIRECT_LINK = 'https://al5sm.com/4/10264533'; 
+
+      // Helper para abrir o Direct Link e conceder recompensa
+      const triggerAd = (onReward) => {
+          // Play Sound
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = 600;
+          gain.gain.value = 0.1;
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+
+          // Open Direct Link
+          window.open(MONETAG_DIRECT_LINK, '_blank');
+          
+          // Grant reward after delay (simulating view)
+          setTimeout(() => {
+              if (onReward) onReward();
+          }, 1000);
+      };
+
+      // ==========================================
       // SUPABASE CONFIG
       // ==========================================
       const initSupabase = () => {
@@ -241,6 +269,7 @@
                 case 'lose': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
                 case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
                 case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'buy': osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
             }
           } catch(e) {}
       };
@@ -394,11 +423,13 @@
           const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
 
           const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
+          
           const handleRespawn = () => { 
-              // Ad is triggered by Popunder on Click bubbling
-              setStats(prev => ({ ...prev, hp: 100 })); 
-              setGameState('playing'); 
-              playSound('powerup');
+              triggerAd(() => {
+                setStats(prev => ({ ...prev, hp: 100 })); 
+                setGameState('playing'); 
+                playSound('powerup');
+              });
           };
           
           useEffect(() => {
@@ -577,7 +608,7 @@
                       equipShip(ship.id);
                       playSound('powerup');
                   } else {
-                      // Trigger Popunder via click and give reward
+                      // Trigger Direct Link via click and give reward
                       handleShipAdWatch(ship.id, reqAds);
                       playSound('buy');
                   }
@@ -670,16 +701,30 @@
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
           const handlePlotClick = (index) => { const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } };
           
-          const handleExpand = () => { setLandLevel(prev => prev + 2); setShowExpand(false); playSound('buy'); };
-          const handleTurbo = () => { const SKIP_MS = 600000; setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); playSound('powerup'); };
+          const handleExpand = () => { 
+              triggerAd(() => {
+                setLandLevel(prev => prev + 2); 
+                setShowExpand(false); 
+                playSound('buy');
+              });
+          };
+          const handleTurbo = () => { 
+              triggerAd(() => {
+                const SKIP_MS = 600000; 
+                setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); 
+                playSound('powerup');
+              });
+          };
           
           const handleItemAdWatch = (id, cost) => {
-              // Trigger Popunder via click and give reward
-              const current = cropAdProgress[id] || 0;
-              if (current < cost) {
-                  setCropAdProgress(prev => ({ ...prev, [id]: current + 1 }));
-                  playSound('buy');
-              }
+              // Trigger Direct Link via click and give reward
+              triggerAd(() => {
+                const current = cropAdProgress[id] || 0;
+                if (current < cost) {
+                    setCropAdProgress(prev => ({ ...prev, [id]: current + 1 }));
+                    playSound('buy');
+                }
+              });
           };
 
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
@@ -729,9 +774,11 @@
           useEffect(() => { resetGame(); }, []); const resetGame = () => { const cats = Object.keys(CATEGORIES); const rc = cats[Math.floor(Math.random() * cats.length)]; const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)]; setCategory(rc); setWord(rw); setGuessed([]); setErrors(0); setGameOver(false); setWon(false); };
           const handleGuess = (letter) => { if (gameOver || guessed.includes(letter)) return; const newGuessed = [...guessed, letter]; setGuessed(newGuessed); if (!word.includes(letter)) { const newErrors = errors + 1; setErrors(newErrors); if (newErrors >= 6) { setGameOver(true); playSound('lose'); } else playSound('lose'); } else { playSound('correct'); if (word.split('').every(l => newGuessed.includes(l))) { setWon(true); setGameOver(true); addCoins(20); playSound('win'); } } };
           const handleTip = () => { 
-              // Ad is triggered by Popunder on Click bubbling
-              const missing = word.split('').find(l => !guessed.includes(l)); 
-              if (missing) handleGuess(missing); 
+              // Trigger Direct Link via click and give reward
+              triggerAd(() => {
+                const missing = word.split('').find(l => !guessed.includes(l)); 
+                if (missing) handleGuess(missing);
+              });
           };
           const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
           return (
@@ -828,10 +875,12 @@
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]); useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]); useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]); useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
           const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
           const handleShipAdWatch = (shipId, reqAds) => { 
-              // Ad is triggered by Popunder on Click bubbling, logic gives reward immediately
-              const next = (adProgress[shipId] || 0) + 1; 
-              setAdProgress(p => ({ ...p, [shipId]: next })); 
-              if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
+              // Trigger Direct Link via click and give reward
+              triggerAd(() => {
+                const next = (adProgress[shipId] || 0) + 1; 
+                setAdProgress(p => ({ ...p, [shipId]: next })); 
+                if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
+              });
           };
           
           const startGame = (name) => { playSound('ui_click'); setCurrentScreen(name); };
