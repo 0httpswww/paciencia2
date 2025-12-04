@@ -403,7 +403,11 @@
           const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
 
           const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
-          const handleRespawn = () => { window.open('https://otieu.com/4/10270523', '_blank'); setStats(prev => ({ ...prev, hp: 100 })); setGameState('playing'); };
+          const handleRespawn = () => { 
+              // Removed Direct Link Ad
+              setStats(prev => ({ ...prev, hp: 100 })); 
+              setGameState('playing'); 
+          };
           
           useEffect(() => {
               const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
@@ -528,7 +532,7 @@
                           <h2 className="text-5xl font-bold text-red-500 mb-2 neon-title">MISSION FAILED</h2>
                           <div className="text-2xl text-white mb-8">Final Score: <span className="text-yellow-400">{stats.score}</span></div>
                           <div className="flex flex-col gap-4 w-64">
-                              <button onClick={() => { playSound('ui_click'); handleRespawn(); }} className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><PlayCircle size={24} /> REVIVE (WATCH AD)</button>
+                              <button onClick={() => { playSound('ui_click'); handleRespawn(); }} className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><PlayCircle size={24} /> REVIVE (AD)</button>
                               <button onClick={() => { playSound('ui_click'); setStats({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 }); setGameState('playing'); }} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white flex items-center justify-center gap-2"><RotateCcw size={20} /> RESTART MISSION</button>
                               <button onClick={() => { playSound('ui_click'); onBack(); }} className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-gray-300">RETURN TO BASE</button>
                           </div>
@@ -662,8 +666,18 @@
           const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
           const handlePlotClick = (index) => { const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } };
-          const handleExpand = () => { window.open('https://otieu.com/4/10270523', '_blank'); setLandLevel(prev => prev + 2); setShowExpand(false); playSound('buy'); };
-          const handleTurbo = () => { window.open('https://otieu.com/4/10270523', '_blank'); const SKIP_MS = 600000; setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); playSound('powerup'); };
+          const handleExpand = () => { 
+              // Removed Direct Link Ad
+              setLandLevel(prev => prev + 2); 
+              setShowExpand(false); 
+              playSound('buy'); 
+          };
+          const handleTurbo = () => { 
+              // Removed Direct Link Ad
+              const SKIP_MS = 600000; 
+              setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); 
+              playSound('powerup'); 
+          };
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
           return (
@@ -695,7 +709,11 @@
           const [category, setCategory] = useState('FRUTAS'); const [word, setWord] = useState('BANANA'); const [guessed, setGuessed] = useState([]); const [errors, setErrors] = useState(0); const [gameOver, setGameOver] = useState(false); const [won, setWon] = useState(false);
           useEffect(() => { resetGame(); }, []); const resetGame = () => { const cats = Object.keys(CATEGORIES); const rc = cats[Math.floor(Math.random() * cats.length)]; const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)]; setCategory(rc); setWord(rw); setGuessed([]); setErrors(0); setGameOver(false); setWon(false); };
           const handleGuess = (letter) => { if (gameOver || guessed.includes(letter)) return; const newGuessed = [...guessed, letter]; setGuessed(newGuessed); if (!word.includes(letter)) { const newErrors = errors + 1; setErrors(newErrors); if (newErrors >= 6) { setGameOver(true); playSound('lose'); } else playSound('lose'); } else { playSound('correct'); if (word.split('').every(l => newGuessed.includes(l))) { setWon(true); setGameOver(true); addCoins(20); playSound('win'); } } };
-          const handleTip = () => { window.open('https://otieu.com/4/10270523', '_blank'); const missing = word.split('').find(l => !guessed.includes(l)); if (missing) handleGuess(missing); };
+          const handleTip = () => { 
+              // Removed Direct Link Ad
+              const missing = word.split('').find(l => !guessed.includes(l)); 
+              if (missing) handleGuess(missing); 
+          };
           const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
           return (
               <div className="w-full h-full bg-slate-900 text-white flex flex-col p-4 relative premium-bg">
@@ -777,8 +795,17 @@
 
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]); useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]); useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]); useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
           const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
-          const handleShipAdWatch = (shipId, reqAds) => { window.open('https://otieu.com/4/10270523', '_blank'); const next = (adProgress[shipId] || 0) + 1; setAdProgress(p => ({ ...p, [shipId]: next })); if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } };
-          const triggerAd = (e) => { if (Date.now() - lastAdTime < 180000) return; setLastAdTime(Date.now()); window.open('https://otieu.com/4/10270523', '_blank'); };
+          const handleShipAdWatch = (shipId, reqAds) => { 
+              // Removed Direct Link Ad
+              const next = (adProgress[shipId] || 0) + 1; 
+              setAdProgress(p => ({ ...p, [shipId]: next })); 
+              if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
+          };
+          const triggerAd = (e) => { 
+              if (Date.now() - lastAdTime < 180000) return; 
+              setLastAdTime(Date.now()); 
+              // Removed Direct Link Ad
+          };
           const startGame = (name) => { playSound('ui_click'); triggerAd(); setCurrentScreen(name); };
           const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); playSound('ui_click'); };
 
