@@ -181,8 +181,8 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      // Aliased Map to MapIcon to avoid conflict with global Map constructor
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Worm, Zap, Download, PlayCircle, ClipboardList, X, Map as MapIcon, Save, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      // Replaced Map with PlusCircle to avoid conflict
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Worm, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -190,9 +190,6 @@
       // ==========================================
       const initSupabase = () => {
           // CREDENCIAIS PÚBLICAS (Frontend Only)
-          // A chave 'ANON' é feita para ser usada aqui. A segurança é feita pelas regras RLS no Banco de Dados.
-          // NUNCA coloque a chave 'SERVICE_ROLE' aqui.
-          
           const supabaseUrl = 'https://yscuszxakpepfrxcpnkc.supabase.co';
           const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto';
           
@@ -1115,7 +1112,7 @@
                            })}
                            {/* Expand Button inside list */}
                            <button onClick={() => setShowExpand(true)} className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border border-dashed border-green-500/50 bg-green-900/10 hover:bg-green-900/20 text-green-400">
-                               <MapIcon size={24} className="mb-2" />
+                               <PlusCircle size={24} className="mb-2" />
                                <span className="text-[10px] font-bold uppercase">Expandir</span>
                            </button>
                        </div>
@@ -1300,7 +1297,7 @@
           // User & Auth
           const [user, setUser] = useState(null);
           const [showAuth, setShowAuth] = useState(false);
-          const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, saved, error
+          const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, saved, error, offline
 
           const [coins, setCoins] = useState(() => { try { return parseInt(localStorage.getItem('galaxy_coins') || '0'); } catch { return 0; } });
           const [unlockedShips, setUnlockedShips] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'); } catch { return ['starter']; } });
@@ -1374,13 +1371,20 @@
                               });
                           error = upsertError;
                       }
+
+                      // Handle Table Missing Error (First time setup needed)
+                      if (error && (error.code === 'PGRST301' || error.message.includes('relation "public.game_saves" does not exist'))) {
+                          console.error("Database setup missing: Table game_saves not found.");
+                          setSyncStatus('offline'); // Stop trying to sync if table is missing
+                          return;
+                      }
                           
-                      if (error) throw new Error(error.message);
+                      if (error) throw new Error(error.message || JSON.stringify(error));
 
                       setSyncStatus('saved');
                       setTimeout(() => setSyncStatus('idle'), 2000);
                   } catch (err) {
-                      console.error("Sync failed:", err);
+                      console.error("Sync failed:", err.message || JSON.stringify(err));
                       setSyncStatus('error');
                   }
               }, 2000); // Wait 2s of inactivity before syncing
@@ -1395,9 +1399,20 @@
                       .eq('user_id', userId)
                       .single();
                   
-                  if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found" (new user)
-                      console.error("Load Error:", error);
-                      return;
+                  if (error) {
+                       // PGRST116 is "Row not found" (new user) - Expected
+                       // PGRST301 is "Relation not found" (Missing table) - Critical setup issue
+                       if (error.code === 'PGRST116') {
+                           console.log("New user, no save found.");
+                           return;
+                       }
+                       if (error.code === 'PGRST301' || error.message.includes('relation "public.game_saves" does not exist')) {
+                           console.error("CRITICAL: Database table 'game_saves' is missing. Please run SQL setup.");
+                           setSyncStatus('offline');
+                           return;
+                       }
+                       console.error("Load Error:", error.message || JSON.stringify(error));
+                       return;
                   }
                       
                   if (data?.data) {
@@ -1518,12 +1533,12 @@
                       <div className="absolute bottom-4 text-gray-700 text-xs flex flex-col items-center gap-1">
                           {user ? (
                               <div className="flex items-center gap-1 text-blue-400 font-bold">
-                                  {syncStatus === 'syncing' ? <><Loader2 size={10} className="animate-spin"/> Salvando na Nuvem...</> : (syncStatus === 'saved' ? <><Cloud size={10} /> Progresso Salvo</> : <><Cloud size={10} /> Conectado</>)}
+                                  {syncStatus === 'syncing' ? <><Loader2 size={10} className="animate-spin"/> Salvando na Nuvem...</> : (syncStatus === 'saved' ? <><Cloud size={10} /> Progresso Salvo</> : (syncStatus === 'offline' ? <><span className="text-red-500">⚠ Tabela não criada</span></> : <><Cloud size={10} /> Conectado</>))}
                               </div>
                           ) : (
                               <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> Progresso Local</div>
                           )}
-                          <div>v4.12.0 (Supabase Enabled)</div>
+                          <div>v4.13.0 (Fixed Import & Sync)</div>
                       </div>
                       
                       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
