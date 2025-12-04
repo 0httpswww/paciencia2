@@ -395,7 +395,7 @@
           const img = new Image(); img.src = canvas.toDataURL(); return img;
       };
 
-      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
+      const GalaxyInvader = ({ onBack, equippedShipId, addCoins, currentCoins }) => {
           const canvasRef = useRef(null);
           const [gameState, setGameState] = useState('playing'); 
           const [stats, setStats] = useState({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 });
@@ -404,9 +404,10 @@
 
           const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
           const handleRespawn = () => { 
-              // Ad is triggered by Popunder on Click
+              // Ad is triggered by Popunder on Click bubbling
               setStats(prev => ({ ...prev, hp: 100 })); 
               setGameState('playing'); 
+              playSound('powerup');
           };
           
           useEffect(() => {
@@ -585,6 +586,7 @@
                       equipShip(ship.id);
                       playSound('powerup');
                   } else {
+                      // Trigger Popunder via click and give reward
                       handleShipAdWatch(ship.id, reqAds);
                       playSound('buy');
                   }
@@ -647,7 +649,7 @@
       };
 
       // --- GAME 2: FARM GAME (Updated UI Logic for Dark Mode & Ad Integration) ---
-      const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
+      const FarmGame = ({ onBack, addCoins, coins }) => {
           const CROPS = { 'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, xp: 5, time: 5000, icon: '🌾', adCost: 0, reqLevel: 1 }, 'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, xp: 10, time: 10000, icon: '🌽', adCost: 0, reqLevel: 2 }, 'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, xp: 20, time: 20000, icon: '🥕', adCost: 1, reqLevel: 3 }, 'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, xp: 40, time: 45000, icon: '🍅', adCost: 2, reqLevel: 5 }, 'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, xp: 80, time: 90000, icon: '🍓', adCost: 3, reqLevel: 8 }, 'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, xp: 150, time: 180000, icon: '🍇', adCost: 5, reqLevel: 10 } };
           const ANIMALS = { 'chicken': { id: 'chicken', name: 'Galinha', cost: 50, reward: 100, xp: 50, time: 30000, icon: '🐔', product: 'Ovo', adCost: 0, reqLevel: 2 }, 'pig': { id: 'pig', name: 'Porco', cost: 150, reward: 250, xp: 100, time: 60000, icon: '🐷', product: 'Bacon', adCost: 0, reqLevel: 4 }, 'cow': { id: 'cow', name: 'Vaca', cost: 500, reward: 800, xp: 250, time: 120000, icon: '🐮', product: 'Leite', adCost: 1, reqLevel: 7 }, 'sheep': { id: 'sheep', name: 'Ovelha', cost: 1000, reward: 1500, xp: 500, time: 300000, icon: '🐑', product: 'Lã', adCost: 2, reqLevel: 12 } };
           
@@ -681,7 +683,7 @@
           const handleTurbo = () => { const SKIP_MS = 600000; setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); playSound('powerup'); };
           
           const handleItemAdWatch = (id, cost) => {
-              // Trigger Popunder via click
+              // Trigger Popunder via click and give reward
               const current = cropAdProgress[id] || 0;
               if (current < cost) {
                   setCropAdProgress(prev => ({ ...prev, [id]: current + 1 }));
@@ -730,13 +732,13 @@
       };
 
       // --- GAME 3 & 4: HANGMAN & SLITHER (Styles updated via CSS) ---
-      const HangmanGame = ({ onBack, triggerAd, addCoins }) => {
+      const HangmanGame = ({ onBack, addCoins }) => {
           const CATEGORIES = { 'FRUTAS': ['BANANA', 'MAÇA', 'UVA', 'LARANJA', 'ABACAXI', 'MELANCIA', 'MORANGO'], 'ANIMAIS': ['GATO', 'CACHORRO', 'ELEFANTE', 'LEAO', 'TIGRE', 'GIRAFA', 'MACACO'], 'PAISES': ['BRASIL', 'ARGENTINA', 'JAPAO', 'ALEMANHA', 'CANADA', 'ITALIA', 'MEXICO'] };
           const [category, setCategory] = useState('FRUTAS'); const [word, setWord] = useState('BANANA'); const [guessed, setGuessed] = useState([]); const [errors, setErrors] = useState(0); const [gameOver, setGameOver] = useState(false); const [won, setWon] = useState(false);
           useEffect(() => { resetGame(); }, []); const resetGame = () => { const cats = Object.keys(CATEGORIES); const rc = cats[Math.floor(Math.random() * cats.length)]; const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)]; setCategory(rc); setWord(rw); setGuessed([]); setErrors(0); setGameOver(false); setWon(false); };
           const handleGuess = (letter) => { if (gameOver || guessed.includes(letter)) return; const newGuessed = [...guessed, letter]; setGuessed(newGuessed); if (!word.includes(letter)) { const newErrors = errors + 1; setErrors(newErrors); if (newErrors >= 6) { setGameOver(true); playSound('lose'); } else playSound('lose'); } else { playSound('correct'); if (word.split('').every(l => newGuessed.includes(l))) { setWon(true); setGameOver(true); addCoins(20); playSound('win'); } } };
           const handleTip = () => { 
-              // Ad is triggered by Popunder on Click
+              // Ad is triggered by Popunder on Click bubbling
               const missing = word.split('').find(l => !guessed.includes(l)); 
               if (missing) handleGuess(missing); 
           };
@@ -764,7 +766,6 @@
       // --- Main App ---
       const App = () => {
           const [currentScreen, setCurrentScreen] = useState('home');
-          const [lastAdTime, setLastAdTime] = useState(0);
           const [user, setUser] = useState(null);
           const [showAuth, setShowAuth] = useState(false);
           const [syncStatus, setSyncStatus] = useState('idle');
@@ -836,25 +837,21 @@
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]); useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]); useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]); useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
           const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
           const handleShipAdWatch = (shipId, reqAds) => { 
-              // Ad is triggered by Popunder on Click
+              // Ad is triggered by Popunder on Click bubbling, logic gives reward immediately
               const next = (adProgress[shipId] || 0) + 1; 
               setAdProgress(p => ({ ...p, [shipId]: next })); 
               if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
           };
-          const triggerAd = (e) => { 
-              if (Date.now() - lastAdTime < 180000) return; 
-              setLastAdTime(Date.now()); 
-              // Ad is triggered by Popunder on Click
-          };
-          const startGame = (name) => { playSound('ui_click'); triggerAd(); setCurrentScreen(name); };
+          
+          const startGame = (name) => { playSound('ui_click'); setCurrentScreen(name); };
           const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); playSound('ui_click'); };
 
           switch(currentScreen) {
               case 'galaxy-menu': return <GalaxyMenu onStart={() => startGame('galaxy-game')} onShop={() => setCurrentScreen('shop')} onBack={() => setCurrentScreen('home')} coins={coins} />;
-              case 'galaxy-game': return <GalaxyInvader onBack={() => setCurrentScreen('galaxy-menu')} triggerAd={triggerAd} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+              case 'galaxy-game': return <GalaxyInvader onBack={() => setCurrentScreen('galaxy-menu')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
               case 'shop': return <ShopScreen adProgress={adProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equippedShip={equippedShip} equipShip={equipShip} onBack={() => setCurrentScreen('galaxy-menu')} />;
-              case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
-              case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
+              case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} coins={coins} />;
+              case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} />;
               case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} />;
               default: return (
                   <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden premium-bg">
