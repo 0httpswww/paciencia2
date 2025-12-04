@@ -6,6 +6,22 @@
     <title>JoGos Online</title>
     <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
     <meta name="theme-color" content="#000000">
+    
+    <!-- SEGURANÇA: Content Security Policy (CSP) 
+         Isso impede que scripts não autorizados rodem ou enviem dados para fora.
+         Permitimos: Self (nosso site), Supabase, CDNs usados e os domínios de Ads.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' https://*.supabase.co https://*.supabase.in;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://aistudiocdn.com https://al5sm.com https://gizokraijaw.net https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+        img-src 'self' data: https://r2.erweima.ai;
+        connect-src 'self' https://*.supabase.co https://*.supabase.in https://al5sm.com https://gizokraijaw.net;
+        font-src 'self';
+        object-src 'none';
+        base-uri 'self';
+    ">
+
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
     <meta name='admaven-placement' content='BqjwGrds9'>
@@ -174,18 +190,23 @@
       // ==========================================
       // SEGURANÇA E CONFIGURAÇÃO
       // ==========================================
-      // As chaves são carregadas via função protegida para evitar exposição global.
-      // NOTA DE SEGURANÇA: A "Anon Key" é pública por design. 
-      // A segurança real é garantida pelo RLS (Row Level Security) no banco de dados.
       const initSupabase = () => {
-          // Strings codificadas em Base64 para ofuscação visual simples
+          // As chaves estão ofuscadas (Base64) apenas para evitar "scrapers" simples.
+          // ATENÇÃO: A segurança REAL depende das regras "Row Level Security" (RLS)
+          // que você configurou no painel do Supabase. Não remova as regras SQL!
           const _u = "aHR0cHM6Ly95c2N1c3p4YWtwZXBmcnhjcG5rYy5zdXBhYmFzZS5jbw==";
           const _k = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5semMzVnplbmhoYTNCbGNHWnlhR053Ym10aklpd2ljbTlzWlNJNkltRnVkbTVpTENKcFlYUWlPakUzTmpRNE1USXhNRGNzSW1WNGNDSTZNakE0TURNNE9ERXdOMzAuN3lCMVkwaHlKSEpBZDlJQy10V2JwS0xJR3YwczFxYm4zME1UTkV5Z0d0bw==";
           
           try {
               const u = atob(_u);
               const k = atob(_k);
-              if (u && k) return createClient(u, k);
+              // Cliente configurado com persistência local
+              if (u && k) return createClient(u, k, {
+                  auth: {
+                      persistSession: true,
+                      storageKey: 'galaxy_auth_token'
+                  }
+              });
           } catch(e) {
               console.error("Erro na config de segurança");
           }
