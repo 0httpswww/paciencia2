@@ -178,11 +178,11 @@
     </script>
 </head>
 <body>
-    <!-- Monetag Popunder (Zone: 10264533) -->
-    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})(document.body.appendChild(document.createElement('script')))</script>
+    <!-- Monetag Popunder (Zone: 10264533) - Robust Injection -->
+    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     
     <!-- Monetag Vignette (Zone: 10273879) -->
-    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})(document.body.appendChild(document.createElement('script')))</script>
+    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
     <div id="root" class="h-[100dvh] w-full overflow-hidden flex flex-col"></div>
 
@@ -404,7 +404,7 @@
 
           const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
           const handleRespawn = () => { 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
               setStats(prev => ({ ...prev, hp: 100 })); 
               setGameState('playing'); 
           };
@@ -667,13 +667,13 @@
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
           const handlePlotClick = (index) => { const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } };
           const handleExpand = () => { 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
               setLandLevel(prev => prev + 2); 
               setShowExpand(false); 
               playSound('buy'); 
           };
           const handleTurbo = () => { 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
               const SKIP_MS = 600000; 
               setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); 
               playSound('powerup'); 
@@ -710,7 +710,7 @@
           useEffect(() => { resetGame(); }, []); const resetGame = () => { const cats = Object.keys(CATEGORIES); const rc = cats[Math.floor(Math.random() * cats.length)]; const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)]; setCategory(rc); setWord(rw); setGuessed([]); setErrors(0); setGameOver(false); setWon(false); };
           const handleGuess = (letter) => { if (gameOver || guessed.includes(letter)) return; const newGuessed = [...guessed, letter]; setGuessed(newGuessed); if (!word.includes(letter)) { const newErrors = errors + 1; setErrors(newErrors); if (newErrors >= 6) { setGameOver(true); playSound('lose'); } else playSound('lose'); } else { playSound('correct'); if (word.split('').every(l => newGuessed.includes(l))) { setWon(true); setGameOver(true); addCoins(20); playSound('win'); } } };
           const handleTip = () => { 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
               const missing = word.split('').find(l => !guessed.includes(l)); 
               if (missing) handleGuess(missing); 
           };
@@ -796,7 +796,7 @@
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]); useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]); useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]); useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
           const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
           const handleShipAdWatch = (shipId, reqAds) => { 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
               const next = (adProgress[shipId] || 0) + 1; 
               setAdProgress(p => ({ ...p, [shipId]: next })); 
               if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
@@ -804,7 +804,7 @@
           const triggerAd = (e) => { 
               if (Date.now() - lastAdTime < 180000) return; 
               setLastAdTime(Date.now()); 
-              // Removed Direct Link Ad
+              // Ad is triggered by Popunder on Click
           };
           const startGame = (name) => { playSound('ui_click'); triggerAd(); setCurrentScreen(name); };
           const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); playSound('ui_click'); };
