@@ -687,8 +687,7 @@
           
           // Camera / Pan State
           const [pan, setPan] = useState({ x: 0, y: 0 });
-          const [isDragging, setIsDragging] = useState(false);
-          const lastPos = useRef({ x: 0, y: 0 });
+          const dragStatus = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, isDragging: false, hasMoved: false });
           
           // Persistence
           const [landLevel, setLandLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; } });
@@ -707,12 +706,10 @@
 
           const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
+          
           const handlePlotClick = (index, e) => { 
-            // Prevent click if dragging occurred
-            if(Math.abs(pan.x - lastPos.current.startX) > 5 || Math.abs(pan.y - lastPos.current.startY) > 5) {
-                // Was a drag, not a click
-                return;
-            }
+            // Only allow click if we haven't dragged significantly
+            if (dragStatus.current.hasMoved) return;
 
             const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
           };
@@ -744,26 +741,43 @@
 
           // --- CAMERA CONTROLS ---
           const handlePointerDown = (e) => {
-              setIsDragging(true);
-              const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-              const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-              lastPos.current = { x: clientX, y: clientY, startX: clientX, startY: clientY };
+              const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+              const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+              
+              dragStatus.current = {
+                  startX: clientX,
+                  startY: clientY,
+                  lastX: clientX,
+                  lastY: clientY,
+                  isDragging: true,
+                  hasMoved: false
+              };
           };
 
           const handlePointerMove = (e) => {
-              if (!isDragging) return;
-              e.preventDefault(); // Prevent scroll
-              const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-              const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+              if (!dragStatus.current.isDragging) return;
               
-              const dx = clientX - lastPos.current.x;
-              const dy = clientY - lastPos.current.y;
+              const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+              const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
               
-              setPan(p => ({ x: p.x + dx, y: p.y + dy }));
-              lastPos.current = { ...lastPos.current, x: clientX, y: clientY };
+              const dx = clientX - dragStatus.current.lastX;
+              const dy = clientY - dragStatus.current.lastY;
+              
+              // Only consider it a drag if moved more than threshold total distance
+              if (Math.abs(clientX - dragStatus.current.startX) > 5 || Math.abs(clientY - dragStatus.current.startY) > 5) {
+                  dragStatus.current.hasMoved = true;
+              }
+
+              if (dragStatus.current.hasMoved) {
+                  setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+                  dragStatus.current.lastX = clientX;
+                  dragStatus.current.lastY = clientY;
+              }
           };
 
-          const handlePointerUp = () => setIsDragging(false);
+          const handlePointerUp = () => {
+              dragStatus.current.isDragging = false;
+          };
 
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
