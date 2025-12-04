@@ -143,7 +143,8 @@
       "imports": {
         "react": "https://aistudiocdn.com/react@^19.2.0",
         "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
       }
     }
     </script>
@@ -167,7 +168,36 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Beef } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Beef, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      import { createClient } from '@supabase/supabase-js';
+
+      // ==========================================
+      // CONFIGURAÇÃO SUPABASE
+      // ==========================================
+      // Crie um projeto em https://supabase.com
+      // Vá em Settings > API e copie a URL e a KEY (Anon/Public)
+      const SUPABASE_URL = "https://yscuszxakpepfrxcpnkc.supabase.co"; 
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto";
+      
+      const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== "") 
+        ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+        : null;
+
+      /* 
+         SQL RECOMENDADO PARA O SUPABASE (Execute no SQL Editor):
+         
+         create table game_saves (
+            user_id uuid references auth.users not null primary key,
+            data jsonb,
+            updated_at timestamptz default now()
+         );
+         
+         alter table game_saves enable row level security;
+
+         create policy "Users can insert their own save" on game_saves for insert with check (auth.uid() = user_id);
+         create policy "Users can update their own save" on game_saves for update using (auth.uid() = user_id);
+         create policy "Users can select their own save" on game_saves for select using (auth.uid() = user_id);
+      */
 
       // --- Helpers ---
       const safeStorage = {
@@ -311,6 +341,81 @@
               </div>
           </div>
       );
+
+      // --- AUTH MODAL ---
+      const AuthModal = ({ onClose, onLogin }) => {
+          const [email, setEmail] = useState('');
+          const [password, setPassword] = useState('');
+          const [isSignUp, setIsSignUp] = useState(false);
+          const [loading, setLoading] = useState(false);
+          const [error, setError] = useState(null);
+
+          const handleSubmit = async (e) => {
+              e.preventDefault();
+              setLoading(true);
+              setError(null);
+              
+              if (!supabase) {
+                  setError("Supabase não configurado. Adicione a URL e KEY no código.");
+                  setLoading(false);
+                  return;
+              }
+
+              try {
+                  let result;
+                  if (isSignUp) {
+                      result = await supabase.auth.signUp({ email, password });
+                  } else {
+                      result = await supabase.auth.signInWithPassword({ email, password });
+                  }
+                  
+                  if (result.error) throw result.error;
+                  if (result.data.user) {
+                      onLogin(result.data.user);
+                      onClose();
+                  }
+              } catch (err) {
+                  setError(err.message);
+              } finally {
+                  setLoading(false);
+              }
+          };
+
+          return (
+              <Modal title={isSignUp ? "CRIAR CONTA" : "LOGIN NA NUVEM"} onClose={onClose}>
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                      {error && <div className="bg-red-500/20 text-red-400 p-2 rounded text-xs">{error}</div>}
+                      
+                      <div>
+                          <label className="text-xs text-gray-400 font-bold ml-1">EMAIL</label>
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-blue-500 outline-none" placeholder="seu@email.com" required />
+                      </div>
+                      
+                      <div>
+                          <label className="text-xs text-gray-400 font-bold ml-1">SENHA</label>
+                          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-blue-500 outline-none" placeholder="******" required />
+                      </div>
+
+                      <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-2 flex justify-center">
+                          {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "CADASTRAR" : "ENTRAR")}
+                      </button>
+
+                      <div className="text-center text-xs text-gray-400 mt-2">
+                          {isSignUp ? "Já tem conta? " : "Não tem conta? "}
+                          <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-blue-400 hover:text-white font-bold underline">
+                              {isSignUp ? "Entrar" : "Criar Agora"}
+                          </button>
+                      </div>
+                      
+                      {!supabase && (
+                          <div className="mt-4 p-2 bg-yellow-900/30 border border-yellow-700 rounded text-[10px] text-yellow-500">
+                              ⚠️ Configure SUPABASE_URL e SUPABASE_KEY no arquivo index.html para ativar.
+                          </div>
+                      )}
+                  </form>
+              </Modal>
+          );
+      };
 
       const ShipCard = ({ ship, unlockedShips, equippedShip, adProgress, onEquip, onWatchAd }) => {
           const isUnlocked = unlockedShips.includes(ship.id);
@@ -1139,11 +1244,97 @@
       const App = () => {
           const [currentScreen, setCurrentScreen] = useState('home');
           const [lastAdTime, setLastAdTime] = useState(0);
+          
+          // User & Auth
+          const [user, setUser] = useState(null);
+          const [showAuth, setShowAuth] = useState(false);
+          const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, saved, error
+
           const [coins, setCoins] = useState(() => { try { return parseInt(localStorage.getItem('galaxy_coins') || '0'); } catch { return 0; } });
           const [unlockedShips, setUnlockedShips] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'); } catch { return ['starter']; } });
           const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
           const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
 
+          // Init Supabase Auth Listener
+          useEffect(() => {
+              if (supabase) {
+                  supabase.auth.getSession().then(({ data: { session } }) => {
+                      if (session?.user) {
+                          setUser(session.user);
+                          loadCloudData(session.user.id);
+                      }
+                  });
+
+                  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                      setUser(session?.user ?? null);
+                      if (session?.user) loadCloudData(session.user.id);
+                  });
+
+                  return () => subscription.unsubscribe();
+              }
+          }, []);
+
+          // Sync Loop (Debounced)
+          const syncTimeoutRef = useRef(null);
+          useEffect(() => {
+              if (!user || !supabase) return;
+              
+              setSyncStatus('syncing');
+              if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+              
+              syncTimeoutRef.current = setTimeout(async () => {
+                  try {
+                      const saveData = {
+                          coins,
+                          unlocked_ships: unlockedShips,
+                          equipped_ship: equippedShip,
+                          ad_progress: adProgress,
+                          // Include farm data here too if needed
+                      };
+                      
+                      const { error } = await supabase
+                          .from('game_saves')
+                          .upsert({ 
+                              user_id: user.id, 
+                              data: saveData,
+                              updated_at: new Date().toISOString()
+                          });
+                          
+                      if (error) throw error;
+                      setSyncStatus('saved');
+                      setTimeout(() => setSyncStatus('idle'), 2000);
+                  } catch (err) {
+                      console.error("Sync failed:", err);
+                      setSyncStatus('error');
+                  }
+              }, 2000); // Wait 2s of inactivity before syncing
+          }, [coins, unlockedShips, equippedShip, adProgress, user]);
+
+          // Cloud Loader
+          const loadCloudData = async (userId) => {
+              try {
+                  const { data, error } = await supabase
+                      .from('game_saves')
+                      .select('data')
+                      .eq('user_id', userId)
+                      .single();
+                      
+                  if (data?.data) {
+                      const d = data.data;
+                      if (d.coins) setCoins(d.coins);
+                      if (d.unlocked_ships) setUnlockedShips(d.unlocked_ships);
+                      if (d.equipped_ship) setEquippedShip(d.equipped_ship);
+                      if (d.ad_progress) setAdProgress(d.ad_progress);
+                      // Force localStorage update
+                      localStorage.setItem('galaxy_coins', d.coins);
+                      localStorage.setItem('galaxy_unlocked', JSON.stringify(d.unlocked_ships));
+                  }
+              } catch (err) {
+                  console.log("No save found or error loading.");
+              }
+          };
+
+          // Local Persist
           useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]);
           useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]);
           useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]);
@@ -1169,12 +1360,16 @@
           };
           
           const startGame = (name) => {
-              // Try fullscreen
               if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
                    document.documentElement.requestFullscreen().catch(() => {});
               }
               triggerAd();
               setCurrentScreen(name);
+          };
+
+          const handleLogout = async () => {
+              await supabase.auth.signOut();
+              setUser(null);
           };
 
           switch(currentScreen) {
@@ -1187,9 +1382,24 @@
               default: return (
                   <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
                       <InstallButton />
-                      <button onClick={toggleFullScreen} className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white z-50">
-                          <Maximize size={24}/>
-                      </button>
+                      
+                      {/* Top Bar Actions */}
+                      <div className="absolute top-4 right-4 flex gap-3 z-50">
+                          <button onClick={() => setShowAuth(true)} className={`p-2 rounded-full transition flex items-center gap-2 px-3 ${user ? 'bg-green-600 hover:bg-green-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+                              {user ? <><Cloud size={16} /> <span className="text-xs font-bold hidden md:block">CONECTADO</span></> : <><LogIn size={16} /> <span className="text-xs font-bold hidden md:block">LOGIN</span></>}
+                          </button>
+                          <button onClick={toggleFullScreen} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-gray-400 hover:text-white">
+                              <Maximize size={24}/>
+                          </button>
+                      </div>
+
+                      {user && (
+                          <div className="absolute top-16 right-4 flex items-center gap-2 z-50">
+                             <div className="text-[10px] text-gray-400">{user.email}</div>
+                             <button onClick={handleLogout} className="text-red-400 hover:text-white"><LogOut size={14}/></button>
+                          </div>
+                      )}
+
                       <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
                           <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
                           <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
@@ -1203,10 +1413,19 @@
                               <button onClick={() => startGame('hangman')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div><Brain size={32} className="text-blue-400" /></div></button>
                           </div>
                       </div>
+                      
                       <div className="absolute bottom-4 text-gray-700 text-xs flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> Progresso Salvo Automático</div>
-                          <div>v4.11.0</div>
+                          {user ? (
+                              <div className="flex items-center gap-1 text-blue-400 font-bold">
+                                  {syncStatus === 'syncing' ? <><Loader2 size={10} className="animate-spin"/> Salvando na Nuvem...</> : (syncStatus === 'saved' ? <><Cloud size={10} /> Progresso Salvo</> : <><Cloud size={10} /> Conectado</>)}
+                              </div>
+                          ) : (
+                              <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> Progresso Local</div>
+                          )}
+                          <div>v4.12.0 (Supabase Enabled)</div>
                       </div>
+                      
+                      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
                   </div>
               );
           }
@@ -1220,4 +1439,1751 @@
     <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </body>
-</html>
+</html>--- START OF FILE index.html ---
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JoGos Online</title>
+    <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
+    <meta name='admaven-placement' content='BqjwGrds9'>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { 
+            overscroll-behavior: none; 
+            touch-action: none; 
+            -webkit-tap-highlight-color: transparent; 
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000000;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: white; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            overflow: hidden;
+        }
+
+        .neon-title {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 900;
+            background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(148, 163, 184, 0.3);
+            filter: drop-shadow(0 0 2px rgba(148, 163, 184, 0.5));
+            letter-spacing: -2px;
+            text-transform: uppercase;
+        }
+
+        .neon-text-small {
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        .glass-box {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        .glass-box:hover {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.02);
+        }
+
+        /* Hangman Animation */
+        @keyframes swing {
+            0% { transform: rotate(2deg); }
+            50% { transform: rotate(-2deg); }
+            100% { transform: rotate(2deg); }
+        }
+        .hangman-swing {
+            transform-origin: 140px 20px;
+            animation: swing 3s infinite ease-in-out;
+        }
+
+        /* Farm 3D & Neon Effects */
+        .farm-scene {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+        }
+        .farm-perspective {
+            perspective: 1000px;
+        }
+        .farm-grid-3d {
+            transform: rotateX(45deg) rotateZ(-45deg) scale(0.8);
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+        .farm-plot {
+            background: #0f172a; /* Slate 900 */
+            box-shadow: 
+                inset 0 0 20px #000,
+                5px 5px 15px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform-style: preserve-3d;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .farm-plot:hover {
+            transform: translateZ(10px);
+            border-color: rgba(56, 189, 248, 0.5); /* Light Blue */
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+        .farm-plot.ready {
+            border-color: #facc15; /* Yellow */
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+        .neon-bar {
+            background: rgba(15, 23, 42, 0.9);
+            border-top: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Farmer 3D Walking Animation */
+        @keyframes walker {
+            0% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); }
+            50% { transform: translateZ(50px) rotateX(-45deg) rotateY(45deg) translateY(-5px); }
+            100% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); }
+        }
+        .farmer-anim {
+            animation: walker 1.5s infinite ease-in-out;
+            transform-style: preserve-3d;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+        }
+
+        /* Floating UI Elements */
+        .float-ui {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        /* Level Up Animation */
+        @keyframes levelUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .level-up-anim {
+            animation: levelUp 2s ease-out forwards;
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+      }
+    }
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="root" class="h-[100dvh] w-full overflow-hidden flex flex-col"></div>
+
+    <script type="text/babel" data-type="module" data-presets="typescript,react">
+      import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { Rocket, ChevronLeft, Sprout, Heart, Star, CheckCircle, XCircle, Volume2, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCcw, Skull, Worm, Zap, Lightbulb, Download, PlayCircle, Sun, CloudRain, Pickaxe, ClipboardList, Store, X, Shield, Crosshair, ArrowUp, Calendar, Map, Save, Egg, Milk, Beef, Cloud, LogIn, LogOut, Loader2 } from 'lucide-react';
+      import { createClient } from '@supabase/supabase-js';
+
+      // ==========================================
+      // CONFIGURAÇÃO SUPABASE
+      // ==========================================
+      // Crie um projeto em https://supabase.com
+      // Vá em Settings > API e copie a URL e a KEY (Anon/Public)
+      const SUPABASE_URL = "https://yscuszxakpepfrxcpnkc.supabase.co"; 
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto";
+      
+      const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== "") 
+        ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+        : null;
+
+      /* 
+         SQL RECOMENDADO PARA O SUPABASE (Execute no SQL Editor):
+         
+         create table game_saves (
+            user_id uuid references auth.users not null primary key,
+            data jsonb,
+            updated_at timestamptz default now()
+         );
+         
+         alter table game_saves enable row level security;
+
+         create policy "Users can insert their own save" on game_saves for insert with check (auth.uid() = user_id);
+         create policy "Users can update their own save" on game_saves for update using (auth.uid() = user_id);
+         create policy "Users can select their own save" on game_saves for select using (auth.uid() = user_id);
+      */
+
+      // --- Helpers ---
+      const safeStorage = {
+          getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+          setItem: (key, value) => { try { localStorage.setItem(key, value); } catch(e) {} }
+      };
+
+      let audioContext = null;
+      const getAudioContext = () => {
+          try {
+            if (!audioContext) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) audioContext = new AudioCtx();
+            }
+            return audioContext;
+          } catch (e) { return null; }
+      };
+
+      const playSound = (type) => {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            const now = ctx.currentTime;
+
+            switch(type) {
+                case 'shoot': osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'explosion': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); break;
+                case 'powerup': osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'win': osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1000, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'lose': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'plant': osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'harvest': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'buy': osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); break;
+                case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
+            }
+          } catch(e) {}
+      };
+
+      const toggleFullScreen = (e) => {
+        if (e) e.stopPropagation();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else if (document.exitFullscreen) document.exitFullscreen();
+      };
+
+      // --- Install Button ---
+      const InstallButton = () => {
+          const [deferredPrompt, setDeferredPrompt] = useState(null);
+          const [showIOS, setShowIOS] = useState(false);
+          const [isIOS, setIsIOS] = useState(false);
+          const [isStandalone, setIsStandalone] = useState(false);
+
+          useEffect(() => {
+              setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone);
+              setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
+              const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+              window.addEventListener('beforeinstallprompt', handler);
+              return () => window.removeEventListener('beforeinstallprompt', handler);
+          }, []);
+
+          const handleInstall = async () => {
+              if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  const { outcome } = await deferredPrompt.userChoice;
+                  if (outcome === 'accepted') setDeferredPrompt(null);
+              } else if (isIOS) setShowIOS(true);
+          };
+
+          if (isStandalone || (!deferredPrompt && !isIOS)) return null; 
+
+          return (
+              <>
+                  <button onClick={handleInstall} className="absolute top-4 left-4 p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-purple-400">
+                      <Download size={16} /> INSTALAR APP
+                  </button>
+                  {showIOS && (
+                      <div className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-6 text-center" onClick={() => setShowIOS(false)}>
+                          <div className="bg-slate-800 p-6 rounded-xl border border-white/20 max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                              <div className="flex justify-center mb-4 text-purple-400"><Download size={48} /></div>
+                              <h3 className="text-xl font-bold text-white mb-4">Instalar no iOS</h3>
+                              <p className="text-gray-300 mb-6 text-sm">Toque em Compartilhar e depois em Adicionar à Tela de Início.</p>
+                              <button onClick={() => setShowIOS(false)} className="mt-6 w-full py-3 bg-purple-600 rounded-lg font-bold text-white">ENTENDI</button>
+                          </div>
+                      </div>
+                  )}
+              </>
+          );
+      };
+
+      // --- Data ---
+      const SHIPS = [
+          { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
+          { id: 'blue', name: 'Interceptor', adCost: 5, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
+          { id: 'purple', name: 'Void Walker', adCost: 10, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
+          { id: 'green', name: 'Venom Striker', adCost: 15, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
+          { id: 'yellow', name: 'Solar Flare', adCost: 20, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
+          { id: 'red', name: 'Crimson Fury', adCost: 25, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
+          { id: 'legendary', name: 'Abyssal King', adCost: 30, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
+      ];
+
+      const generatePlayerSprite = (palette) => {
+          const canvas = document.createElement('canvas');
+          const size = 32;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const P = palette.main; const D = palette.dark; const L = palette.light;
+          const C = palette.cockpit; const W = '#ffffff'; const B = palette.engine;
+          const pixelSize = 2;
+          const grid = [
+              "      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ",
+              "   12233221   ", "   12233221   ", "  1222222221  ", "  1222222221  ", " 122114411221 ",
+              " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "
+          ];
+          const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
+          for(let y=0; y<grid.length; y++) {
+              const row = grid[y];
+              for(let x=0; x<row.length; x++) {
+                  const char = row[x];
+                  if(colorMap[char]) { ctx.fillStyle = colorMap[char]; ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); }
+              }
+          }
+          const img = new Image(); img.src = canvas.toDataURL(); return img;
+      };
+
+      // --- Reusable Components ---
+      const Modal = ({ title, onClose, children }) => (
+          <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+              <div className="bg-slate-900 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[80%] relative" onClick={e => e.stopPropagation()}>
+                  <div className="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
+                  <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center z-10">
+                      <h2 className="text-xl font-bold text-white neon-text-small">{title}</h2>
+                      <button onClick={onClose}><X className="text-gray-400 hover:text-white" /></button>
+                  </div>
+                  <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
+              </div>
+          </div>
+      );
+
+      // --- AUTH MODAL ---
+      const AuthModal = ({ onClose, onLogin }) => {
+          const [email, setEmail] = useState('');
+          const [password, setPassword] = useState('');
+          const [isSignUp, setIsSignUp] = useState(false);
+          const [loading, setLoading] = useState(false);
+          const [error, setError] = useState(null);
+
+          const handleSubmit = async (e) => {
+              e.preventDefault();
+              setLoading(true);
+              setError(null);
+              
+              if (!supabase) {
+                  setError("Supabase não configurado. Adicione a URL e KEY no código.");
+                  setLoading(false);
+                  return;
+              }
+
+              try {
+                  let result;
+                  if (isSignUp) {
+                      result = await supabase.auth.signUp({ email, password });
+                  } else {
+                      result = await supabase.auth.signInWithPassword({ email, password });
+                  }
+                  
+                  if (result.error) throw result.error;
+                  if (result.data.user) {
+                      onLogin(result.data.user);
+                      onClose();
+                  }
+              } catch (err) {
+                  setError(err.message);
+              } finally {
+                  setLoading(false);
+              }
+          };
+
+          return (
+              <Modal title={isSignUp ? "CRIAR CONTA" : "LOGIN NA NUVEM"} onClose={onClose}>
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                      {error && <div className="bg-red-500/20 text-red-400 p-2 rounded text-xs">{error}</div>}
+                      
+                      <div>
+                          <label className="text-xs text-gray-400 font-bold ml-1">EMAIL</label>
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-blue-500 outline-none" placeholder="seu@email.com" required />
+                      </div>
+                      
+                      <div>
+                          <label className="text-xs text-gray-400 font-bold ml-1">SENHA</label>
+                          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-blue-500 outline-none" placeholder="******" required />
+                      </div>
+
+                      <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-2 flex justify-center">
+                          {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "CADASTRAR" : "ENTRAR")}
+                      </button>
+
+                      <div className="text-center text-xs text-gray-400 mt-2">
+                          {isSignUp ? "Já tem conta? " : "Não tem conta? "}
+                          <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-blue-400 hover:text-white font-bold underline">
+                              {isSignUp ? "Entrar" : "Criar Agora"}
+                          </button>
+                      </div>
+                      
+                      {!supabase && (
+                          <div className="mt-4 p-2 bg-yellow-900/30 border border-yellow-700 rounded text-[10px] text-yellow-500">
+                              ⚠️ Configure SUPABASE_URL e SUPABASE_KEY no arquivo index.html para ativar.
+                          </div>
+                      )}
+                  </form>
+              </Modal>
+          );
+      };
+
+      const ShipCard = ({ ship, unlockedShips, equippedShip, adProgress, onEquip, onWatchAd }) => {
+          const isUnlocked = unlockedShips.includes(ship.id);
+          const isEquipped = equippedShip === ship.id;
+          const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+          const currentAds = adProgress[ship.id] || 0;
+          const reqAds = ship.adCost;
+
+          return (
+              <div className={`glass-box relative rounded-xl p-4 flex flex-col items-center gap-3 ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                  <div className="text-sm font-bold text-gray-300">{ship.name}</div>
+                  <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                       <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
+                       {!isUnlocked && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Lock size={20} className="text-gray-400" /></div>}
+                  </div>
+                  {isUnlocked ? (
+                      <button onClick={() => onEquip(ship.id)} disabled={isEquipped} className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+                          {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
+                      </button>
+                  ) : (
+                      <div className="w-full flex flex-col gap-1">
+                          <button onClick={() => onWatchAd(ship.id, reqAds)} className="w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white">
+                              <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
+                          </button>
+                          <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
+      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => (
+          <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/95">
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+               <div className="z-10 flex flex-col items-center gap-6 w-full max-w-md px-4 animate-fade-in">
+                   <div className="relative">
+                      <Rocket size={80} className="text-blue-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                      <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full"></div>
+                   </div>
+                   <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2 neon-title tracking-widest leading-tight">GALAXY<br/><span className="text-blue-400">INVADER</span></h1>
+                   <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+                        <Coins size={20} className="text-yellow-400" />
+                        <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                   </div>
+                   <div className="w-full grid gap-4 mt-8">
+                       <button onClick={onStart} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden border-blue-500/30 hover:border-blue-500 transition-all transform hover:scale-105">
+                            <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition"></div>
+                            <div className="relative z-10 flex items-center justify-center gap-3 h-full text-white">
+                                <span className="text-2xl font-bold tracking-wider">START MISSION</span>
+                                <ChevronLeft className="rotate-180" size={24} />
+                            </div>
+                       </button>
+                       <button onClick={onShop} className="glass-box group relative w-full h-20 rounded-xl overflow-hidden border-yellow-500/30 hover:border-yellow-500 transition-all transform hover:scale-105">
+                            <div className="absolute inset-0 bg-yellow-600/10 group-hover:bg-yellow-600/20 transition"></div>
+                            <div className="relative z-10 flex items-center justify-center gap-3 h-full text-yellow-400">
+                                <ShoppingCart size={24} />
+                                <span className="text-xl font-bold tracking-wider">HANGAR SHOP</span>
+                            </div>
+                       </button>
+                   </div>
+                   <button onClick={onBack} className="mt-8 flex items-center gap-2 text-gray-500 hover:text-white transition uppercase text-sm font-bold tracking-widest px-4 py-2 hover:bg-white/5 rounded-full"><ChevronLeft size={16} /> Back to Hub</button>
+               </div>
+               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+          </div>
+      );
+
+      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => (
+          <div className="w-full h-full bg-[#050505] flex flex-col">
+               <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                  <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                  <h1 className="text-xl font-bold neon-title">HANGAR SHOP</h1>
+                  <div className="w-10"></div>
+               </div>
+               <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                   {SHIPS.map(ship => (
+                       <ShipCard key={ship.id} ship={ship} unlockedShips={unlockedShips} equippedShip={equippedShip} adProgress={adProgress} onEquip={equipShip} onWatchAd={handleShipAdWatch} />
+                   ))}
+               </div>
+          </div>
+      );
+
+      // --- GAME 1: GALAXY INVADER (Canvas) ---
+      const GalaxyInvader = ({ onBack, triggerAd, equippedShipId, addCoins, currentCoins }) => {
+          const canvasRef = useRef(null);
+          const [score, setScore] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [lives, setLives] = useState(3);
+          const [wave, setWave] = useState(1);
+          
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              const ctx = canvas.getContext('2d');
+              let animationFrameId;
+              let lastTime = 0;
+              
+              // Game Objects
+              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
+              const playerImg = generatePlayerSprite(shipDef.palette);
+              
+              const player = { x: canvas.width/2, y: canvas.height - 100, width: 40, height: 40, speed: 5, hp: 100, weapon: 1, lastShot: 0 };
+              const bullets = [];
+              const enemies = [];
+              const particles = [];
+              const powerups = [];
+              let boss = null;
+              
+              let touchX = null;
+              let touchY = null;
+              
+              const spawnEnemy = () => {
+                  if (boss) return;
+                  const type = Math.random();
+                  let enemy = { x: Math.random() * (canvas.width - 40), y: -50, width: 30, height: 30, hp: 1, type: 'drone', speedY: 2 + Math.random(), speedX: Math.sin(Date.now()/1000)*2 };
+                  if (wave > 1 && type > 0.7) enemy = { ...enemy, type: 'kamikaze', hp: 2, speedY: 4, color: '#f87171' };
+                  if (wave > 3 && type > 0.9) enemy = { ...enemy, type: 'heavy', hp: 5, width: 50, height: 50, speedY: 1, color: '#60a5fa' };
+                  enemies.push(enemy);
+              };
+              
+              const spawnBoss = () => {
+                  boss = { x: canvas.width/2 - 60, y: -120, width: 120, height: 100, hp: 50 * wave, maxHp: 50 * wave, phase: 0, moveDir: 1 };
+                  playSound('warning');
+              };
+
+              const update = (time) => {
+                  const deltaTime = time - lastTime;
+                  lastTime = time;
+                  
+                  // Move Player (360 degrees)
+                  if (touchX !== null) {
+                      const dx = touchX - player.x;
+                      const dy = touchY - player.y;
+                      const dist = Math.sqrt(dx*dx + dy*dy);
+                      if (dist > 5) {
+                          player.x += (dx / dist) * player.speed * 1.5;
+                          player.y += (dy / dist) * player.speed * 1.5;
+                      }
+                  }
+                  // Bounds
+                  player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+                  player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+
+                  // Auto Shoot
+                  if (time - player.lastShot > 300) {
+                      if (player.weapon >= 1) bullets.push({ x: player.x, y: player.y - 20, vy: -10, type: 'player' });
+                      if (player.weapon >= 2) {
+                          bullets.push({ x: player.x - 10, y: player.y - 10, vy: -9, vx: -1, type: 'player' });
+                          bullets.push({ x: player.x + 10, y: player.y - 10, vy: -9, vx: 1, type: 'player' });
+                      }
+                      if (player.weapon >= 3) {
+                          bullets.push({ x: player.x - 20, y: player.y, vy: -8, vx: -3, type: 'player' });
+                          bullets.push({ x: player.x + 20, y: player.y, vy: -8, vx: 3, type: 'player' });
+                      }
+                      playSound('shoot');
+                      player.lastShot = time;
+                  }
+
+                  // Enemies Spawning
+                  if (Math.random() < 0.02 + (wave * 0.005) && !boss) spawnEnemy();
+                  if (score > wave * 2000 && !boss) spawnBoss();
+
+                  // Update Bullets
+                  for (let i = bullets.length - 1; i >= 0; i--) {
+                      let b = bullets[i];
+                      b.y += b.vy;
+                      if (b.vx) b.x += b.vx;
+                      if (b.y < -20 || b.y > canvas.height + 20) bullets.splice(i, 1);
+                  }
+
+                  // Update Enemies
+                  for (let i = enemies.length - 1; i >= 0; i--) {
+                      let e = enemies[i];
+                      e.y += e.speedY;
+                      e.x += e.speedX;
+                      if (e.y > canvas.height) enemies.splice(i, 1);
+                      
+                      // Collision Player
+                      if (Math.abs(e.x - player.x) < (e.width + player.width)/2 && Math.abs(e.y - player.y) < (e.height + player.height)/2) {
+                          player.hp -= 20;
+                          enemies.splice(i, 1);
+                          playSound('explosion');
+                          if (player.hp <= 0) setGameOver(true);
+                      }
+                      
+                      // Collision Bullets
+                      for (let j = bullets.length - 1; j >= 0; j--) {
+                          let b = bullets[j];
+                          if (b.type === 'player' && Math.abs(b.x - e.x) < e.width/2 && Math.abs(b.y - e.y) < e.height/2) {
+                              e.hp--;
+                              bullets.splice(j, 1);
+                              if (e.hp <= 0) {
+                                  if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon' });
+                                  enemies.splice(i, 1);
+                                  setScore(s => s + (e.type === 'heavy' ? 50 : 10));
+                                  addCoins(1);
+                                  playSound('explosion');
+                                  break; // Enemy died
+                              }
+                          }
+                      }
+                  }
+
+                  // Update Boss
+                  if (boss) {
+                      if (boss.y < 80) boss.y += 1;
+                      boss.x += boss.moveDir * 2;
+                      if (boss.x > canvas.width - 60 || boss.x < 60) boss.moveDir *= -1;
+                      
+                      // Boss Shot
+                      if (Math.random() < 0.05) {
+                          bullets.push({ x: boss.x, y: boss.y + 50, vy: 5, type: 'enemy', color: 'red' });
+                          if (wave > 2) {
+                               bullets.push({ x: boss.x - 40, y: boss.y + 40, vy: 4, vx: -1, type: 'enemy', color: 'red' });
+                               bullets.push({ x: boss.x + 40, y: boss.y + 40, vy: 4, vx: 1, type: 'enemy', color: 'red' });
+                          }
+                      }
+
+                      // Boss Collision
+                       for (let j = bullets.length - 1; j >= 0; j--) {
+                          let b = bullets[j];
+                          if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.width/2 && Math.abs(b.y - boss.y) < boss.height/2) {
+                              boss.hp--;
+                              bullets.splice(j, 1);
+                              playSound('boss_hit');
+                              if (boss.hp <= 0) {
+                                  boss = null;
+                                  setScore(s => s + 1000);
+                                  setWave(w => w + 1);
+                                  addCoins(100);
+                                  playSound('win');
+                              }
+                          }
+                      }
+                  }
+
+                  // Player Hit by Enemy Bullets
+                  for (let i = bullets.length - 1; i >= 0; i--) {
+                      let b = bullets[i];
+                      if (b.type === 'enemy' && Math.abs(b.x - player.x) < player.width/2 && Math.abs(b.y - player.y) < player.height/2) {
+                          player.hp -= 10;
+                          bullets.splice(i, 1);
+                          playSound('explosion');
+                          if (player.hp <= 0) setGameOver(true);
+                      }
+                  }
+                  
+                  // Powerups
+                  for(let i=powerups.length-1; i>=0; i--) {
+                      let p = powerups[i];
+                      p.y += 2;
+                      if(Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) {
+                          player.weapon = Math.min(3, player.weapon + 1);
+                          powerups.splice(i, 1);
+                          playSound('powerup');
+                      }
+                  }
+
+                  // Render
+                  ctx.fillStyle = '#000000';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Starfield
+                  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                  for(let i=0; i<50; i++) ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+
+                  // Draw Player
+                  if (playerImg.complete && player.hp > 0) ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
+
+                  // Draw Enemies
+                  enemies.forEach(e => {
+                      ctx.fillStyle = e.color || '#fff';
+                      ctx.fillRect(e.x - e.width/2, e.y - e.height/2, e.width, e.height);
+                  });
+
+                  // Draw Boss
+                  if (boss) {
+                      ctx.fillStyle = 'red';
+                      ctx.fillRect(boss.x - boss.width/2, boss.y - boss.height/2, boss.width, boss.height);
+                      // Boss HP Bar
+                      ctx.fillStyle = 'gray';
+                      ctx.fillRect(boss.x - 50, boss.y - 60, 100, 5);
+                      ctx.fillStyle = 'lime';
+                      ctx.fillRect(boss.x - 50, boss.y - 60, 100 * (boss.hp / boss.maxHp), 5);
+                  }
+
+                  // Draw Bullets
+                  bullets.forEach(b => {
+                      ctx.fillStyle = b.color || 'yellow';
+                      ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
+                  });
+                  
+                  // Draw Powerups
+                  powerups.forEach(p => {
+                      ctx.fillStyle = 'cyan';
+                      ctx.beginPath();
+                      ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+                      ctx.fill();
+                  });
+                  
+                  // UI
+                  ctx.fillStyle = 'white';
+                  ctx.font = '20px Courier New';
+                  ctx.fillText(`SCORE: ${score}`, 10, 30);
+                  ctx.fillText(`WAVE: ${wave}`, 10, 50);
+                  
+                  // Player HP
+                  ctx.fillStyle = 'gray';
+                  ctx.fillRect(10, canvas.height - 20, 200, 10);
+                  ctx.fillStyle = player.hp > 30 ? 'green' : 'red';
+                  ctx.fillRect(10, canvas.height - 20, 200 * (player.hp/100), 10);
+
+                  if (!gameOver) animationFrameId = requestAnimationFrame(() => update(Date.now()));
+              };
+
+              // Resize
+              const handleResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+              window.addEventListener('resize', handleResize);
+              handleResize();
+              
+              update(Date.now());
+              
+              // Input
+              const onTouchMove = (e) => { e.preventDefault(); touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; };
+              const onMouseMove = (e) => { touchX = e.clientX; touchY = e.clientY; };
+              const onEnd = () => { touchX = null; touchY = null; };
+              
+              canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+              canvas.addEventListener('touchend', onEnd);
+              canvas.addEventListener('mousemove', onMouseMove);
+              canvas.addEventListener('mouseup', onEnd);
+              
+              return () => {
+                  window.removeEventListener('resize', handleResize);
+                  cancelAnimationFrame(animationFrameId);
+                  canvas.removeEventListener('touchmove', onTouchMove);
+              };
+          }, [equippedShipId, gameOver, wave]);
+
+          return (
+              <div className="relative w-full h-full bg-black">
+                  <canvas ref={canvasRef} className="block w-full h-full" />
+                  {gameOver && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
+                          <div className="bg-slate-800 p-8 rounded-2xl border-2 border-red-500 text-center animate-fade-in">
+                              <h2 className="text-4xl font-bold text-red-500 mb-4">GAME OVER</h2>
+                              <p className="text-2xl text-white mb-6">Score: {score}</p>
+                              <div className="flex flex-col gap-4">
+                                  <button onClick={() => { setGameOver(false); setScore(0); setWave(1); }} className="px-6 py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-white flex items-center justify-center gap-2">
+                                      <RefreshCcw /> RESTART
+                                  </button>
+                                  <button onClick={onBack} className="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-bold text-white">EXIT</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full z-40 text-white"><ChevronLeft /></button>
+              </div>
+          );
+      };
+
+      // --- GAME 2: FARM GAME (Premium Dark Neon) ---
+      const FarmGame = ({ onBack, triggerAd, addCoins, coins }) => {
+          const CROPS = {
+              'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, xp: 5, time: 5000, icon: '🌾', adCost: 0, reqLevel: 1 },
+              'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, xp: 10, time: 10000, icon: '🌽', adCost: 0, reqLevel: 2 },
+              'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, xp: 20, time: 20000, icon: '🥕', adCost: 1, reqLevel: 3 },
+              'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, xp: 40, time: 45000, icon: '🍅', adCost: 2, reqLevel: 5 },
+              'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, xp: 80, time: 90000, icon: '🍓', adCost: 3, reqLevel: 8 },
+              'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, xp: 150, time: 180000, icon: '🍇', adCost: 5, reqLevel: 10 }
+          };
+
+          const ANIMALS = {
+              'chicken': { id: 'chicken', name: 'Galinha', cost: 50, reward: 100, xp: 50, time: 30000, icon: '🐔', product: 'Ovo', adCost: 0, reqLevel: 2 },
+              'pig': { id: 'pig', name: 'Porco', cost: 150, reward: 250, xp: 100, time: 60000, icon: '🐷', product: 'Bacon', adCost: 0, reqLevel: 4 },
+              'cow': { id: 'cow', name: 'Vaca', cost: 500, reward: 800, xp: 250, time: 120000, icon: '🐮', product: 'Leite', adCost: 1, reqLevel: 7 },
+              'sheep': { id: 'sheep', name: 'Ovelha', cost: 1000, reward: 1500, xp: 500, time: 300000, icon: '🐑', product: 'Lã', adCost: 2, reqLevel: 12 }
+          };
+
+          const [grid, setGrid] = useState(() => {
+             try { return JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'); } catch { return []; }
+          });
+          const [selectedItem, setSelectedItem] = useState('wheat');
+          const [category, setCategory] = useState('plants'); // 'plants' | 'animals'
+          const [now, setNow] = useState(Date.now());
+          const [showMissions, setShowMissions] = useState(false);
+          const [showExpand, setShowExpand] = useState(false);
+          const [landLevel, setLandLevel] = useState(() => {
+             try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; }
+          });
+          
+          // XP & Level System
+          const [level, setLevel] = useState(() => {
+             try { return parseInt(localStorage.getItem('farm_level') || '1'); } catch { return 1; }
+          });
+          const [xp, setXp] = useState(() => {
+             try { return parseInt(localStorage.getItem('farm_xp') || '0'); } catch { return 0; }
+          });
+          const [levelUpNotif, setLevelUpNotif] = useState(false);
+
+          const maxXp = level * 100;
+
+          const addXp = (amount) => {
+              setXp(prev => {
+                  const newXp = prev + amount;
+                  if (newXp >= maxXp) {
+                      setLevel(l => l + 1);
+                      setLevelUpNotif(true);
+                      playSound('levelup');
+                      setTimeout(() => setLevelUpNotif(false), 3000);
+                      return newXp - maxXp;
+                  }
+                  return newXp;
+              });
+          };
+
+          // Daily Missions State
+          const [missions, setMissions] = useState(() => {
+              const saved = safeStorage.getItem('farm_missions');
+              const defaultMissions = [
+                  { id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false },
+                  { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false },
+                  { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }
+              ];
+              return saved ? JSON.parse(saved) : defaultMissions;
+          });
+
+          useEffect(() => {
+              // Ensure grid size matches land level
+              if (grid.length < landLevel) {
+                   const newGrid = [...grid];
+                   while(newGrid.length < landLevel) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null });
+                   setGrid(newGrid);
+              }
+              const interval = setInterval(() => setNow(Date.now()), 1000);
+              return () => clearInterval(interval);
+          }, [landLevel]);
+
+          useEffect(() => safeStorage.setItem('farm_grid_v2', JSON.stringify(grid)), [grid]);
+          useEffect(() => safeStorage.setItem('farm_land', landLevel.toString()), [landLevel]);
+          useEffect(() => safeStorage.setItem('farm_missions', JSON.stringify(missions)), [missions]);
+          useEffect(() => safeStorage.setItem('farm_level', level.toString()), [level]);
+          useEffect(() => safeStorage.setItem('farm_xp', xp.toString()), [xp]);
+
+          const updateMission = (type, id, amount = 1) => {
+              setMissions(prev => prev.map(m => {
+                  if (m.claimed) return m;
+                  let match = false;
+                  if (m.type === 'earn' && type === 'earn') match = true;
+                  else if (m.target === id) match = true;
+                  
+                  if (match) {
+                      return { ...m, progress: Math.min(m.count, m.progress + amount) };
+                  }
+                  return m;
+              }));
+          };
+
+          const claimMission = (m) => {
+              if (m.progress >= m.count && !m.claimed) {
+                  addCoins(m.reward);
+                  addXp(20);
+                  playSound('win');
+                  setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm));
+              }
+          };
+
+          const handlePlotClick = (index) => {
+              const plot = grid[index];
+              if (plot.crop) {
+                  const isAnimal = ANIMALS[plot.crop];
+                  const def = isAnimal ? ANIMALS[plot.crop] : CROPS[plot.crop];
+                  
+                  if (!def) { 
+                       const newGrid = [...grid];
+                       newGrid[index] = { ...plot, crop: null, plantedAt: null };
+                       setGrid(newGrid);
+                       return;
+                  }
+                  
+                  if (now - plot.plantedAt >= def.time) {
+                      addCoins(def.reward);
+                      addXp(def.xp);
+                      updateMission('harvest', plot.crop);
+                      updateMission('earn', null, def.reward);
+                      playSound('harvest');
+                      const newGrid = [...grid];
+                      newGrid[index] = { ...plot, crop: null, plantedAt: null }; // Harvest clears the plot (even animals for simplicity in MVP)
+                      setGrid(newGrid);
+                  }
+              } else {
+                  // Planting / Placing
+                  const dict = category === 'animals' ? ANIMALS : CROPS;
+                  const item = dict[selectedItem];
+                  
+                  if (item && coins >= item.cost) {
+                      if (level < item.reqLevel) {
+                          playSound('lose'); // Level too low
+                          return;
+                      }
+                      
+                      addCoins(-item.cost);
+                      addXp(category === 'animals' ? 10 : 2); // Small XP for planting
+                      playSound('plant');
+                      const newGrid = [...grid];
+                      newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now };
+                      setGrid(newGrid);
+                  } else {
+                      playSound('lose');
+                  }
+              }
+          };
+
+          const handleExpand = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Ad Link
+              setLandLevel(prev => prev + 2);
+              setShowExpand(false);
+              playSound('buy');
+          };
+          
+          const handleTurbo = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Ad Link
+              // Speed up: Skip 10 minutes
+              const SKIP_MS = 600000;
+              setGrid(prev => prev.map(p => {
+                  if (p.crop && p.plantedAt) {
+                      return { ...p, plantedAt: p.plantedAt - SKIP_MS };
+                  }
+                  return p;
+              }));
+              playSound('powerup');
+          };
+
+          const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
+
+          return (
+              <div className="w-full h-full farm-scene flex flex-col overflow-hidden relative text-white font-sans">
+                   {/* HUD */}
+                   <div className="absolute top-0 w-full p-4 flex flex-col gap-2 z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                       <div className="flex justify-between items-start">
+                           <button onClick={onBack} className="pointer-events-auto p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur"><ChevronLeft /></button>
+                           
+                           {/* XP & Level Display */}
+                           <div className="flex flex-col items-center">
+                               <div className="flex items-center gap-2 mb-1">
+                                    <div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-purple-400 shadow-lg z-10">{level}</div>
+                                    <div className="w-32 h-4 bg-slate-800 rounded-full border border-slate-600 overflow-hidden relative">
+                                        <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all duration-500" style={{ width: `${Math.min(100, (xp/maxXp)*100)}%` }}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow">{xp} / {maxXp} XP</div>
+                                    </div>
+                               </div>
+                           </div>
+
+                           <div className="flex items-center gap-2">
+                               <button onClick={() => setShowMissions(true)} className="pointer-events-auto bg-blue-600/80 p-2 rounded-full border border-blue-400 shadow-lg animate-pulse relative">
+                                    <ClipboardList size={20} />
+                                    {missions.some(m => m.progress >= m.count && !m.claimed) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>}
+                               </button>
+                               <div className="bg-yellow-500/80 px-4 py-1.5 rounded-full font-bold text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-300 flex items-center gap-2">
+                                   <Coins size={16} className="text-white fill-white" /> {coins}
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   {/* Level Up Notification */}
+                   {levelUpNotif && (
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center">
+                           <div className="text-6xl mb-2">⭐</div>
+                           <h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2>
+                           <p className="text-xl font-bold text-white">Nível {level}</p>
+                       </div>
+                   )}
+                   
+                   {/* Main Game World */}
+                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden">
+                       <div className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative">
+                            {/* Neon Grid Glow */}
+                            <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
+
+                           {/* 3D Cyber Farmer */}
+                           <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
+                           
+                           {grid.map((plot, i) => {
+                               const isAnimal = plot.crop && ANIMALS[plot.crop];
+                               const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null);
+                               const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0;
+                               const isReady = progress >= 100;
+                               
+                               return (
+                                   <button key={i} onClick={() => handlePlotClick(i)} className={`w-28 h-28 rounded-xl farm-plot relative group ${isReady ? 'ready' : ''}`}>
+                                       {/* Content */}
+                                       {def && (
+                                           <div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}>
+                                               <span className="text-5xl filter drop-shadow-md">{def.icon}</span>
+                                           </div>
+                                       )}
+                                       {/* Progress Neon Ring */}
+                                       {def && !isReady && (
+                                           <div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                               <div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div>
+                                           </div>
+                                       )}
+                                       {/* Empty Plot Marker */}
+                                       {!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}
+                                   </button>
+                               );
+                           })}
+                       </div>
+                   </div>
+                   
+                   {/* Turbo Button */}
+                   <button onClick={handleTurbo} className="absolute right-4 bottom-52 z-40 bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-full shadow-[0_0_20px_gold] animate-bounce border-2 border-white flex flex-col items-center">
+                       <Zap size={24} fill="black" />
+                       <span className="text-[10px] font-bold mt-1">TURBO</span>
+                       <span className="text-[8px] bg-black text-yellow-500 px-1 rounded">AD</span>
+                   </button>
+                   
+                   {/* Cyber Seed/Animal Selector */}
+                   <div className="neon-bar h-48 w-full z-40 flex flex-col">
+                       {/* Tabs */}
+                       <div className="flex w-full border-b border-white/10">
+                           <button onClick={() => { setCategory('plants'); setSelectedItem('wheat'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'plants' ? 'text-cyan-400 bg-white/5 border-b-2 border-cyan-400' : 'text-gray-500'}`}>Plantas</button>
+                           <button onClick={() => { setCategory('animals'); setSelectedItem('chicken'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'animals' ? 'text-purple-400 bg-white/5 border-b-2 border-purple-400' : 'text-gray-500'}`}>Animais</button>
+                       </div>
+
+                       {/* Scrollable List */}
+                       <div className="flex-1 overflow-x-auto flex gap-4 p-4 items-center">
+                           {availableItems.map(item => {
+                               const locked = level < item.reqLevel;
+                               return (
+                                   <button key={item.id} onClick={() => !locked && setSelectedItem(item.id)} className={`flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border transition-all active:scale-95 relative overflow-hidden ${selectedItem === item.id ? 'border-cyan-400 bg-cyan-900/20 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-slate-700 bg-black/40 hover:border-slate-500'}`}>
+                                       {locked && (
+                                           <div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center text-gray-400">
+                                               <Lock size={16} className="mb-1" />
+                                               <span className="text-[10px] font-bold">NVL {item.reqLevel}</span>
+                                           </div>
+                                       )}
+                                       <div className="text-4xl mb-2 filter drop-shadow-lg">{item.icon}</div>
+                                       <div className="text-[10px] font-bold text-gray-300 uppercase tracking-wide">{item.name}</div>
+                                       <div className="text-[10px] text-yellow-400 font-bold mt-1 bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">{item.cost} 💰</div>
+                                       {category === 'animals' && <div className="text-[8px] text-purple-300 mt-0.5">{item.product}</div>}
+                                   </button>
+                               );
+                           })}
+                           {/* Expand Button inside list */}
+                           <button onClick={() => setShowExpand(true)} className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border border-dashed border-green-500/50 bg-green-900/10 hover:bg-green-900/20 text-green-400">
+                               <Map size={24} className="mb-2" />
+                               <span className="text-[10px] font-bold uppercase">Expandir</span>
+                           </button>
+                       </div>
+                   </div>
+
+                   {/* Modals */}
+                   {showMissions && (
+                       <Modal title="MISSÕES DIÁRIAS" onClose={() => setShowMissions(false)}>
+                           <div className="flex flex-col gap-3">
+                               {missions.map(m => (
+                                   <div key={m.id} className="bg-slate-800/80 p-3 rounded-lg border border-slate-700 flex justify-between items-center">
+                                       <div className="flex-1">
+                                           <div className="text-sm font-bold text-cyan-100">{m.text}</div>
+                                           <div className="w-full bg-slate-950 h-1.5 mt-2 rounded-full overflow-hidden">
+                                               <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (m.progress/m.count)*100)}%` }}></div>
+                                           </div>
+                                           <div className="text-[10px] text-gray-400 mt-1">{m.progress} / {m.count}</div>
+                                       </div>
+                                       {m.claimed ? (
+                                           <CheckCircle className="text-green-500 ml-2" />
+                                       ) : (
+                                            <button 
+                                                disabled={m.progress < m.count}
+                                                onClick={() => claimMission(m)}
+                                                className={`ml-3 px-3 py-1 rounded text-xs font-bold ${m.progress >= m.count ? 'bg-yellow-500 text-black animate-pulse shadow-[0_0_10px_gold]' : 'bg-slate-700 text-gray-500'}`}
+                                            >
+                                                +{m.reward}
+                                            </button>
+                                       )}
+                                   </div>
+                               ))}
+                           </div>
+                       </Modal>
+                   )}
+
+                   {showExpand && (
+                       <Modal title="EXPANDIR TERRENO" onClose={() => setShowExpand(false)}>
+                           <div className="text-center p-4">
+                               <div className="text-6xl mb-4">🚜</div>
+                               <h3 className="text-white text-lg font-bold mb-2">Precisa de mais espaço?</h3>
+                               <p className="text-gray-400 text-sm mb-6">Assista a um anúncio para adicionar 2 novos lotes de plantio à sua fazenda.</p>
+                               <button onClick={handleExpand} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2">
+                                   <PlayCircle size={18} /> EXPANDIR AGORA
+                               </button>
+                           </div>
+                       </Modal>
+                   )}
+              </div>
+          );
+      };
+
+      // --- GAME 3: HANGMAN (With Ad Tips) ---
+      const HangmanGame = ({ onBack, triggerAd, addCoins }) => {
+          const CATEGORIES = {
+              'FRUTAS': ['BANANA', 'MAÇA', 'UVA', 'LARANJA', 'ABACAXI', 'MELANCIA', 'MORANGO'],
+              'ANIMAIS': ['GATO', 'CACHORRO', 'ELEFANTE', 'LEAO', 'TIGRE', 'GIRAFA', 'MACACO'],
+              'PAISES': ['BRASIL', 'ARGENTINA', 'JAPAO', 'ALEMANHA', 'CANADA', 'ITALIA', 'MEXICO']
+          };
+          
+          const [category, setCategory] = useState('FRUTAS');
+          const [word, setWord] = useState('BANANA');
+          const [guessed, setGuessed] = useState([]);
+          const [errors, setErrors] = useState(0);
+          const [gameOver, setGameOver] = useState(false);
+          const [won, setWon] = useState(false);
+
+          useEffect(() => { resetGame(); }, []);
+          
+          const resetGame = () => {
+              const cats = Object.keys(CATEGORIES);
+              const rc = cats[Math.floor(Math.random() * cats.length)];
+              const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)];
+              setCategory(rc);
+              setWord(rw);
+              setGuessed([]);
+              setErrors(0);
+              setGameOver(false);
+              setWon(false);
+          };
+
+          const handleGuess = (letter) => {
+              if (gameOver || guessed.includes(letter)) return;
+              const newGuessed = [...guessed, letter];
+              setGuessed(newGuessed);
+              if (!word.includes(letter)) {
+                  const newErrors = errors + 1;
+                  setErrors(newErrors);
+                  if (newErrors >= 6) { setGameOver(true); playSound('lose'); }
+                  else playSound('lose');
+              } else {
+                  playSound('correct');
+                  if (word.split('').every(l => newGuessed.includes(l))) {
+                      setWon(true);
+                      setGameOver(true);
+                      addCoins(20);
+                      playSound('win');
+                  }
+              }
+          };
+          
+          const handleTip = () => {
+              window.open('https://otieu.com/4/10270523', '_blank'); // Direct Ad Link
+              // Reward: Reveal one missing letter
+              const missing = word.split('').find(l => !guessed.includes(l));
+              if (missing) handleGuess(missing);
+          };
+
+          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+          
+          return (
+              <div className="w-full h-full bg-slate-900 text-white flex flex-col p-4 relative">
+                  <div className="flex justify-between items-center mb-6">
+                      <button onClick={onBack}><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold text-blue-400">FORCA: {category}</h1>
+                      <button onClick={handleTip} className="bg-yellow-600 px-3 py-1 rounded text-xs font-bold animate-pulse">VER AD 💡</button>
+                  </div>
+                  
+                  {/* Visual */}
+                  <div className="flex justify-center mb-8 h-40 relative">
+                       <svg width="200" height="160" viewBox="0 0 200 160" className="stroke-white stroke-[4px] fill-none">
+                            <line x1="20" y1="150" x2="100" y2="150" />
+                            <line x1="60" y1="150" x2="60" y2="20" />
+                            <line x1="60" y1="20" x2="140" y2="20" />
+                            <line x1="140" y1="20" x2="140" y2="40" />
+                            <g className={errors > 0 ? "hangman-swing" : ""}>
+                                {errors > 0 && <circle cx="140" cy="50" r="10" />}
+                                {errors > 1 && <line x1="140" y1="60" x2="140" y2="100" />}
+                                {errors > 2 && <line x1="140" y1="70" x2="120" y2="90" />}
+                                {errors > 3 && <line x1="140" y1="70" x2="160" y2="90" />}
+                                {errors > 4 && <line x1="140" y1="100" x2="120" y2="130" />}
+                                {errors > 5 && <line x1="140" y1="100" x2="160" y2="130" />}
+                            </g>
+                       </svg>
+                  </div>
+                  
+                  {/* Word */}
+                  <div className="flex justify-center gap-2 mb-8 flex-wrap">
+                      {word.split('').map((l, i) => (
+                          <div key={i} className="w-8 h-10 border-b-4 border-white flex items-center justify-center text-2xl font-bold">
+                              {guessed.includes(l) || gameOver ? l : ''}
+                          </div>
+                      ))}
+                  </div>
+                  
+                  {/* Keyboard */}
+                  <div className="grid grid-cols-7 gap-2">
+                      {alphabet.map(l => (
+                          <button key={l} onClick={() => handleGuess(l)} disabled={guessed.includes(l) || gameOver} className={`h-10 rounded font-bold ${guessed.includes(l) ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+                              {l}
+                          </button>
+                      ))}
+                  </div>
+                  
+                  {gameOver && (
+                      <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 animate-fade-in">
+                          <h2 className={`text-4xl font-bold mb-4 ${won ? 'text-green-500' : 'text-red-500'}`}>{won ? 'VITÓRIA!' : 'DERROTA!'}</h2>
+                          <p className="mb-6 text-xl">A palavra era: <span className="text-yellow-400">{word}</span></p>
+                          {won && <p className="mb-6 text-yellow-300 font-bold">+20 Moedas</p>}
+                          <button onClick={resetGame} className="px-8 py-3 bg-white text-black font-bold rounded-full">JOGAR NOVAMENTE</button>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
+      // --- GAME 4: SLITHER (Placeholder Logic) ---
+      const SlitherGame = ({ onBack }) => {
+          return (
+             <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white">
+                  <h1 className="text-4xl font-bold text-green-500 mb-4 neon-title">NEON SLITHER</h1>
+                  <p className="mb-8">Em breve...</p>
+                  <button onClick={onBack} className="px-6 py-2 bg-gray-700 rounded-full">VOLTAR</button>
+             </div>
+          );
+      };
+
+      // --- Main App ---
+      const App = () => {
+          const [currentScreen, setCurrentScreen] = useState('home');
+          const [lastAdTime, setLastAdTime] = useState(0);
+          
+          // User & Auth
+          const [user, setUser] = useState(null);
+          const [showAuth, setShowAuth] = useState(false);
+          const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, saved, error
+
+          const [coins, setCoins] = useState(() => { try { return parseInt(localStorage.getItem('galaxy_coins') || '0'); } catch { return 0; } });
+          const [unlockedShips, setUnlockedShips] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'); } catch { return ['starter']; } });
+          const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
+          const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
+
+          // Init Supabase Auth Listener
+          useEffect(() => {
+              if (supabase) {
+                  supabase.auth.getSession().then(({ data: { session } }) => {
+                      if (session?.user) {
+                          setUser(session.user);
+                          loadCloudData(session.user.id);
+                      }
+                  });
+
+                  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                      setUser(session?.user ?? null);
+                      if (session?.user) loadCloudData(session.user.id);
+                  });
+
+                  return () => subscription.unsubscribe();
+              }
+          }, []);
+
+          // Sync Loop (Debounced)
+          const syncTimeoutRef = useRef(null);
+          useEffect(() => {
+              if (!user || !supabase) return;
+              
+              setSyncStatus('syncing');
+              if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+              
+              syncTimeoutRef.current = setTimeout(async () => {
+                  try {
+                      const saveData = {
+                          coins,
+                          unlocked_ships: unlockedShips,
+                          equipped_ship: equippedShip,
+                          ad_progress: adProgress,
+                          // Include farm data here too if needed
+                      };
+                      
+                      const { error } = await supabase
+                          .from('game_saves')
+                          .upsert({ 
+                              user_id: user.id, 
+                              data: saveData,
+                              updated_at: new Date().toISOString()
+                          });
+                          
+                      if (error) throw error;
+                      setSyncStatus('saved');
+                      setTimeout(() => setSyncStatus('idle'), 2000);
+                  } catch (err) {
+                      console.error("Sync failed:", err);
+                      setSyncStatus('error');
+                  }
+              }, 2000); // Wait 2s of inactivity before syncing
+          }, [coins, unlockedShips, equippedShip, adProgress, user]);
+
+          // Cloud Loader
+          const loadCloudData = async (userId) => {
+              try {
+                  const { data, error } = await supabase
+                      .from('game_saves')
+                      .select('data')
+                      .eq('user_id', userId)
+                      .single();
+                      
+                  if (data?.data) {
+                      const d = data.data;
+                      if (d.coins) setCoins(d.coins);
+                      if (d.unlocked_ships) setUnlockedShips(d.unlocked_ships);
+                      if (d.equipped_ship) setEquippedShip(d.equipped_ship);
+                      if (d.ad_progress) setAdProgress(d.ad_progress);
+                      // Force localStorage update
+                      localStorage.setItem('galaxy_coins', d.coins);
+                      localStorage.setItem('galaxy_unlocked', JSON.stringify(d.unlocked_ships));
+                  }
+              } catch (err) {
+                  console.log("No save found or error loading.");
+              }
+          };
+
+          // Local Persist
+          useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]);
+          useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]);
+          useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]);
+          useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
+
+          const addCoins = (amount) => setCoins(c => c + amount);
+          const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
+
+          const handleShipAdWatch = (shipId, reqAds) => {
+              window.open('https://otieu.com/4/10270523', '_blank');
+              const next = (adProgress[shipId] || 0) + 1;
+              setAdProgress(p => ({ ...p, [shipId]: next }));
+              if (next >= reqAds && !unlockedShips.includes(shipId)) {
+                  setUnlockedShips(u => [...u, shipId]);
+                  playSound('powerup');
+              }
+          };
+
+          const triggerAd = (e) => {
+              if (Date.now() - lastAdTime < 180000) return;
+              setLastAdTime(Date.now());
+              window.open('https://otieu.com/4/10270523', '_blank');
+          };
+          
+          const startGame = (name) => {
+              if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                   document.documentElement.requestFullscreen().catch(() => {});
+              }
+              triggerAd();
+              setCurrentScreen(name);
+          };
+
+          const handleLogout = async () => {
+              await supabase.auth.signOut();
+              setUser(null);
+          };
+
+          switch(currentScreen) {
+              case 'galaxy-menu': return <GalaxyMenu onStart={() => startGame('galaxy-game')} onShop={() => setCurrentScreen('shop')} onBack={() => setCurrentScreen('home')} coins={coins} />;
+              case 'galaxy-game': return <GalaxyInvader onBack={() => setCurrentScreen('galaxy-menu')} triggerAd={triggerAd} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+              case 'shop': return <ShopScreen adProgress={adProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equippedShip={equippedShip} equipShip={equipShip} onBack={() => setCurrentScreen('galaxy-menu')} />;
+              case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} coins={coins} />;
+              case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} triggerAd={triggerAd} addCoins={addCoins} />;
+              case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} />;
+              default: return (
+                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+                      <InstallButton />
+                      
+                      {/* Top Bar Actions */}
+                      <div className="absolute top-4 right-4 flex gap-3 z-50">
+                          <button onClick={() => setShowAuth(true)} className={`p-2 rounded-full transition flex items-center gap-2 px-3 ${user ? 'bg-green-600 hover:bg-green-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+                              {user ? <><Cloud size={16} /> <span className="text-xs font-bold hidden md:block">CONECTADO</span></> : <><LogIn size={16} /> <span className="text-xs font-bold hidden md:block">LOGIN</span></>}
+                          </button>
+                          <button onClick={toggleFullScreen} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-gray-400 hover:text-white">
+                              <Maximize size={24}/>
+                          </button>
+                      </div>
+
+                      {user && (
+                          <div className="absolute top-16 right-4 flex items-center gap-2 z-50">
+                             <div className="text-[10px] text-gray-400">{user.email}</div>
+                             <button onClick={handleLogout} className="text-red-400 hover:text-white"><LogOut size={14}/></button>
+                          </div>
+                      )}
+
+                      <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
+                          <h1 className="text-5xl md:text-6xl font-bold text-center neon-title tracking-wider">JoGos<br/>Online</h1>
+                          <div className="flex items-center gap-2 bg-gray-900/80 px-4 py-2 rounded-full border border-yellow-600">
+                              <Coins size={20} className="text-yellow-400" />
+                              <span className="font-bold text-xl text-yellow-400">{coins}</span>
+                          </div>
+                          <div className="w-full grid gap-4 mt-8">
+                              <button onClick={() => setCurrentScreen('galaxy-menu')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">GALAXY INVADER</span><span className="text-xs text-gray-400">Space Shooter</span></div><Rocket size={32} className="text-purple-400" /></div></button>
+                              <button onClick={() => startGame('slither')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">NEON SLITHER</span><span className="text-xs text-gray-400">Snake IO</span></div><Worm size={32} className="text-pink-400" /></div></button>
+                              <button onClick={() => startGame('farm')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">FAZENDINHA</span><span className="text-xs text-gray-400">Farm Idle</span></div><Sprout size={32} className="text-green-400" /></div></button>
+                              <button onClick={() => startGame('hangman')} className="glass-box group relative w-full h-24 rounded-xl overflow-hidden"><div className="relative z-10 flex items-center justify-between p-6 h-full text-white"><div className="flex flex-col items-start"><span className="text-xl font-bold text-white drop-shadow-md neon-text-small">JOGO DA FORCA</span><span className="text-xs text-gray-400">Classic Puzzle</span></div><Brain size={32} className="text-blue-400" /></div></button>
+                          </div>
+                      </div>
+                      
+                      <div className="absolute bottom-4 text-gray-700 text-xs flex flex-col items-center gap-1">
+                          {user ? (
+                              <div className="flex items-center gap-1 text-blue-400 font-bold">
+                                  {syncStatus === 'syncing' ? <><Loader2 size={10} className="animate-spin"/> Salvando na Nuvem...</> : (syncStatus === 'saved' ? <><Cloud size={10} /> Progresso Salvo</> : <><Cloud size={10} /> Conectado</>)}
+                              </div>
+                          ) : (
+                              <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> Progresso Local</div>
+                          )}
+                          <div>v4.12.0 (Supabase Enabled)</div>
+                      </div>
+                      
+                      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
+                  </div>
+              );
+          }
+      };
+
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+    
+    <!-- Monetag Scripts Moved to End of Body for Performance -->
+    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+</body>
+</html>--- START OF FILE types.ts ---
+
+export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
+export type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
+
+export interface CardType {
+  suit: Suit;
+  rank: Rank;
+  isFaceUp: boolean;
+  id: string; // Unique identifier for React keys
+}
+
+export type PileType = CardType[];--- START OF FILE utils/deck.ts ---
+
+import { CardType, Suit, Rank } from '../types';
+
+const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
+const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+export const createDeck = (): CardType[] => {
+  const deck: CardType[] = [];
+  SUITS.forEach((suit) => {
+    RANKS.forEach((rank) => {
+      deck.push({
+        suit,
+        rank,
+        isFaceUp: false,
+        id: `${rank}-${suit}`,
+      });
+    });
+  });
+  return deck;
+};
+
+export const shuffleDeck = (deck: CardType[]): CardType[] => {
+  const newDeck = [...deck];
+  for (let i = newDeck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+  }
+  return newDeck;
+};
+
+export const getCardColor = (suit: Suit): 'red' | 'black' => {
+  return suit === 'hearts' || suit === 'diamonds' ? 'red' : 'black';
+};
+
+export const getRankValue = (rank: Rank): number => {
+  const index = RANKS.indexOf(rank);
+  return index + 1;
+};
+--- START OF FILE components/SolitaireCard.tsx ---
+
+import React from 'react';
+import { CardType } from '../types';
+import { getCardColor } from '../utils/deck';
+import { Heart, Diamond, Club, Spade } from 'lucide-react';
+
+interface SolitaireCardProps {
+  card: CardType;
+  onClick?: () => void;
+  isSelected?: boolean;
+  style?: React.CSSProperties;
+}
+
+const SolitaireCard: React.FC<SolitaireCardProps> = ({ card, onClick, isSelected, style }) => {
+  const color = getCardColor(card.suit);
+  
+  const getSuitIcon = (suit: string, size: number = 16) => {
+    switch (suit) {
+      case 'hearts': return <Heart size={size} fill={color === 'red' ? 'red' : 'black'} stroke={color === 'red' ? 'red' : 'black'} />;
+      case 'diamonds': return <Diamond size={size} fill={color === 'red' ? 'red' : 'black'} stroke={color === 'red' ? 'red' : 'black'} />;
+      case 'clubs': return <Club size={size} fill="black" stroke="black" />;
+      case 'spades': return <Spade size={size} fill="black" stroke="black" />;
+      default: return null;
+    }
+  };
+
+  if (!card.isFaceUp) {
+    return (
+      <div 
+        onClick={onClick}
+        className="w-16 h-24 bg-blue-800 rounded-lg border-2 border-white shadow-md flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors bg-opacity-90 backdrop-blur-sm"
+        style={style}
+      >
+        <div className="w-12 h-20 border border-blue-400 rounded opacity-50 bg-pattern-stripes"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`w-16 h-24 bg-white rounded-lg border-2 shadow-md flex flex-col justify-between p-1 cursor-pointer transition-all hover:scale-105 select-none ${isSelected ? 'ring-4 ring-yellow-400 transform -translate-y-1 z-10' : 'border-gray-300'}`}
+      style={{
+        color: color,
+        ...style
+      }}
+    >
+      <div className="flex flex-col items-center leading-none">
+        <span className="font-bold text-sm">{card.rank}</span>
+        {getSuitIcon(card.suit, 12)}
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+         {getSuitIcon(card.suit, 40)}
+      </div>
+      <div className="flex flex-col items-center leading-none transform rotate-180">
+        <span className="font-bold text-sm">{card.rank}</span>
+        {getSuitIcon(card.suit, 12)}
+      </div>
+    </div>
+  );
+};
+
+export default SolitaireCard;
+--- START OF FILE components/AdBanner.tsx ---
+
+import React, { useEffect } from 'react';
+
+const AdBanner: React.FC = () => {
+    useEffect(() => {
+        // Here you would normally initialize the ad script if it's not global
+        // Since we are using a global script in index.html, we just need the container
+    }, []);
+
+    return (
+        <div className="w-full h-[50px] bg-gray-900 flex items-center justify-center overflow-hidden border-t border-gray-800 shrink-0 relative z-50">
+           <span className="text-gray-600 text-xs">ADVERTISEMENT</span>
+           {/* Placeholder for actual Ad unit */}
+           <div id="ad-container" className="absolute inset-0"></div>
+        </div>
+    );
+};
+
+export default AdBanner;
+--- START OF FILE App.tsx ---
+
+import React from 'react';
+// Main App Logic is now in index.html for Single File Deployment
+// This file is kept for structure reference but not used in build
+const App = () => null;
+export default App;--- START OF FILE public/ads.txt ---
+
+google.com, pub-ca-pub-1234567890, DIRECT, f08c47fec0942fa0--- START OF FILE components/Confetti.tsx ---
+
+import React, { useEffect, useState } from 'react';
+
+const Confetti: React.FC = () => {
+    const [particles, setParticles] = useState<{id: number, x: number, y: number, color: string}[]>([]);
+
+    useEffect(() => {
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+        const newParticles = Array.from({ length: 50 }).map((_, i) => ({
+            id: i,
+            x: Math.random() * 100,
+            y: -10,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        }));
+        setParticles(newParticles);
+    }, []);
+
+    return (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+            {particles.map(p => (
+                <div 
+                    key={p.id}
+                    className="absolute w-2 h-2 rounded-full animate-fall"
+                    style={{
+                        left: `${p.x}%`,
+                        backgroundColor: p.color,
+                        animationDuration: `${Math.random() * 2 + 1}s`,
+                        animationDelay: `${Math.random()}s`
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
+
+export default Confetti;--- START OF FILE utils/progression.ts ---
+
+export const RANKS_MAP = {
+  1: { title: "Novice", minXp: 0 },
+  2: { title: "Apprentice", minXp: 100 },
+  3: { title: "Card Shark", minXp: 300 },
+  4: { title: "Solitaire Master", minXp: 600 },
+  5: { title: "Grandmaster", minXp: 1000 },
+};
+
+export const calculateLevel = (xp: number) => {
+  let currentLevel = 1;
+  let nextLevelXp = 100;
+
+  for (const [level, data] of Object.entries(RANKS_MAP)) {
+    if (xp >= data.minXp) {
+      currentLevel = parseInt(level);
+      // Determine next level XP
+      const nextLvl = parseInt(level) + 1;
+      // @ts-ignore
+      if (RANKS_MAP[nextLvl]) {
+          // @ts-ignore
+        nextLevelXp = RANKS_MAP[nextLvl].minXp;
+      } else {
+        nextLevelXp = xp + 1000; // Cap
+      }
+    }
+  }
+
+  return { level: currentLevel, nextLevelXp };
+};--- START OF FILE components/WinningBounce.tsx ---
+
+import React from 'react';
+
+const WinningBounce = () => {
+    return (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+            <h1 className="text-6xl font-bold text-yellow-400 animate-bounce drop-shadow-lg stroke-black">
+                VICTORY!
+            </h1>
+        </div>
+    );
+};
+
+export default WinningBounce;--- START OF FILE utils/dailyTasks.ts ---
+
+export interface Task {
+    id: number;
+    description: string;
+    target: number;
+    current: number;
+    completed: boolean;
+    reward: number; // XP
+}
+
+export const generateDailyTasks = (): Task[] => {
+    // Generate 3 random tasks
+    const templates = [
+        { desc: "Win {target} games", baseTarget: 1, reward: 50 },
+        { desc: "Move {target} cards to foundation", baseTarget: 10, reward: 20 },
+        { desc: "Flip {target} cards", baseTarget: 15, reward: 30 },
+        { desc: "Use Undo less than {target} times in a game", baseTarget: 5, reward: 40 },
+    ];
+
+    return templates.slice(0, 3).map((t, i) => ({
+        id: Date.now() + i,
+        description: t.desc.replace('{target}', t.baseTarget.toString()),
+        target: t.baseTarget,
+        current: 0,
+        completed: false,
+        reward: t.reward
+    }));
+};--- START OF FILE components/DailyTasksModal.tsx ---
+
+import React from 'react';
+import { Task } from '../utils/dailyTasks';
+import { CheckCircle, Circle, X } from 'lucide-react';
+
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
+    tasks: Task[];
+}
+
+const DailyTasksModal: React.FC<Props> = ({ isOpen, onClose, tasks }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in duration-200">
+            <div className="bg-slate-800 w-full max-w-md rounded-2xl border border-slate-600 shadow-2xl overflow-hidden relative">
+                <div className="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <span className="text-yellow-400">★</span> Daily Missions
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition">
+                        <X size={24} />
+                    </button>
+                </div>
+                
+                <div className="p-4 flex flex-col gap-3">
+                    {tasks.map(task => (
+                        <div key={task.id} className={`p-3 rounded-xl border flex items-center justify-between ${task.completed ? 'bg-green-900/20 border-green-500/50' : 'bg-slate-700/50 border-slate-600'}`}>
+                            <div className="flex-1">
+                                <p className={`font-medium ${task.completed ? 'text-green-400' : 'text-gray-200'}`}>{task.description}</p>
+                                <div className="w-full bg-slate-900 h-2 rounded-full mt-2 overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-500 ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
+                                        style={{ width: `${Math.min(100, (task.current / task.target) * 100)}%` }}
+                                    ></div>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">{task.current} / {task.target}</p>
+                            </div>
+                            <div className="ml-4 flex flex-col items-center">
+                                {task.completed ? <CheckCircle className="text-green-500" /> : <Circle className="text-gray-500" />}
+                                <span className="text-xs font-bold text-yellow-500 mt-1">+{task.reward} XP</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default DailyTasksModal;
+```
