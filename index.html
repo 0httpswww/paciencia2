@@ -12,7 +12,6 @@
 
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
-    <meta name='admaven-placement' content='BqjwGrds9'>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -114,16 +113,9 @@
             text-transform: uppercase;
         }
 
-        .nav-icon {
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
-        }
-
-        /* --- HUD ELEMENTS --- */
-        .hud-panel {
-            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(20,20,20,0.9) 50%, rgba(0,0,0,0.8) 100%);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
+        /* --- UTILS --- */
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
 
         /* --- GAME SPECIFIC PRESERVED STYLES --- */
         .space-3d { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); perspective: 1000px; overflow: hidden; }
@@ -135,9 +127,9 @@
         .hangman-swing { transform-origin: 140px 20px; animation: swing 3s infinite ease-in-out; }
         .farm-scene { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
         .farm-perspective { perspective: 1000px; }
-        .farm-grid-3d { transform: rotateX(45deg) rotateZ(-45deg) scale(0.8); transform-style: preserve-3d; transition: transform 0.5s ease; }
-        .farm-plot { background: #0f172a; box-shadow: inset 0 0 20px #000, 5px 5px 15px rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); transform-style: preserve-3d; transition: all 0.3s; }
-        .farm-plot:hover { transform: translateZ(10px); border-color: rgba(56, 189, 248, 0.5); }
+        .farm-grid-3d { transform-style: preserve-3d; transition: transform 0.1s ease-out; }
+        .farm-plot { background: #0f172a; box-shadow: inset 0 0 20px #000, 5px 5px 15px rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); transform-style: preserve-3d; transition: border-color 0.3s, box-shadow 0.3s; }
+        .farm-plot:hover { border-color: rgba(56, 189, 248, 0.5); }
         .farm-plot.ready { border-color: #facc15; box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
         @keyframes walker { 0% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } 50% { transform: translateZ(50px) rotateX(-45deg) rotateY(45deg) translateY(-5px); } 100% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } }
         .farmer-anim { animation: walker 1.5s infinite ease-in-out; transform-style: preserve-3d; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
@@ -169,7 +161,7 @@
     </script>
 </head>
 <body>
-    <!-- Monetag Popunder (Zone: 10264533) - Robust Injection -->
+    <!-- Monetag Popunder (Zone: 10264533) - ACTIVATED -->
     <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
     
     <!-- Monetag Vignette (Zone: 10273879) -->
@@ -180,35 +172,28 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
       // MONETAG ADS CONFIGURATION
       // ==========================================
-      // SUBSTITUA PELO SEU LINK DIRETO REAL DA MONETAG
       const MONETAG_DIRECT_LINK = 'https://al5sm.com/4/10264533'; 
 
-      // Helper para abrir o Direct Link e conceder recompensa
       const triggerAd = (onReward) => {
-          // Play Sound
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = 600;
-          gain.gain.value = 0.1;
-          osc.start();
-          osc.stop(ctx.currentTime + 0.1);
+          // Resume audio context if suspended (requires user gesture)
+          const ctx = getAudioContext();
+          if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
 
+          playSound('ui_click');
+          
           // Open Direct Link
           window.open(MONETAG_DIRECT_LINK, '_blank');
           
-          // Grant reward after delay (simulating view)
+          // Simulate ad watch time and grant reward
           setTimeout(() => {
               if (onReward) onReward();
-          }, 1000);
+          }, 2000);
       };
 
       // ==========================================
@@ -230,7 +215,6 @@
 
       const supabase = initSupabase();
 
-      // --- Helpers ---
       const safeStorage = {
           getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
           setItem: (key, value) => { try { localStorage.setItem(key, value); } catch(e) {} }
@@ -270,6 +254,23 @@
                 case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
                 case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
                 case 'buy': osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                // --- NEW SOUND EFFECTS ---
+                case 'plant': // Digging sound
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                    break;
+                case 'harvest': // High pitched success
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                    break;
             }
           } catch(e) {}
       };
@@ -670,7 +671,7 @@
           );
       };
 
-      // --- GAME 2: FARM GAME (Updated UI Logic for Dark Mode & Ad Integration) ---
+      // --- GAME 2: FARM GAME ---
       const FarmGame = ({ onBack, addCoins, coins }) => {
           const CROPS = { 'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, xp: 5, time: 5000, icon: '🌾', adCost: 0, reqLevel: 1 }, 'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, xp: 10, time: 10000, icon: '🌽', adCost: 0, reqLevel: 2 }, 'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, xp: 20, time: 20000, icon: '🥕', adCost: 1, reqLevel: 3 }, 'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, xp: 40, time: 45000, icon: '🍅', adCost: 2, reqLevel: 5 }, 'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, xp: 80, time: 90000, icon: '🍓', adCost: 3, reqLevel: 8 }, 'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, xp: 150, time: 180000, icon: '🍇', adCost: 5, reqLevel: 10 } };
           const ANIMALS = { 'chicken': { id: 'chicken', name: 'Galinha', cost: 50, reward: 100, xp: 50, time: 30000, icon: '🐔', product: 'Ovo', adCost: 0, reqLevel: 2 }, 'pig': { id: 'pig', name: 'Porco', cost: 150, reward: 250, xp: 100, time: 60000, icon: '🐷', product: 'Bacon', adCost: 0, reqLevel: 4 }, 'cow': { id: 'cow', name: 'Vaca', cost: 500, reward: 800, xp: 250, time: 120000, icon: '🐮', product: 'Leite', adCost: 1, reqLevel: 7 }, 'sheep': { id: 'sheep', name: 'Ovelha', cost: 1000, reward: 1500, xp: 500, time: 300000, icon: '🐑', product: 'Lã', adCost: 2, reqLevel: 12 } };
@@ -681,6 +682,11 @@
           const [now, setNow] = useState(Date.now()); 
           const [showMissions, setShowMissions] = useState(false); 
           const [showExpand, setShowExpand] = useState(false);
+          
+          // Camera / Pan State
+          const [pan, setPan] = useState({ x: 0, y: 0 });
+          const [isDragging, setIsDragging] = useState(false);
+          const lastPos = useRef({ x: 0, y: 0 });
           
           // Persistence
           const [landLevel, setLandLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; } });
@@ -699,7 +705,15 @@
 
           const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
-          const handlePlotClick = (index) => { const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } };
+          const handlePlotClick = (index, e) => { 
+            // Prevent click if dragging occurred
+            if(Math.abs(pan.x - lastPos.current.startX) > 5 || Math.abs(pan.y - lastPos.current.startY) > 5) {
+                // Was a drag, not a click
+                return;
+            }
+
+            const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
+          };
           
           const handleExpand = () => { 
               triggerAd(() => {
@@ -717,7 +731,6 @@
           };
           
           const handleItemAdWatch = (id, cost) => {
-              // Trigger Direct Link via click and give reward
               triggerAd(() => {
                 const current = cropAdProgress[id] || 0;
                 if (current < cost) {
@@ -726,6 +739,29 @@
                 }
               });
           };
+
+          // --- CAMERA CONTROLS ---
+          const handlePointerDown = (e) => {
+              setIsDragging(true);
+              const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+              const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+              lastPos.current = { x: clientX, y: clientY, startX: clientX, startY: clientY };
+          };
+
+          const handlePointerMove = (e) => {
+              if (!isDragging) return;
+              e.preventDefault(); // Prevent scroll
+              const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+              const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+              
+              const dx = clientX - lastPos.current.x;
+              const dy = clientY - lastPos.current.y;
+              
+              setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+              lastPos.current = { ...lastPos.current, x: clientX, y: clientY };
+          };
+
+          const handlePointerUp = () => setIsDragging(false);
 
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
@@ -739,9 +775,58 @@
                        </div>
                    </div>
                    {levelUpNotif && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center"><div className="text-6xl mb-2">⭐</div><h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2><p className="text-xl font-bold text-white">Nível {level}</p></div>}
-                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden"><div className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative"><div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div><div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
-                           {grid.map((plot, i) => { const isAnimal = plot.crop && ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0; const isReady = progress >= 100; return (<button key={i} onClick={() => handlePlotClick(i)} className={`w-28 h-28 rounded-xl farm-plot relative group ${isReady ? 'ready' : ''}`}>{def && (<div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}><span className="text-5xl filter drop-shadow-md">{def.icon}</span></div>)}{def && !isReady && (<div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div></div>)}{!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}</button>); })}
-                       </div></div>
+                   
+                   {/* Main Game Area with Pan Handler */}
+                   <div 
+                        className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden cursor-move touch-none"
+                        onMouseDown={handlePointerDown}
+                        onMouseMove={handlePointerMove}
+                        onMouseUp={handlePointerUp}
+                        onMouseLeave={handlePointerUp}
+                        onTouchStart={handlePointerDown}
+                        onTouchMove={handlePointerMove}
+                        onTouchEnd={handlePointerUp}
+                    >
+                       {/* Instructions Overlay if never panned */}
+                       {pan.x === 0 && pan.y === 0 && (
+                           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30 flex flex-col items-center">
+                               <Move size={48} className="animate-pulse" />
+                               <span className="text-[10px] uppercase tracking-widest mt-2">Arraste para mover</span>
+                           </div>
+                       )}
+
+                       <div 
+                            className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative origin-center" 
+                            style={{ 
+                                transform: `translate3d(${pan.x}px, ${pan.y}px, 0) rotateX(45deg) rotateZ(-45deg) scale(0.8)` 
+                            }}
+                       >
+                           <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
+                           <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
+                           
+                           {grid.map((plot, i) => { 
+                               const isAnimal = plot.crop && ANIMALS[plot.crop]; 
+                               const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); 
+                               const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0; 
+                               const isReady = progress >= 100; 
+                               return (
+                                   <div 
+                                      key={i} 
+                                      onClick={(e) => {
+                                          e.stopPropagation(); 
+                                          handlePlotClick(i, e);
+                                      }} 
+                                      className={`w-28 h-28 rounded-xl farm-plot relative group cursor-pointer ${isReady ? 'ready' : ''}`}
+                                   >
+                                       {def && (<div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}><span className="text-5xl filter drop-shadow-md">{def.icon}</span></div>)}
+                                       {def && !isReady && (<div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div></div>)}
+                                       {!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}
+                                   </div>
+                               ); 
+                           })}
+                       </div>
+                   </div>
+                   
                    <button onClick={handleTurbo} className="absolute right-4 bottom-52 z-40 bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-full shadow-[0_0_20px_gold] animate-bounce border-2 border-white flex flex-col items-center"><Zap size={24} fill="black" /><span className="text-[10px] font-bold mt-1">TURBO</span><span className="text-[8px] bg-black text-yellow-500 px-1 rounded">AD</span></button>
                    <div className="neon-bar h-48 w-full z-40 flex flex-col"><div className="flex w-full border-b border-white/10"><button onClick={() => { setCategory('plants'); setSelectedItem('wheat'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'plants' ? 'text-cyan-400 bg-white/5 border-b-2 border-cyan-400' : 'text-gray-500'}`}>Plantas</button><button onClick={() => { setCategory('animals'); setSelectedItem('chicken'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'animals' ? 'text-purple-400 bg-white/5 border-b-2 border-purple-400' : 'text-gray-500'}`}>Animais</button></div><div className="flex-1 overflow-x-auto flex gap-4 p-4 items-center">
                            {availableItems.map(item => { 
@@ -767,174 +852,211 @@
           );
       };
 
-      // --- GAME 3 & 4: HANGMAN & SLITHER (Styles updated via CSS) ---
+      // --- GAME 3: HANGMAN (Restored & Enhanced) ---
       const HangmanGame = ({ onBack, addCoins }) => {
-          const CATEGORIES = { 'FRUTAS': ['BANANA', 'MAÇA', 'UVA', 'LARANJA', 'ABACAXI', 'MELANCIA', 'MORANGO'], 'ANIMAIS': ['GATO', 'CACHORRO', 'ELEFANTE', 'LEAO', 'TIGRE', 'GIRAFA', 'MACACO'], 'PAISES': ['BRASIL', 'ARGENTINA', 'JAPAO', 'ALEMANHA', 'CANADA', 'ITALIA', 'MEXICO'] };
-          const [category, setCategory] = useState('FRUTAS'); const [word, setWord] = useState('BANANA'); const [guessed, setGuessed] = useState([]); const [errors, setErrors] = useState(0); const [gameOver, setGameOver] = useState(false); const [won, setWon] = useState(false);
-          useEffect(() => { resetGame(); }, []); const resetGame = () => { const cats = Object.keys(CATEGORIES); const rc = cats[Math.floor(Math.random() * cats.length)]; const rw = CATEGORIES[rc][Math.floor(Math.random() * CATEGORIES[rc].length)]; setCategory(rc); setWord(rw); setGuessed([]); setErrors(0); setGameOver(false); setWon(false); };
-          const handleGuess = (letter) => { if (gameOver || guessed.includes(letter)) return; const newGuessed = [...guessed, letter]; setGuessed(newGuessed); if (!word.includes(letter)) { const newErrors = errors + 1; setErrors(newErrors); if (newErrors >= 6) { setGameOver(true); playSound('lose'); } else playSound('lose'); } else { playSound('correct'); if (word.split('').every(l => newGuessed.includes(l))) { setWon(true); setGameOver(true); addCoins(20); playSound('win'); } } };
-          const handleTip = () => { 
-              // Trigger Direct Link via click and give reward
-              triggerAd(() => {
-                const missing = word.split('').find(l => !guessed.includes(l)); 
-                if (missing) handleGuess(missing);
-              });
-          };
-          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
-          return (
-              <div className="w-full h-full bg-slate-900 text-white flex flex-col p-4 relative premium-bg">
-                  <div className="flex justify-between items-center mb-6"><button onClick={() => { playSound('ui_click'); onBack(); }}><ChevronLeft /></button><h1 className="text-xl font-bold text-blue-400 hero-title">FORCA: {category}</h1><button onClick={handleTip} className="bg-yellow-600 px-3 py-1 rounded text-xs font-bold animate-pulse">VER AD 💡</button></div>
-                  <div className="flex justify-center mb-8 h-40 relative"><svg width="200" height="160" viewBox="0 0 200 160" className="stroke-white stroke-[4px] fill-none"><line x1="20" y1="150" x2="100" y2="150" /><line x1="60" y1="150" x2="60" y2="20" /><line x1="60" y1="20" x2="140" y2="20" /><line x1="140" y1="20" x2="140" y2="40" /><g className={errors > 0 ? "hangman-swing" : ""}>{errors > 0 && <circle cx="140" cy="50" r="10" />}{errors > 1 && <line x1="140" y1="60" x2="140" y2="100" />}{errors > 2 && <line x1="140" y1="70" x2="120" y2="90" />}{errors > 3 && <line x1="140" y1="70" x2="160" y2="90" />}{errors > 4 && <line x1="140" y1="100" x2="120" y2="130" />}{errors > 5 && <line x1="140" y1="100" x2="160" y2="130" />}</g></svg></div>
-                  <div className="flex justify-center gap-2 mb-8 flex-wrap">{word.split('').map((l, i) => (<div key={i} className="w-8 h-10 border-b-4 border-white flex items-center justify-center text-2xl font-bold">{guessed.includes(l) || gameOver ? l : ''}</div>))}</div>
-                  <div className="grid grid-cols-7 gap-2">{alphabet.map(l => (<button key={l} onClick={() => { playSound('ui_click'); handleGuess(l); }} disabled={guessed.includes(l) || gameOver} className={`h-10 rounded font-bold transition-all ${guessed.includes(l) ? 'bg-gray-700 text-gray-500 scale-95' : 'premium-btn'}`}>{l}</button>))}</div>
-                  {gameOver && (<div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 animate-fade-in"><h2 className={`text-4xl font-bold mb-4 ${won ? 'text-green-500' : 'text-red-500'}`}>{won ? 'VITÓRIA!' : 'DERROTA!'}</h2><p className="mb-6 text-xl">A palavra era: <span className="text-yellow-400">{word}</span></p>{won && <p className="mb-6 text-yellow-300 font-bold">+20 Moedas</p>}<button onClick={resetGame} className="px-8 py-3 bg-white text-black font-bold rounded-full">JOGAR NOVAMENTE</button></div>)}
-              </div>
-          );
+        const WORDS = [
+          { word: "JAVASCRIPT", hint: "Linguagem da Web" },
+          { word: "REACT", hint: "Biblioteca UI" },
+          { word: "GALAXY", hint: "Via Láctea" },
+          { word: "FAZENDA", hint: "Lugar de plantar" },
+          { word: "ROBO", hint: "Inteligência Artificial" },
+          { word: "INTERNET", hint: "Rede Mundial" },
+          { word: "CODIGO", hint: "Instruções do PC" },
+          { word: "FUTURO", hint: "O que virá" }
+        ];
+
+        const [game, setGame] = useState(() => {
+           const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+           return { ...rand, guessed: [], errors: 0, status: 'playing' };
+        });
+
+        const handleGuess = (letter) => {
+            if (game.status !== 'playing' || game.guessed.includes(letter)) return;
+            const newGuessed = [...game.guessed, letter];
+            const isError = !game.word.includes(letter);
+            const newErrors = isError ? game.errors + 1 : game.errors;
+            const isWin = game.word.split('').every(l => newGuessed.includes(l));
+            const isLose = newErrors >= 6;
+            
+            playSound(isError ? 'ui_click' : 'powerup');
+            if(isWin) playSound('win');
+            if(isLose) playSound('lose');
+
+            setGame(prev => ({ ...prev, guessed: newGuessed, errors: newErrors, status: isWin ? 'won' : (isLose ? 'lost' : 'playing') }));
+            
+            if (isWin) addCoins(20);
+        };
+
+        const handleRestart = () => {
+            const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+            setGame({ ...rand, guessed: [], errors: 0, status: 'playing' });
+            playSound('ui_click');
+        };
+
+        const handleHint = () => {
+             triggerAd(() => {
+                 const hidden = game.word.split('').filter(l => !game.guessed.includes(l));
+                 if (hidden.length > 0) {
+                     const reveal = hidden[Math.floor(Math.random() * hidden.length)];
+                     handleGuess(reveal);
+                 }
+                 playSound('powerup');
+             });
+        };
+
+        return (
+            <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center premium-bg">
+                <div className="scanlines"></div>
+                <div className="absolute top-4 left-4 z-50"><button onClick={onBack} className="p-3 bg-white/10 rounded-full text-white"><ChevronLeft /></button></div>
+                
+                <div className="text-center z-10 p-4 w-full max-w-lg">
+                    <h1 className="hero-title text-4xl mb-8">HANGMAN</h1>
+                    
+                    {/* HANGMAN DRAWING */}
+                    <div className="h-48 relative mb-8 flex justify-center">
+                        <svg width="200" height="200" className="stroke-white stroke-[4] fill-none drop-shadow-lg">
+                            <path d="M20 190 L180 190 M50 190 L50 20 L140 20 L140 40" />
+                            {game.errors > 0 && <circle cx="140" cy="60" r="20" className="animate-fade-in" />}
+                            {game.errors > 1 && <path d="M140 80 L140 140" className="animate-fade-in" />}
+                            {game.errors > 2 && <path d="M140 90 L110 120" className="animate-fade-in" />}
+                            {game.errors > 3 && <path d="M140 90 L170 120" className="animate-fade-in" />}
+                            {game.errors > 4 && <path d="M140 140 L120 180" className="animate-fade-in" />}
+                            {game.errors > 5 && <path d="M140 140 L160 180" className="animate-fade-in" />}
+                        </svg>
+                    </div>
+
+                    {/* WORD DISPLAY */}
+                    <div className="flex justify-center gap-2 mb-4 flex-wrap">
+                        {game.word.split('').map((l, i) => (
+                            <div key={i} className={`w-10 h-12 flex items-center justify-center border-b-4 text-2xl font-bold ${game.guessed.includes(l) ? 'border-blue-500 text-white' : 'border-gray-600 text-transparent'}`}>
+                                {game.guessed.includes(l) ? l : '_'}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="text-gray-400 mb-8 text-sm uppercase tracking-widest">{game.hint}</div>
+
+                    {/* KEYBOARD */}
+                    <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+                        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').map(l => {
+                            const status = game.guessed.includes(l) ? (game.word.includes(l) ? 'bg-green-600 border-green-400' : 'bg-red-900/50 border-red-900 opacity-50') : 'bg-slate-700 hover:bg-slate-600 border-slate-500';
+                            return (
+                                <button key={l} disabled={game.status !== 'playing' || game.guessed.includes(l)} onClick={() => handleGuess(l)} className={`w-10 h-10 rounded font-bold border ${status} text-white transition-all`}>{l}</button>
+                            )
+                        })}
+                    </div>
+
+                    {/* CONTROLS */}
+                    <div className="mt-8 flex justify-center gap-4">
+                        {game.status === 'playing' ? (
+                            <button onClick={handleHint} className="flex items-center gap-2 px-6 py-3 bg-yellow-600 rounded-xl font-bold text-white shadow-[0_0_15px_gold]">
+                                <Lightbulb size={20} /> DICA (AD)
+                            </button>
+                        ) : (
+                            <button onClick={handleRestart} className="flex items-center gap-2 px-8 py-3 bg-blue-600 rounded-xl font-bold text-white shadow-[0_0_20px_blue] animate-pulse">
+                                <RefreshCw size={20} /> JOGAR NOVAMENTE
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
       };
 
-      const SlitherGame = ({ onBack }) => (
-         <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white premium-bg">
-              <div className="scanlines"></div>
-              <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 mb-4 hero-title drop-shadow-[0_0_20px_rgba(34,197,94,0.5)]">NEON SLITHER</h1>
-              <p className="mb-8 text-gray-400 tracking-widest">EM DESENVOLVIMENTO</p>
-              <button onClick={() => { playSound('ui_click'); onBack(); }} className="px-8 py-3 bg-slate-800 border border-white/20 rounded-full hover:bg-slate-700 transition">RETORNAR</button>
-         </div>
-      );
-
-      // --- Main App ---
+      // --- MAIN APP ORCHESTRATOR ---
       const App = () => {
-          const [currentScreen, setCurrentScreen] = useState('home');
+          const [screen, setScreen] = useState('menu');
           const [user, setUser] = useState(null);
           const [showAuth, setShowAuth] = useState(false);
-          const [syncStatus, setSyncStatus] = useState('idle');
-
-          const [coins, setCoins] = useState(() => { try { return parseInt(localStorage.getItem('galaxy_coins') || '0'); } catch { return 0; } });
-          const [unlockedShips, setUnlockedShips] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_unlocked') || '["starter"]'); } catch { return ['starter']; } });
-          const [equippedShip, setEquippedShip] = useState(() => localStorage.getItem('galaxy_equipped') || 'starter');
-          const [adProgress, setAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('galaxy_ad_progress') || '{}'); } catch { return {}; } });
-
-          // Supabase Logic
-          useEffect(() => {
-              if (supabase) {
-                  supabase.auth.getSession().then(({ data: { session } }) => { if (session?.user) { setUser(session.user); loadCloudData(session.user.id); } });
-                  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); if (session?.user) loadCloudData(session.user.id); });
-                  return () => subscription.unsubscribe();
-              }
-          }, []);
-
-          const syncTimeoutRef = useRef(null);
-          useEffect(() => {
-              if (!user || !supabase) return;
-              setSyncStatus('syncing');
-              if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-              syncTimeoutRef.current = setTimeout(async () => {
-                  try {
-                      const farmData = { 
-                          grid: JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'), 
-                          landLevel: parseInt(localStorage.getItem('farm_land') || '6'), 
-                          missions: JSON.parse(localStorage.getItem('farm_missions') || '[]'), 
-                          level: parseInt(localStorage.getItem('farm_level') || '1'), 
-                          xp: parseInt(localStorage.getItem('farm_xp') || '0'),
-                          cropAds: JSON.parse(localStorage.getItem('farm_crop_ads') || '{}')
-                      };
-                      let { error } = await supabase.rpc('save_progress', { new_data: { coins, unlocked_ships: unlockedShips, equipped_ship: equippedShip, ad_progress: adProgress, farm: farmData } });
-                      if (error && (error.code === '42883' || error.message.includes('function'))) { const { error: upsertError } = await supabase.from('game_saves').upsert({ user_id: user.id, data: { coins, unlocked_ships: unlockedShips, equipped_ship: equippedShip, ad_progress: adProgress, farm: farmData }, updated_at: new Date().toISOString() }); error = upsertError; }
-                      if (error && (error.code === 'PGRST301' || error.message.includes('relation "public.game_saves" does not exist') || error.message.includes('Could not find the table'))) { setSyncStatus('offline'); return; }
-                      if (error) throw new Error(error.message || JSON.stringify(error));
-                      setSyncStatus('saved'); setTimeout(() => setSyncStatus('idle'), 2000);
-                  } catch (err) { console.error("Sync failed:", err.message || JSON.stringify(err)); setSyncStatus('error'); }
-              }, 2000);
-          }, [coins, unlockedShips, equippedShip, adProgress, user]);
-
-          const loadCloudData = async (userId) => {
-              try {
-                  const { data, error } = await supabase.from('game_saves').select('data').eq('user_id', userId).single();
-                  if (error) { 
-                      if (error.code === 'PGRST116') return; 
-                      if (error.code === 'PGRST301' || error.message.includes('Could not find the table')) { setSyncStatus('offline'); return; } 
-                      console.error("Load Error:", error.message); return; 
-                  }
-                  if (data?.data) {
-                      const d = data.data;
-                      if (d.coins !== undefined) { setCoins(d.coins); localStorage.setItem('galaxy_coins', d.coins); }
-                      if (d.unlocked_ships) { setUnlockedShips(d.unlocked_ships); localStorage.setItem('galaxy_unlocked', JSON.stringify(d.unlocked_ships)); }
-                      if (d.equipped_ship) { setEquippedShip(d.equipped_ship); localStorage.setItem('galaxy_equipped', d.equipped_ship); }
-                      if (d.ad_progress) { setAdProgress(d.ad_progress); localStorage.setItem('galaxy_ad_progress', JSON.stringify(d.ad_progress)); }
-                      if (d.farm) { 
-                          if (d.farm.grid) localStorage.setItem('farm_grid_v2', JSON.stringify(d.farm.grid)); 
-                          if (d.farm.landLevel) localStorage.setItem('farm_land', d.farm.landLevel); 
-                          if (d.farm.missions) localStorage.setItem('farm_missions', JSON.stringify(d.farm.missions)); 
-                          if (d.farm.level) localStorage.setItem('farm_level', d.farm.level); 
-                          if (d.farm.xp) localStorage.setItem('farm_xp', d.farm.xp); 
-                          if (d.farm.cropAds) localStorage.setItem('farm_crop_ads', JSON.stringify(d.farm.cropAds));
-                      }
-                  }
-              } catch (err) { console.error("Unexpected load error:", err); }
-          };
-
-          useEffect(() => safeStorage.setItem('galaxy_coins', coins), [coins]); useEffect(() => safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)), [unlockedShips]); useEffect(() => safeStorage.setItem('galaxy_equipped', equippedShip), [equippedShip]); useEffect(() => safeStorage.setItem('galaxy_ad_progress', JSON.stringify(adProgress)), [adProgress]);
-          const addCoins = (amount) => setCoins(c => c + amount); const equipShip = (id) => { if(unlockedShips.includes(id)) setEquippedShip(id); };
-          const handleShipAdWatch = (shipId, reqAds) => { 
-              // Trigger Direct Link via click and give reward
-              triggerAd(() => {
-                const next = (adProgress[shipId] || 0) + 1; 
-                setAdProgress(p => ({ ...p, [shipId]: next })); 
-                if (next >= reqAds && !unlockedShips.includes(shipId)) { setUnlockedShips(u => [...u, shipId]); playSound('powerup'); } 
-              });
-          };
+          const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('galaxy_coins') || '100'));
           
-          const startGame = (name) => { playSound('ui_click'); setCurrentScreen(name); };
-          const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); playSound('ui_click'); };
+          // Galaxy State
+          const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(safeStorage.getItem('galaxy_unlocked') || '["starter"]'));
+          const [equippedShip, setEquippedShip] = useState(() => safeStorage.getItem('galaxy_equipped') || 'starter');
+          const [shipAdProgress, setShipAdProgress] = useState(() => JSON.parse(safeStorage.getItem('galaxy_ship_ads') || '{}'));
 
-          switch(currentScreen) {
-              case 'galaxy-menu': return <GalaxyMenu onStart={() => startGame('galaxy-game')} onShop={() => setCurrentScreen('shop')} onBack={() => setCurrentScreen('home')} coins={coins} />;
-              case 'galaxy-game': return <GalaxyInvader onBack={() => setCurrentScreen('galaxy-menu')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
-              case 'shop': return <ShopScreen adProgress={adProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equippedShip={equippedShip} equipShip={equipShip} onBack={() => setCurrentScreen('galaxy-menu')} />;
-              case 'farm': return <FarmGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} coins={coins} />;
-              case 'hangman': return <HangmanGame onBack={() => setCurrentScreen('home')} addCoins={addCoins} />;
-              case 'slither': return <SlitherGame onBack={() => setCurrentScreen('home')} />;
-              default: return (
-                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden premium-bg">
+          // Sync coins
+          useEffect(() => { safeStorage.setItem('galaxy_coins', coins.toString()); }, [coins]);
+          useEffect(() => { safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)); }, [unlockedShips]);
+          useEffect(() => { safeStorage.setItem('galaxy_equipped', equippedShip); }, [equippedShip]);
+          useEffect(() => { safeStorage.setItem('galaxy_ship_ads', JSON.stringify(shipAdProgress)); }, [shipAdProgress]);
+
+          const addCoins = (amount) => { 
+              setCoins(c => {
+                  const newVal = Math.max(0, c + amount);
+                  if (amount > 0) playSound('buy');
+                  return newVal;
+              }); 
+          };
+
+          const handleShipAdWatch = (shipId, requiredAds) => {
+              const current = shipAdProgress[shipId] || 0;
+              if (current < requiredAds) {
+                  const next = current + 1;
+                  setShipAdProgress(p => ({ ...p, [shipId]: next }));
+                  if (next >= requiredAds) {
+                      setUnlockedShips(prev => [...prev, shipId]);
+                      playSound('win');
+                  }
+              }
+          };
+
+          // --- MENU SCREEN ---
+          if (screen === 'menu') {
+              return (
+                  <div className="w-full h-full premium-bg flex flex-col items-center justify-center p-4">
                       <div className="scanlines"></div>
+                      <div className="z-10 w-full max-w-md flex flex-col gap-6 animate-fade-in">
+                          <div className="text-center mb-4">
+                              <h1 className="hero-title text-6xl">JOGOS<br/><span className="text-blue-500">ONLINE</span></h1>
+                              <p className="text-gray-400 tracking-[0.5em] text-xs mt-2 uppercase">Arcade • Farm • Logic</p>
+                          </div>
+                          
+                          <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
+                              <div className="flex items-center gap-2">
+                                  {user ? (
+                                      <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs">{user.email[0].toUpperCase()}</div><div className="text-xs text-gray-300">Conectado</div></div>
+                                  ) : (
+                                      <button onClick={() => { playSound('ui_click'); setShowAuth(true); }} className="text-xs font-bold text-blue-400 flex items-center gap-1 hover:text-white"><LogIn size={14} /> LOGIN / SALVAR</button>
+                                  )}
+                              </div>
+                              <div className="flex items-center gap-2 font-bold text-yellow-400 bg-black/40 px-3 py-1 rounded-full border border-yellow-500/20"><Coins size={16} /> {coins}</div>
+                          </div>
+
+                          <div className="grid gap-4">
+                              <button onClick={() => { playSound('ui_click'); setScreen('galaxy_menu'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
+                                  <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Rocket size={32} /></div>
+                                  <div className="flex-1 text-left"><div className="font-bold text-xl">GALAXY INVADER</div><div className="text-xs text-gray-400">Combate Espacial 3D</div></div>
+                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
+                              </button>
+                              
+                              <button onClick={() => { playSound('ui_click'); setScreen('farm'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
+                                  <div className="p-3 bg-green-500/20 rounded-lg text-green-400 group-hover:bg-green-500 group-hover:text-white transition-colors"><Sprout size={32} /></div>
+                                  <div className="flex-1 text-left"><div className="font-bold text-xl">FAZENDA 3D</div><div className="text-xs text-gray-400">Plante, Cultive e Lucre</div></div>
+                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
+                              </button>
+
+                              <button onClick={() => { playSound('ui_click'); setScreen('hangman'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
+                                  <div className="p-3 bg-purple-500/20 rounded-lg text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors"><Brain size={32} /></div>
+                                  <div className="flex-1 text-left"><div className="font-bold text-xl">HANGMAN</div><div className="text-xs text-gray-400">Desafie seu vocabulário</div></div>
+                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
+                              </button>
+                          </div>
+                      </div>
+                      
                       <InstallButton />
-                      <div className="absolute top-4 right-4 flex gap-3 z-50">
-                          <button onClick={() => { playSound('ui_click'); setShowAuth(true); }} className={`p-2 rounded-full transition flex items-center gap-2 px-4 border border-white/10 ${user ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30' : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'}`}>{user ? <><Cloud size={16} /> <span className="text-xs font-bold hidden md:block">ONLINE</span></> : <><LogIn size={16} /> <span className="text-xs font-bold hidden md:block">LOGIN</span></>}</button>
-                          <button onClick={toggleFullScreen} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white border border-white/10"><Maximize size={24}/></button>
-                      </div>
-                      {user && (<div className="absolute top-16 right-4 flex items-center gap-2 z-50 bg-black/50 px-3 py-1 rounded-full border border-white/5"><div className="text-[10px] text-gray-400">{user.email}</div><button onClick={handleLogout} className="text-red-400 hover:text-white"><LogOut size={14}/></button></div>)}
-                      <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4">
-                          <h1 className="text-6xl md:text-7xl font-bold text-center hero-title tracking-wider leading-none">JOGOS<br/>ONLINE</h1>
-                          <div className="flex items-center gap-3 bg-black/50 px-6 py-2 rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                              <Coins size={24} className="text-yellow-400 drop-shadow-[0_0_5px_gold]" />
-                              <span className="font-bold text-2xl text-yellow-400 font-mono tracking-wider">{coins}</span>
-                          </div>
-                          <div className="w-full grid gap-4 mt-8">
-                              <button onClick={() => startGame('galaxy-menu')} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-between p-6 group">
-                                  <div className="flex flex-col items-start gap-1"><span className="text-2xl font-bold text-white tracking-widest group-hover:text-blue-400 transition-colors">GALAXY 3D</span><span className="text-xs text-gray-400 uppercase tracking-widest font-bold">Space Shooter</span></div>
-                                  <Rocket size={40} className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)] group-hover:scale-110 transition-transform" />
-                              </button>
-                              <button onClick={() => startGame('slither')} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-between p-6 group">
-                                  <div className="flex flex-col items-start gap-1"><span className="text-2xl font-bold text-white tracking-widest group-hover:text-pink-400 transition-colors">SLITHER</span><span className="text-xs text-gray-400 uppercase tracking-widest font-bold">Snake IO</span></div>
-                                  <Zap size={40} className="text-pink-500 drop-shadow-[0_0_10px_rgba(236,72,153,0.8)] group-hover:scale-110 transition-transform" />
-                              </button>
-                              <button onClick={() => startGame('farm')} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-between p-6 group">
-                                  <div className="flex flex-col items-start gap-1"><span className="text-2xl font-bold text-white tracking-widest group-hover:text-green-400 transition-colors">FAZENDA</span><span className="text-xs text-gray-400 uppercase tracking-widest font-bold">Idle RPG</span></div>
-                                  <Sprout size={40} className="text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.8)] group-hover:scale-110 transition-transform" />
-                              </button>
-                              <button onClick={() => startGame('hangman')} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-between p-6 group">
-                                  <div className="flex flex-col items-start gap-1"><span className="text-2xl font-bold text-white tracking-widest group-hover:text-cyan-400 transition-colors">FORCA</span><span className="text-xs text-gray-400 uppercase tracking-widest font-bold">Puzzle</span></div>
-                                  <Brain size={40} className="text-cyan-500 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] group-hover:scale-110 transition-transform" />
-                              </button>
-                          </div>
-                      </div>
-                      <div className="absolute bottom-4 text-gray-600 text-[10px] flex flex-col items-center gap-1 font-mono">
-                          {user ? ( <div className="flex items-center gap-1 text-blue-400 font-bold">{syncStatus === 'syncing' ? <><Loader2 size={10} className="animate-spin"/> SYNCING CLOUD...</> : (syncStatus === 'saved' ? <><Cloud size={10} /> SAVED</> : (syncStatus === 'offline' ? <><span className="text-red-500">⚠ TABLE MISSING</span></> : <><Cloud size={10} /> CONNECTED</>))}</div> ) : ( <div className="flex items-center gap-1 text-green-500/50"><Save size={10} /> LOCAL SAVE</div> )}
-                          <div>SYSTEM V5.2.0 • PREMIUM UI</div>
-                      </div>
                       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
                   </div>
               );
           }
+
+          // --- ROUTING ---
+          if (screen === 'galaxy_menu') return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('menu')} coins={coins} />;
+          if (screen === 'galaxy_shop') return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equipShip={setEquippedShip} equippedShip={equippedShip} onBack={() => setScreen('galaxy_menu')} />;
+          if (screen === 'galaxy_game') return <GalaxyInvader onBack={() => setScreen('galaxy_menu')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+          if (screen === 'farm') return <FarmGame onBack={() => setScreen('menu')} addCoins={addCoins} coins={coins} />;
+          if (screen === 'hangman') return <HangmanGame onBack={() => setScreen('menu')} addCoins={addCoins} />;
+
+          return null;
       };
 
       const root = createRoot(document.getElementById('root'));
