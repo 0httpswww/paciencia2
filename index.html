@@ -689,10 +689,6 @@
           const [showMissions, setShowMissions] = useState(false); 
           const [showExpand, setShowExpand] = useState(false);
           
-          // Camera / Pan State
-          const [pan, setPan] = useState({ x: 0, y: 0 });
-          const dragStatus = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, isDragging: false, hasMoved: false });
-          
           // Persistence
           const [landLevel, setLandLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; } });
           const [level, setLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_level') || '1'); } catch { return 1; } });
@@ -712,9 +708,6 @@
           const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
           
           const handlePlotClick = (index, e) => { 
-            // Only allow click if we haven't dragged significantly
-            if (dragStatus.current.hasMoved) return;
-
             const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
           };
           
@@ -743,46 +736,6 @@
               });
           };
 
-          // --- CAMERA CONTROLS ---
-          const handlePointerDown = (e) => {
-              const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-              const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-              
-              dragStatus.current = {
-                  startX: clientX,
-                  startY: clientY,
-                  lastX: clientX,
-                  lastY: clientY,
-                  isDragging: true,
-                  hasMoved: false
-              };
-          };
-
-          const handlePointerMove = (e) => {
-              if (!dragStatus.current.isDragging) return;
-              
-              const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-              const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-              
-              const dx = clientX - dragStatus.current.lastX;
-              const dy = clientY - dragStatus.current.lastY;
-              
-              // Only consider it a drag if moved more than threshold total distance
-              if (Math.abs(clientX - dragStatus.current.startX) > 5 || Math.abs(clientY - dragStatus.current.startY) > 5) {
-                  dragStatus.current.hasMoved = true;
-              }
-
-              if (dragStatus.current.hasMoved) {
-                  setPan(p => ({ x: p.x + dx, y: p.y + dy }));
-                  dragStatus.current.lastX = clientX;
-                  dragStatus.current.lastY = clientY;
-              }
-          };
-
-          const handlePointerUp = () => {
-              dragStatus.current.isDragging = false;
-          };
-
           const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
           return (
@@ -796,29 +749,12 @@
                    </div>
                    {levelUpNotif && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center"><div className="text-6xl mb-2">⭐</div><h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2><p className="text-xl font-bold text-white">Nível {level}</p></div>}
                    
-                   {/* Main Game Area with Pan Handler */}
-                   <div 
-                        className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden cursor-move touch-none"
-                        onMouseDown={handlePointerDown}
-                        onMouseMove={handlePointerMove}
-                        onMouseUp={handlePointerUp}
-                        onMouseLeave={handlePointerUp}
-                        onTouchStart={handlePointerDown}
-                        onTouchMove={handlePointerMove}
-                        onTouchEnd={handlePointerUp}
-                    >
-                       {/* Instructions Overlay if never panned */}
-                       {pan.x === 0 && pan.y === 0 && (
-                           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30 flex flex-col items-center">
-                               <Move size={48} className="animate-pulse" />
-                               <span className="text-[10px] uppercase tracking-widest mt-2">Arraste para mover</span>
-                           </div>
-                       )}
-
+                   {/* Main Game Area - Fixed Camera */}
+                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden">
                        <div 
                             className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative origin-center" 
                             style={{ 
-                                transform: `translate3d(${pan.x}px, ${pan.y}px, 0) rotateX(45deg) rotateZ(-45deg) scale(0.8)` 
+                                transform: 'rotateX(45deg) rotateZ(-45deg) scale(0.8)'
                             }}
                        >
                            <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
