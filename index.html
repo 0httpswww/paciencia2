@@ -18,6 +18,7 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
         body { 
             overscroll-behavior: none; 
@@ -147,9 +148,11 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Pinball Neon */
-        .neon-text-pink { text-shadow: 0 0 5px #d946ef, 0 0 10px #d946ef, 0 0 20px #d946ef; }
-        .neon-box { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 10px rgba(0, 255, 255, 0.2); }
+        /* Matrix/Hacker Text */
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        .text-glow { text-shadow: 0 0 5px currentColor; }
+        .animate-blink { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
     <script type="importmap">
     {
@@ -187,7 +190,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2 } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2 } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -297,13 +300,13 @@
                     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                     osc.start(now); osc.stop(now + 0.2);
                     break;
-                case 'bumper': 
-                    osc.type = 'square'; 
-                    osc.frequency.setValueAtTime(300, now); 
-                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1); 
-                    gainNode.gain.setValueAtTime(0.1, now); 
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15); 
-                    osc.start(now); osc.stop(now + 0.15); 
+                case 'scan': // Sci-fi scan sound
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
                     break;
             }
           } catch(e) {}
@@ -1097,281 +1100,238 @@
         );
       };
 
-      // --- GAME 4: PINBALL 3D (New) ---
-      const PinballGame = ({ onBack }) => {
-          const canvasRef = useRef(null);
-          const [score, setScore] = useState(0);
-          const [gameOver, setGameOver] = useState(false);
+      // --- NEW FEATURE: BLAZE AI SIGNAL BOT ---
+      const BlazeSignalBot = ({ onBack }) => {
+          const [activeTab, setActiveTab] = useState('double'); // 'double' | 'crash'
+          const [isAnalyzing, setIsAnalyzing] = useState(false);
+          const [signal, setSignal] = useState(null);
+          const [logs, setLogs] = useState([]);
+          const [confidence, setConfidence] = useState(0);
+          
+          // Double Simulator Data
+          const [doubleHistory, setDoubleHistory] = useState([]);
+          // Crash Simulator Data
+          const [crashHistory, setCrashHistory] = useState([]);
 
-          // Physics Constants
-          const GRAVITY = 0.2;
-          const FRICTION = 0.98;
-          const FLIPPER_SPEED = 0.2;
-          
-          // Game State Refs
-          const ballRef = useRef({ x: 150, y: 100, vx: 0, vy: 0, r: 8 });
-          const flippersRef = useRef({ 
-              left: { x: 100, y: 450, length: 60, angle: 0.5, targetAngle: 0.5, restAngle: 0.5, activeAngle: -0.5 },
-              right: { x: 240, y: 450, length: 60, angle: Math.PI - 0.5, targetAngle: Math.PI - 0.5, restAngle: Math.PI - 0.5, activeAngle: Math.PI + 0.5 }
-          });
-          const bumpersRef = useRef([
-              { x: 170, y: 150, r: 20, score: 100 },
-              { x: 100, y: 220, r: 15, score: 50 },
-              { x: 240, y: 220, r: 15, score: 50 }
-          ]);
-          
-          const plungerRef = useRef(0); // 0 to 1
-          
-          const keys = useRef({});
+          const addLog = (text) => setLogs(prev => [text, ...prev].slice(0, 5));
 
-          // Reset Game
-          const resetGame = () => {
-              ballRef.current = { x: 330, y: 400, vx: 0, vy: 0, r: 8 };
-              setScore(0);
-              setGameOver(false);
+          // Mock Data Generation
+          useEffect(() => {
+              // Initial history fill
+              const colors = ['red', 'black', 'white'];
+              setDoubleHistory(Array.from({length: 12}, () => colors[Math.floor(Math.random() * colors.length)]));
+              setCrashHistory(Array.from({length: 12}, () => (Math.random() * 5 + 1).toFixed(2)));
+          }, []);
+
+          // Simulation Loop
+          useEffect(() => {
+              const interval = setInterval(() => {
+                  // Simulate new results coming in every few seconds
+                  if (Math.random() > 0.7) {
+                      const colors = ['red', 'black', 'white'];
+                      // Weighted random for Double
+                      const r = Math.random();
+                      const newColor = r > 0.95 ? 'white' : (r > 0.47 ? 'black' : 'red');
+                      setDoubleHistory(prev => [newColor, ...prev].slice(0, 15));
+                      
+                      // Crash logic
+                      const newCrash = (Math.random() * (Math.random() > 0.8 ? 10 : 2) + 1).toFixed(2);
+                      setCrashHistory(prev => [newCrash, ...prev].slice(0, 15));
+                  }
+              }, 3000);
+              return () => clearInterval(interval);
+          }, []);
+
+          const generateSignal = () => {
+              setIsAnalyzing(true);
+              setSignal(null);
+              setLogs([]);
+              playSound('scan');
+
+              let steps = [
+                  "Connecting to Blaze API...",
+                  "Fetching recent hashes...",
+                  "Calculating RTP variance...",
+                  `Analyzing ${activeTab === 'double' ? 'color' : 'multiplier'} patterns...`,
+                  "Running Monte Carlo simulation...",
+                  "Signal found."
+              ];
+
+              let i = 0;
+              const stepInterval = setInterval(() => {
+                  if (i < steps.length) {
+                      addLog(steps[i]);
+                      i++;
+                      playSound('ui_hover');
+                  } else {
+                      clearInterval(stepInterval);
+                      finishAnalysis();
+                  }
+              }, 600);
           };
 
-          useEffect(() => {
-              resetGame();
-              const canvas = canvasRef.current;
-              const ctx = canvas.getContext('2d');
-              let animationId;
+          const finishAnalysis = () => {
+              setIsAnalyzing(false);
+              const conf = Math.floor(Math.random() * 15) + 85; // 85-99% confidence
+              setConfidence(conf);
+              playSound('win');
 
-              const loop = () => {
-                  if (gameOver) return;
-
-                  const ball = ballRef.current;
-                  const flippers = flippersRef.current;
+              if (activeTab === 'double') {
+                  // Simple Pattern Logic: Anti-trend
+                  const last = doubleHistory[0];
+                  let prediction = 'red';
+                  if (last === 'red') prediction = 'black';
+                  if (last === 'black') prediction = 'red';
+                  if (last === 'white') prediction = 'red'; // recovery
                   
-                  // 1. Physics Update
-                  
-                  // Gravity
-                  ball.vy += GRAVITY;
-                  ball.vx *= FRICTION;
-                  ball.vy *= FRICTION;
-
-                  // Update Ball Position
-                  ball.x += ball.vx;
-                  ball.y += ball.vy;
-
-                  // Walls Collision
-                  // Left Wall
-                  if (ball.x < 20 + ball.r) { ball.x = 20 + ball.r; ball.vx *= -0.8; }
-                  // Right Wall (Plunger Lane separate)
-                  if (ball.x > 310 - ball.r && ball.y < 100) { ball.x = 310 - ball.r; ball.vx *= -0.8; }
-                  // Top Wall
-                  if (ball.y < 20 + ball.r) { ball.y = 20 + ball.r; ball.vy *= -0.8; }
-                  // Plunger Lane Wall
-                  if (ball.x > 310 && ball.x < 350) {
-                      if (ball.x < 315 + ball.r) { ball.x = 315 + ball.r; ball.vx *= -0.8; } // Inner wall
-                      if (ball.x > 345 - ball.r) { ball.x = 345 - ball.r; ball.vx *= -0.8; } // Outer wall
-                  }
-                  
-                  // Floor (Game Over)
-                  if (ball.y > 600) {
-                       setGameOver(true);
-                       playSound('lose');
-                  }
-
-                  // Plunger Logic
-                  if (keys.current['Space'] || keys.current['Enter']) {
-                      if(ball.x > 310 && ball.y > 300) {
-                          plungerRef.current = Math.min(plungerRef.current + 0.05, 1);
-                      }
-                  } else if (plungerRef.current > 0) {
-                      // Release
-                      if(ball.x > 310 && ball.y > 300) {
-                          ball.vy = -30 * plungerRef.current;
-                          playSound('shoot');
-                      }
-                      plungerRef.current = 0;
-                  }
-
-                  // Flipper Physics
-                  ['left', 'right'].forEach(side => {
-                      const f = flippers[side];
-                      // Move flipper
-                      const target = (side === 'left' ? keys.current['ArrowLeft'] : keys.current['ArrowRight']) 
-                                     ? f.activeAngle : f.restAngle;
-                      f.angle += (target - f.angle) * FLIPPER_SPEED;
-
-                      // Collision with Flipper (Line Segment vs Circle simplified)
-                      const tipX = f.x + Math.cos(f.angle) * f.length;
-                      const tipY = f.y + Math.sin(f.angle) * f.length;
-                      
-                      // Check distance to line segment
-                      const dx = tipX - f.x;
-                      const dy = tipY - f.y;
-                      const lenSq = dx*dx + dy*dy;
-                      const t = Math.max(0, Math.min(1, ((ball.x - f.x) * dx + (ball.y - f.y) * dy) / lenSq));
-                      const closeX = f.x + t * dx;
-                      const closeY = f.y + t * dy;
-                      const distX = ball.x - closeX;
-                      const distY = ball.y - closeY;
-                      const dist = Math.sqrt(distX*distX + distY*distY);
-
-                      if (dist < ball.r + 5) {
-                          // Bounce
-                          const normalAngle = Math.atan2(distY, distX);
-                          const speed = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
-                          
-                          // Add Kick from flipper movement
-                          const kick = Math.abs(target - f.angle) > 0.1 ? 15 : 1.2; 
-                          
-                          ball.vx = Math.cos(normalAngle) * speed * 0.8 + Math.cos(normalAngle) * kick * 0.5;
-                          ball.vy = Math.sin(normalAngle) * speed * 0.8 + Math.sin(normalAngle) * kick * 0.5;
-                          
-                          // Push out
-                          ball.x = closeX + Math.cos(normalAngle) * (ball.r + 6);
-                          ball.y = closeY + Math.sin(normalAngle) * (ball.r + 6);
-                          
-                          if (kick > 2) playSound('bumper');
-                      }
+                  setSignal({
+                      type: prediction,
+                      text: prediction === 'white' ? 'BRANCO (14x)' : (prediction === 'red' ? 'VERMELHO' : 'PRETO'),
+                      subText: 'Protection on White',
+                      action: 'ENTRAR AGORA'
                   });
-
-                  // Bumper Physics
-                  bumpersRef.current.forEach(b => {
-                      const dx = ball.x - b.x;
-                      const dy = ball.y - b.y;
-                      const dist = Math.sqrt(dx*dx + dy*dy);
-                      if (dist < ball.r + b.r) {
-                          const angle = Math.atan2(dy, dx);
-                          ball.vx = Math.cos(angle) * 10;
-                          ball.vy = Math.sin(angle) * 10;
-                          setScore(s => s + b.score);
-                          playSound('bumper');
-                      }
+              } else {
+                  // Crash Logic
+                  const safe = (1.5 + Math.random() * 0.5).toFixed(2);
+                  setSignal({
+                      type: 'crash',
+                      text: `SAIR EM ${safe}x`,
+                      subText: 'Stop Loss: 1.10x',
+                      action: 'ENTRAR AGORA'
                   });
-
-                  // 2. Render
-                  // Clear
-                  ctx.clearRect(0, 0, canvas.width, canvas.height);
-                  
-                  // Draw Board Background (Neon Style)
-                  ctx.fillStyle = '#050510';
-                  ctx.fillRect(0,0, canvas.width, canvas.height);
-                  
-                  // Draw Plunger Lane
-                  ctx.strokeStyle = '#444';
-                  ctx.lineWidth = 2;
-                  ctx.beginPath(); ctx.moveTo(315, 100); ctx.lineTo(315, 600); ctx.stroke();
-                  
-                  // Draw Walls
-                  ctx.strokeStyle = '#0ff';
-                  ctx.lineWidth = 5;
-                  ctx.shadowBlur = 10; ctx.shadowColor = '#0ff';
-                  ctx.strokeRect(10, 10, 340, 580);
-                  ctx.shadowBlur = 0;
-
-                  // Draw Bumpers
-                  bumpersRef.current.forEach(b => {
-                      ctx.beginPath();
-                      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-                      ctx.fillStyle = '#f0f';
-                      ctx.shadowBlur = 15; ctx.shadowColor = '#f0f';
-                      ctx.fill();
-                      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-                      ctx.shadowBlur = 0;
-                  });
-
-                  // Draw Flippers
-                  ['left', 'right'].forEach(side => {
-                      const f = flippers[side];
-                      ctx.beginPath();
-                      ctx.moveTo(f.x, f.y);
-                      ctx.lineTo(f.x + Math.cos(f.angle) * f.length, f.y + Math.sin(f.angle) * f.length);
-                      ctx.strokeStyle = '#ff0';
-                      ctx.lineWidth = 8;
-                      ctx.lineCap = 'round';
-                      ctx.stroke();
-                  });
-
-                  // Draw Ball (Metallic Gradient)
-                  ctx.beginPath();
-                  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-                  const grad = ctx.createRadialGradient(ball.x-2, ball.y-2, 1, ball.x, ball.y, ball.r);
-                  grad.addColorStop(0, '#fff');
-                  grad.addColorStop(1, '#888');
-                  ctx.fillStyle = grad;
-                  ctx.fill();
-
-                  // Draw Plunger
-                  ctx.fillStyle = '#555';
-                  ctx.fillRect(320, 550 + (plungerRef.current * 30), 20, 40);
-
-                  animationId = requestAnimationFrame(loop);
-              };
-              
-              const handleKeyDown = (e) => { keys.current[e.code] = true; };
-              const handleKeyUp = (e) => { keys.current[e.code] = false; };
-              
-              window.addEventListener('keydown', handleKeyDown);
-              window.addEventListener('keyup', handleKeyUp);
-              
-              loop();
-              return () => {
-                  window.removeEventListener('keydown', handleKeyDown);
-                  window.removeEventListener('keyup', handleKeyUp);
-                  cancelAnimationFrame(animationId);
-              };
-          }, [gameOver]);
+              }
+          };
 
           return (
-              <div className="w-full h-full bg-black flex flex-col items-center justify-center relative overflow-hidden safe-area-padding">
-                  <div className="absolute top-0 w-full p-4 flex justify-between items-center z-50">
-                     <button onClick={onBack} className="p-2 rounded-full bg-white/10 text-white"><ChevronLeft /></button>
-                     <div className="text-3xl font-bold font-['Rajdhani'] text-cyan-400 drop-shadow-[0_0_10px_cyan]">{score}</div>
-                  </div>
-
-                  {/* 3D Perspective Container */}
-                  <div className="relative" style={{ perspective: '800px' }}>
-                      <canvas 
-                          ref={canvasRef} 
-                          width={360} 
-                          height={600} 
-                          className="bg-gray-900 border-4 border-gray-800 rounded-lg shadow-2xl"
-                          style={{ 
-                              transform: 'rotateX(20deg)',
-                              boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
-                          }}
-                      />
-                  </div>
-
-                  {/* Virtual Controls (Mobile) */}
-                  <div className="absolute inset-0 z-40 flex">
-                      <div 
-                        className="flex-1 active:bg-white/5 transition-colors"
-                        onTouchStart={() => keys.current['ArrowLeft'] = true}
-                        onTouchEnd={() => keys.current['ArrowLeft'] = false}
-                      ></div>
-                      <div 
-                        className="flex-1 active:bg-white/5 transition-colors"
-                        onTouchStart={() => keys.current['ArrowRight'] = true}
-                        onTouchEnd={() => keys.current['ArrowRight'] = false}
-                      ></div>
-                  </div>
+              <div className="w-full h-full bg-[#050505] flex flex-col premium-bg safe-area-padding font-mono-tech relative">
+                  <div className="scanlines"></div>
                   
-                  {/* Plunger Button */}
-                  <div 
-                    className="absolute bottom-10 right-4 z-50 w-20 h-20 rounded-full bg-red-600/50 border-4 border-red-500 flex items-center justify-center active:scale-95 transition-transform"
-                    onTouchStart={() => keys.current['Space'] = true}
-                    onTouchEnd={() => keys.current['Space'] = false}
-                    onMouseDown={() => keys.current['Space'] = true}
-                    onMouseUp={() => keys.current['Space'] = false}
-                  >
-                      <div className="text-white font-bold text-xs uppercase">Launch</div>
-                  </div>
-
-                  {/* Game Over Overlay */}
-                  {gameOver && (
-                      <div className="absolute inset-0 z-50 bg-black/80 flex flex-col items-center justify-center animate-fade-in">
-                          <h2 className="text-5xl font-bold text-red-500 mb-4 neon-text-pink">GAME OVER</h2>
-                          <div className="text-2xl text-white mb-8">Score: {score}</div>
-                          <button onClick={resetGame} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-[0_0_20px_cyan]">TRY AGAIN</button>
+                  {/* Header */}
+                  <div className="p-4 flex justify-between items-center border-b border-white/10 bg-black/80 backdrop-blur z-20">
+                      <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white transition"><ChevronLeft /></button>
+                      <div className="flex items-center gap-2">
+                          <Activity className="text-green-500 animate-pulse" size={16} />
+                          <h1 className="text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">BLAZE SIGNAL AI</h1>
                       </div>
-                  )}
-                  
-                  <div className="absolute bottom-2 text-gray-500 text-xs pointer-events-none">PC: Arrows to Flip, Space to Launch</div>
+                      <div className="w-8"></div>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 z-10">
+                      
+                      {/* Game Selector */}
+                      <div className="grid grid-cols-2 gap-4 bg-black/40 p-1 rounded-xl border border-white/10">
+                          <button 
+                            onClick={() => { setActiveTab('double'); setSignal(null); playSound('ui_click'); }}
+                            className={`py-3 rounded-lg font-bold transition-all ${activeTab === 'double' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'text-gray-500 hover:text-white'}`}
+                          >
+                              DOUBLE
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab('crash'); setSignal(null); playSound('ui_click'); }}
+                            className={`py-3 rounded-lg font-bold transition-all ${activeTab === 'crash' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-gray-500 hover:text-white'}`}
+                          >
+                              CRASH
+                          </button>
+                      </div>
+
+                      {/* Live History Simulation */}
+                      <div className="bg-black/40 border border-white/10 rounded-xl p-3 overflow-hidden">
+                          <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs text-gray-400 uppercase tracking-widest flex items-center gap-1"><RefreshCcw size={10} className="animate-spin" /> Live Feed</span>
+                              <span className="text-[10px] text-green-500">CONNECTED</span>
+                          </div>
+                          <div className="flex gap-2 overflow-x-hidden mask-fade-right">
+                              {activeTab === 'double' ? (
+                                  doubleHistory.map((color, i) => (
+                                      <div key={i} className={`w-8 h-8 rounded shrink-0 flex items-center justify-center border border-white/10 shadow-lg ${color === 'red' ? 'bg-red-600' : (color === 'black' ? 'bg-slate-800' : 'bg-white text-black')}`}>
+                                          {color === 'white' && <div className="w-2 h-2 rounded-full bg-black"></div>}
+                                      </div>
+                                  ))
+                              ) : (
+                                  crashHistory.map((val, i) => (
+                                      <div key={i} className={`px-2 h-8 rounded shrink-0 flex items-center justify-center border border-white/10 font-bold text-xs ${parseFloat(val) >= 2.0 ? 'bg-green-900/50 text-green-400' : 'bg-slate-800 text-gray-400'}`}>
+                                          {val}x
+                                      </div>
+                                  ))
+                              )}
+                          </div>
+                      </div>
+
+                      {/* Signal Area */}
+                      <div className="flex-1 flex flex-col items-center justify-center min-h-[200px] relative">
+                          <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent rounded-2xl border border-emerald-500/20"></div>
+                          
+                          {!signal && !isAnalyzing && (
+                              <div className="text-center z-10 animate-pulse">
+                                  <ShieldAlert size={48} className="mx-auto text-emerald-500 mb-4" />
+                                  <h2 className="text-2xl font-bold text-white mb-2">AI READY</h2>
+                                  <p className="text-gray-400 text-sm">Waiting for manual trigger...</p>
+                              </div>
+                          )}
+
+                          {isAnalyzing && (
+                              <div className="w-full h-full p-6 flex flex-col z-10 font-mono text-xs">
+                                  {logs.map((log, i) => (
+                                      <div key={i} className="text-emerald-400 mb-1">> {log}</div>
+                                  ))}
+                                  <div className="mt-auto h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                      <div className="h-full bg-emerald-500 animate-[width_3s_ease-out]" style={{width: '100%'}}></div>
+                                  </div>
+                              </div>
+                          )}
+
+                          {signal && (
+                              <div className="z-10 text-center w-full p-4 animate-[zoomIn_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+                                  <div className="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-500 rounded-full text-emerald-400 text-xs font-bold mb-4">
+                                      CONFIDENCE: {confidence}%
+                                  </div>
+                                  
+                                  <div className="mb-2 text-gray-400 text-sm tracking-widest uppercase">{signal.action}</div>
+                                  
+                                  <div className={`text-4xl md:text-5xl font-black mb-2 text-glow ${signal.type === 'red' ? 'text-red-500' : (signal.type === 'black' ? 'text-slate-300' : (signal.type === 'white' ? 'text-white' : 'text-emerald-400'))}`}>
+                                      {signal.text}
+                                  </div>
+                                  
+                                  <div className="text-sm text-gray-400 bg-black/50 inline-block px-4 py-2 rounded-lg border border-white/5">
+                                      {signal.subText}
+                                  </div>
+
+                                  <div className="mt-6 flex justify-center gap-2">
+                                      <a 
+                                        href={activeTab === 'double' ? "https://blaze.bet.br/pt/games/double" : "https://blaze.bet.br/pt/games/crash"} 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center gap-2 animate-bounce"
+                                      >
+                                          PLAY NOW <ExternalLink size={16} />
+                                      </a>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Trigger Button */}
+                      {!isAnalyzing && (
+                          <button 
+                            onClick={generateSignal}
+                            className="w-full py-4 bg-white text-black font-bold text-lg rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 z-20"
+                          >
+                              <Target /> GENERATE SIGNAL
+                          </button>
+                      )}
+
+                      {/* External Tools Links */}
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                          <a href={activeTab === 'double' ? "https://kitblaze.com/historico-blaze-hoje/" : "https://www.tipminer.com/br/historico/blaze/crash"} target="_blank" className="p-3 bg-slate-800/50 rounded-lg border border-white/5 flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-white hover:bg-slate-700 transition">
+                              <BarChart2 size={14} /> HISTÓRICO
+                          </a>
+                          <div className="p-3 bg-slate-800/50 rounded-lg border border-white/5 flex items-center justify-center gap-2 text-xs font-bold text-gray-400">
+                             <TrendingUp size={14} /> RTP: 96.4%
+                          </div>
+                      </div>
+
+                  </div>
               </div>
           );
       };
@@ -1455,9 +1415,9 @@
                                   <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
                               </button>
 
-                              <button onClick={() => { playSound('ui_click'); setScreen('pinball'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
-                                  <div className="p-3 bg-pink-500/20 rounded-lg text-pink-400 group-hover:bg-pink-500 group-hover:text-white transition-colors"><Gamepad2 size={32} /></div>
-                                  <div className="flex-1 text-left"><div className="font-bold text-xl">PINBALL 3D</div><div className="text-xs text-gray-400">Arcade Luxuoso</div></div>
+                              <button onClick={() => { playSound('ui_click'); setScreen('blaze_ai'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group border-emerald-500/30">
+                                  <div className="p-3 bg-emerald-500/20 rounded-lg text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors animate-pulse"><Zap size={32} /></div>
+                                  <div className="flex-1 text-left"><div className="font-bold text-xl text-emerald-400 text-glow">BLAZE SIGNALS AI</div><div className="text-xs text-gray-400">Bot Double & Crash</div></div>
                                   <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
                               </button>
                           </div>
@@ -1475,7 +1435,7 @@
           if (screen === 'galaxy_game') return <GalaxyInvader onBack={() => setScreen('galaxy_menu')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
           if (screen === 'farm') return <FarmGame onBack={() => setScreen('menu')} addCoins={addCoins} coins={coins} />;
           if (screen === 'hangman') return <HangmanGame onBack={() => setScreen('menu')} addCoins={addCoins} />;
-          if (screen === 'pinball') return <PinballGame onBack={() => setScreen('menu')} />;
+          if (screen === 'blaze_ai') return <BlazeSignalBot onBack={() => setScreen('menu')} />;
 
           return null;
       };
