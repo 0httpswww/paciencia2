@@ -9,16 +9,17 @@ try {
 } catch (e) {}
 
 // Offline Caching
-const CACHE_NAME = 'jogos-online-v2';
+const CACHE_NAME = 'jogos-online-v4';
 const URLS_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
     'https://cdn.tailwindcss.com',
     'https://unpkg.com/@babel/standalone/babel.min.js',
-    'https://esm.sh/react@18.3.1?dev',
-    'https://esm.sh/react-dom@18.3.1/client?dev',
-    'https://esm.sh/lucide-react@0.344.0?deps=react@18.3.1',
+    'https://esm.sh/react@18.2.0',
+    'https://esm.sh/react-dom@18.2.0/client',
+    'https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0',
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js',
     'https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png'
 ];
 

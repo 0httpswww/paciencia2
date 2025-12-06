@@ -177,6 +177,7 @@
             });
         }
     </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="touch-none overflow-hidden">
     <!-- Monetag Popunder (Zone: 10264533) - ACTIVATED -->
@@ -905,18 +906,103 @@
       // --- GAME 3: HANGMAN (Enhanced 3D UI) ---
       const HangmanGame = ({ onBack, addCoins }) => {
         const WORDS = [
+          // TECH & DEV
           { word: "JAVASCRIPT", hint: "Linguagem da Web" },
           { word: "REACT", hint: "Biblioteca UI" },
-          { word: "GALAXY", hint: "Via Láctea" },
-          { word: "FAZENDA", hint: "Lugar de plantar" },
-          { word: "ROBO", hint: "Inteligência Artificial" },
-          { word: "INTERNET", hint: "Rede Mundial" },
-          { word: "CODIGO", hint: "Instruções do PC" },
-          { word: "FUTURO", hint: "O que virá" }
+          { word: "TYPESCRIPT", hint: "JS com tipos" },
+          { word: "HTML", hint: "Estrutura Web" },
+          { word: "CSS", hint: "Estilo Web" },
+          { word: "DATABASE", hint: "Banco de dados" },
+          { word: "SERVER", hint: "Servidor" },
+          { word: "FRONTEND", hint: "Interface do usuário" },
+          { word: "BACKEND", hint: "Lógica do servidor" },
+          { word: "API", hint: "Interface de Programa" },
+          { word: "BUG", hint: "Erro no código" },
+          { word: "DEBUG", hint: "Corrigir erro" },
+          { word: "COMPILADOR", hint: "Traduz código" },
+          { word: "LINUX", hint: "Sistema Operacional Livre" },
+          { word: "WINDOWS", hint: "SO da Microsoft" },
+          { word: "APPLE", hint: "Dona do iPhone" },
+          { word: "ANDROID", hint: "SO do Google" },
+          { word: "WIFI", hint: "Internet sem fio" },
+          { word: "BLUETOOTH", hint: "Conexão azul" },
+          { word: "ROUTER", hint: "Roteador" },
+          { word: "FIREWALL", hint: "Parede de fogo" },
+          { word: "VIRUS", hint: "Malware" },
+          { word: "HACKER", hint: "Invade sistemas" },
+          { word: "ENCRIPTAR", hint: "Proteger dados" },
+          { word: "SENHA", hint: "Código secreto" },
+          
+          // SPACE & SCI-FI
+          { word: "GALAXY", hint: "Via Láctea é uma" },
+          { word: "UNIVERSO", hint: "Tudo que existe" },
+          { word: "ESTRELA", hint: "Sol é uma" },
+          { word: "PLANETA", hint: "Orbita estrela" },
+          { word: "ASTEROIDE", hint: "Rocha espacial" },
+          { word: "COMETA", hint: "Gelo sujo" },
+          { word: "MARTE", hint: "Planeta Vermelho" },
+          { word: "LUA", hint: "Satélite da Terra" },
+          { word: "FOGUETE", hint: "Veículo espacial" },
+          { word: "GRAVIDADE", hint: "Força de atração" },
+          { word: "ALIEN", hint: "Extraterrestre" },
+          { word: "UFO", hint: "Objeto Voador" },
+          { word: "ROBO", hint: "Máquina inteligente" },
+          { word: "CYBORG", hint: "Meio homem, meio máquina" },
+          { word: "LASER", hint: "Luz focada" },
+          { word: "PLASMA", hint: "Estado da matéria" },
+          { word: "SOL", hint: "Nossa estrela" },
+          { word: "NEBULOSA", hint: "Berçário de estrelas" },
+          { word: "SUPERNOVA", hint: "Explosão estelar" },
+          
+          // GENERAL
+          { word: "FAZENDA", hint: "Local rural" },
+          { word: "TRATOR", hint: "Veículo agrícola" },
+          { word: "COLHEITA", hint: "Recolher frutos" },
+          { word: "PLANTAR", hint: "Semear" },
+          { word: "AGUA", hint: "H2O" },
+          { word: "TERRA", hint: "Nosso planeta" },
+          { word: "FOGO", hint: "Quente e queima" },
+          { word: "AR", hint: "Respiramos" },
+          { word: "VIDA", hint: "Contrário de morte" },
+          { word: "TEMPO", hint: "Relógio mede" },
+          { word: "DINHEIRO", hint: "Moeda de troca" },
+          { word: "OURO", hint: "Metal precioso" },
+          { word: "DIAMANTE", hint: "Carbono duro" },
+          { word: "ESCOLA", hint: "Lugar de aprender" },
+          { word: "LIVRO", hint: "Tem páginas" },
+          { word: "MUSICA", hint: "Sons ritmados" },
+          { word: "FILME", hint: "Cinema" },
+          { word: "JOGO", hint: "Diversão" },
+          { word: "AMIGO", hint: "Companheiro" }
         ];
 
+        const getNewWord = () => {
+            let playedWords = [];
+            try {
+                playedWords = JSON.parse(safeStorage.getItem('hangman_played') || '[]');
+            } catch { playedWords = []; }
+
+            const available = WORDS.filter(w => !playedWords.includes(w.word));
+            
+            if (available.length === 0) {
+                // All words played, reset history
+                safeStorage.setItem('hangman_played', '[]');
+                const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+                safeStorage.setItem('hangman_played', JSON.stringify([rand.word]));
+                return rand;
+            }
+
+            const rand = available[Math.floor(Math.random() * available.length)];
+            
+            // Mark as played
+            playedWords.push(rand.word);
+            safeStorage.setItem('hangman_played', JSON.stringify(playedWords));
+            
+            return rand;
+        };
+
         const [game, setGame] = useState(() => {
-           const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+           const rand = getNewWord();
            return { ...rand, guessed: [], errors: 0, status: 'playing' };
         });
 
@@ -938,7 +1024,7 @@
         };
 
         const handleRestart = () => {
-            const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+            const rand = getNewWord();
             setGame({ ...rand, guessed: [], errors: 0, status: 'playing' });
             playSound('ui_click');
         };
@@ -1102,342 +1188,150 @@
 
       // --- NEW FEATURE: BLAZE AI SIGNAL BOT ---
       const BlazeSignalBot = ({ onBack }) => {
-          const [activeTab, setActiveTab] = useState('double'); // 'double' | 'crash'
-          const [isAnalyzing, setIsAnalyzing] = useState(false);
-          const [signal, setSignal] = useState(null);
-          const [logs, setLogs] = useState([]);
-          const [confidence, setConfidence] = useState(0);
-          
-          // Double Simulator Data
-          const [doubleHistory, setDoubleHistory] = useState([]);
-          // Crash Simulator Data
-          const [crashHistory, setCrashHistory] = useState([]);
+        const [signal, setSignal] = useState(null);
+        const [loading, setLoading] = useState(false);
 
-          const addLog = (text) => setLogs(prev => [text, ...prev].slice(0, 5));
+        const generateSignal = () => {
+            setLoading(true);
+            setTimeout(() => {
+                const type = Math.random() > 0.5 ? '🔴 DOUBLE (Vermelho)' : '⚫ DOUBLE (Preto)';
+                const protection = Math.random() > 0.7 ? 'Com proteção no Branco ⚪' : 'Sem proteção';
+                setSignal({ type, protection, time: new Date().toLocaleTimeString() });
+                setLoading(false);
+                playSound('powerup');
+            }, 2000);
+        };
 
-          // Mock Data Generation
-          useEffect(() => {
-              // Initial history fill
-              const colors = ['red', 'black', 'white'];
-              setDoubleHistory(Array.from({length: 12}, () => colors[Math.floor(Math.random() * colors.length)]));
-              setCrashHistory(Array.from({length: 12}, () => (Math.random() * 5 + 1).toFixed(2)));
-          }, []);
+        return (
+            <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-6 relative">
+                <button onClick={onBack} className="absolute top-4 left-4 p-2 bg-white/10 rounded-full text-white"><ChevronLeft /></button>
+                <h1 className="text-3xl font-bold text-red-500 mb-8 flex items-center gap-2"><Zap /> BLAZE BOT AI</h1>
+                
+                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 w-full max-w-md text-center shadow-2xl">
+                    {loading ? (
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="animate-spin text-red-500" size={48} />
+                            <p className="text-gray-400 animate-pulse">Analisando padrão...</p>
+                        </div>
+                    ) : signal ? (
+                        <div className="animate-fade-in">
+                            <div className="text-gray-400 mb-2">Sinal Encontrado:</div>
+                            <div className="text-2xl font-bold text-white mb-2">{signal.type}</div>
+                            <div className="text-sm text-gray-500 mb-4">{signal.protection}</div>
+                            <div className="text-xs text-gray-600">Horário: {signal.time}</div>
+                            <button onClick={generateSignal} className="mt-6 px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl w-full">GERAR NOVO SINAL</button>
+                        </div>
+                    ) : (
+                        <div>
+                            <p className="text-gray-300 mb-6">A Inteligência Artificial está pronta para identificar padrões de entrada.</p>
+                            <button onClick={generateSignal} className="px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl w-full shadow-[0_0_20px_rgba(220,38,38,0.4)]">ANALISAR AGORA</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+      };
 
-          // Simulation Loop
-          useEffect(() => {
-              const interval = setInterval(() => {
-                  // Simulate new results coming in every few seconds
-                  if (Math.random() > 0.7) {
-                      const colors = ['red', 'black', 'white'];
-                      // Weighted random for Double
-                      const r = Math.random();
-                      const newColor = r > 0.95 ? 'white' : (r > 0.47 ? 'black' : 'red');
-                      setDoubleHistory(prev => [newColor, ...prev].slice(0, 15));
-                      
-                      // Crash logic
-                      const newCrash = (Math.random() * (Math.random() > 0.8 ? 10 : 2) + 1).toFixed(2);
-                      setCrashHistory(prev => [newCrash, ...prev].slice(0, 15));
-                  }
-              }, 3000);
-              return () => clearInterval(interval);
-          }, []);
-
-          const generateSignal = () => {
-              setIsAnalyzing(true);
-              setSignal(null);
-              setLogs([]);
-              playSound('scan');
-
-              let steps = [
-                  "Connecting to Blaze API...",
-                  "Fetching recent hashes...",
-                  "Calculating RTP variance...",
-                  `Analyzing ${activeTab === 'double' ? 'color' : 'multiplier'} patterns...`,
-                  "Running Monte Carlo simulation...",
-                  "Signal found."
-              ];
-
-              let i = 0;
-              const stepInterval = setInterval(() => {
-                  if (i < steps.length) {
-                      addLog(steps[i]);
-                      i++;
-                      playSound('ui_hover');
-                  } else {
-                      clearInterval(stepInterval);
-                      finishAnalysis();
-                  }
-              }, 600);
-          };
-
-          const finishAnalysis = () => {
-              setIsAnalyzing(false);
-              const conf = Math.floor(Math.random() * 15) + 85; // 85-99% confidence
-              setConfidence(conf);
-              playSound('win');
-
-              if (activeTab === 'double') {
-                  // Simple Pattern Logic: Anti-trend
-                  const last = doubleHistory[0];
-                  let prediction = 'red';
-                  if (last === 'red') prediction = 'black';
-                  if (last === 'black') prediction = 'red';
-                  if (last === 'white') prediction = 'red'; // recovery
-                  
-                  setSignal({
-                      type: prediction,
-                      text: prediction === 'white' ? 'BRANCO (14x)' : (prediction === 'red' ? 'VERMELHO' : 'PRETO'),
-                      subText: 'Protection on White',
-                      action: 'ENTRAR AGORA'
-                  });
-              } else {
-                  // Crash Logic
-                  const safe = (1.5 + Math.random() * 0.5).toFixed(2);
-                  setSignal({
-                      type: 'crash',
-                      text: `SAIR EM ${safe}x`,
-                      subText: 'Stop Loss: 1.10x',
-                      action: 'ENTRAR AGORA'
-                  });
-              }
-          };
+      const MainHub = ({ onSelect, coins }) => {
+          const GAMES = [
+              { id: 'galaxy', name: 'Galaxy Invader', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Space Shooter' },
+              { id: 'farm', name: 'Farm Tycoon', icon: <Sprout size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Relaxing Farming Sim' },
+              { id: 'hangman', name: 'Neon Hangman', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Cyberpunk Word Puzzle' },
+              { id: 'blaze', name: 'Blaze Signal', icon: <Zap size={32} />, color: 'from-red-600 to-orange-600', desc: 'AI Predictor Tool' }
+          ];
 
           return (
-              <div className="w-full h-full bg-[#050505] flex flex-col premium-bg safe-area-padding font-mono-tech relative">
-                  <div className="scanlines"></div>
+              <div className="w-full h-full premium-bg flex flex-col p-6 overflow-y-auto safe-area-padding">
+                  <header className="flex justify-between items-center mb-8">
+                      <div>
+                          <h1 className="text-3xl font-bold hero-title">JOGOS ONLINE</h1>
+                          <p className="text-gray-400 text-sm">Arcade • Racing • Learning</p>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-yellow-500/30">
+                          <Coins size={20} className="text-yellow-400" />
+                          <span className="font-bold text-yellow-400">{coins}</span>
+                      </div>
+                  </header>
+
+                  <div className="grid grid-cols-1 gap-4 max-w-md mx-auto w-full">
+                      {GAMES.map(game => (
+                          <button 
+                              key={game.id}
+                              onClick={() => { playSound('ui_click'); onSelect(game.id); }}
+                              className={`relative h-28 rounded-2xl overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
+                          >
+                              <div className={`absolute inset-0 bg-gradient-to-r ${game.color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
+                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                              <div className="absolute inset-0 flex items-center justify-between p-6 z-10">
+                                  <div className="flex items-center gap-4">
+                                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner">
+                                          {game.icon}
+                                      </div>
+                                      <div className="text-left">
+                                          <h3 className="text-xl font-bold text-white uppercase tracking-wider">{game.name}</h3>
+                                          <p className="text-xs text-blue-100 font-medium">{game.desc}</p>
+                                      </div>
+                                  </div>
+                                  <ChevronLeft className="rotate-180 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" size={24} />
+                              </div>
+                          </button>
+                      ))}
+                  </div>
                   
-                  {/* Header */}
-                  <div className="p-4 flex justify-between items-center border-b border-white/10 bg-black/80 backdrop-blur z-20">
-                      <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white transition"><ChevronLeft /></button>
-                      <div className="flex items-center gap-2">
-                          <Activity className="text-green-500 animate-pulse" size={16} />
-                          <h1 className="text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">BLAZE SIGNAL AI</h1>
-                      </div>
-                      <div className="w-8"></div>
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 z-10">
-                      
-                      {/* Game Selector */}
-                      <div className="grid grid-cols-2 gap-4 bg-black/40 p-1 rounded-xl border border-white/10">
-                          <button 
-                            onClick={() => { setActiveTab('double'); setSignal(null); playSound('ui_click'); }}
-                            className={`py-3 rounded-lg font-bold transition-all ${activeTab === 'double' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'text-gray-500 hover:text-white'}`}
-                          >
-                              DOUBLE
-                          </button>
-                          <button 
-                            onClick={() => { setActiveTab('crash'); setSignal(null); playSound('ui_click'); }}
-                            className={`py-3 rounded-lg font-bold transition-all ${activeTab === 'crash' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-gray-500 hover:text-white'}`}
-                          >
-                              CRASH
-                          </button>
-                      </div>
-
-                      {/* Live History Simulation */}
-                      <div className="bg-black/40 border border-white/10 rounded-xl p-3 overflow-hidden">
-                          <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-gray-400 uppercase tracking-widest flex items-center gap-1"><RefreshCcw size={10} className="animate-spin" /> Live Feed</span>
-                              <span className="text-[10px] text-green-500">CONNECTED</span>
-                          </div>
-                          <div className="flex gap-2 overflow-x-hidden mask-fade-right">
-                              {activeTab === 'double' ? (
-                                  doubleHistory.map((color, i) => (
-                                      <div key={i} className={`w-8 h-8 rounded shrink-0 flex items-center justify-center border border-white/10 shadow-lg ${color === 'red' ? 'bg-red-600' : (color === 'black' ? 'bg-slate-800' : 'bg-white text-black')}`}>
-                                          {color === 'white' && <div className="w-2 h-2 rounded-full bg-black"></div>}
-                                      </div>
-                                  ))
-                              ) : (
-                                  crashHistory.map((val, i) => (
-                                      <div key={i} className={`px-2 h-8 rounded shrink-0 flex items-center justify-center border border-white/10 font-bold text-xs ${parseFloat(val) >= 2.0 ? 'bg-green-900/50 text-green-400' : 'bg-slate-800 text-gray-400'}`}>
-                                          {val}x
-                                      </div>
-                                  ))
-                              )}
-                          </div>
-                      </div>
-
-                      {/* Signal Area */}
-                      <div className="flex-1 flex flex-col items-center justify-center min-h-[200px] relative">
-                          <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent rounded-2xl border border-emerald-500/20"></div>
-                          
-                          {!signal && !isAnalyzing && (
-                              <div className="text-center z-10 animate-pulse">
-                                  <ShieldAlert size={48} className="mx-auto text-emerald-500 mb-4" />
-                                  <h2 className="text-2xl font-bold text-white mb-2">AI READY</h2>
-                                  <p className="text-gray-400 text-sm">Waiting for manual trigger...</p>
-                              </div>
-                          )}
-
-                          {isAnalyzing && (
-                              <div className="w-full h-full p-6 flex flex-col z-10 font-mono text-xs">
-                                  {logs.map((log, i) => (
-                                      <div key={i} className="text-emerald-400 mb-1">> {log}</div>
-                                  ))}
-                                  <div className="mt-auto h-1 w-full bg-gray-800 rounded-full overflow-hidden">
-                                      <div className="h-full bg-emerald-500 animate-[width_3s_ease-out]" style={{width: '100%'}}></div>
-                                  </div>
-                              </div>
-                          )}
-
-                          {signal && (
-                              <div className="z-10 text-center w-full p-4 animate-[zoomIn_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)]">
-                                  <div className="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-500 rounded-full text-emerald-400 text-xs font-bold mb-4">
-                                      CONFIDENCE: {confidence}%
-                                  </div>
-                                  
-                                  <div className="mb-2 text-gray-400 text-sm tracking-widest uppercase">{signal.action}</div>
-                                  
-                                  <div className={`text-4xl md:text-5xl font-black mb-2 text-glow ${signal.type === 'red' ? 'text-red-500' : (signal.type === 'black' ? 'text-slate-300' : (signal.type === 'white' ? 'text-white' : 'text-emerald-400'))}`}>
-                                      {signal.text}
-                                  </div>
-                                  
-                                  <div className="text-sm text-gray-400 bg-black/50 inline-block px-4 py-2 rounded-lg border border-white/5">
-                                      {signal.subText}
-                                  </div>
-
-                                  <div className="mt-6 flex justify-center gap-2">
-                                      <a 
-                                        href={activeTab === 'double' ? "https://blaze.bet.br/pt/games/double" : "https://blaze.bet.br/pt/games/crash"} 
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center gap-2 animate-bounce"
-                                      >
-                                          PLAY NOW <ExternalLink size={16} />
-                                      </a>
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-
-                      {/* Trigger Button */}
-                      {!isAnalyzing && (
-                          <button 
-                            onClick={generateSignal}
-                            className="w-full py-4 bg-white text-black font-bold text-lg rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 z-20"
-                          >
-                              <Target /> GENERATE SIGNAL
-                          </button>
-                      )}
-
-                      {/* External Tools Links */}
-                      <div className="grid grid-cols-2 gap-4 mt-2">
-                          <a href={activeTab === 'double' ? "https://kitblaze.com/historico-blaze-hoje/" : "https://www.tipminer.com/br/historico/blaze/crash"} target="_blank" className="p-3 bg-slate-800/50 rounded-lg border border-white/5 flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-white hover:bg-slate-700 transition">
-                              <BarChart2 size={14} /> HISTÓRICO
-                          </a>
-                          <div className="p-3 bg-slate-800/50 rounded-lg border border-white/5 flex items-center justify-center gap-2 text-xs font-bold text-gray-400">
-                             <TrendingUp size={14} /> RTP: 96.4%
-                          </div>
-                      </div>
-
-                  </div>
+                  <footer className="mt-auto pt-8 text-center text-gray-600 text-xs">
+                      &copy; 2024 Jogos Online. All rights reserved.
+                  </footer>
               </div>
           );
       };
 
-      // --- MAIN APP ORCHESTRATOR ---
       const App = () => {
-          const [screen, setScreen] = useState('menu');
-          const [user, setUser] = useState(null);
-          const [showAuth, setShowAuth] = useState(false);
-          const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('galaxy_coins') || '100'));
+          const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, farm, hangman, blaze
+          const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('coins') || '100'));
           
           // Galaxy State
-          const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(safeStorage.getItem('galaxy_unlocked') || '["starter"]'));
-          const [equippedShip, setEquippedShip] = useState(() => safeStorage.getItem('galaxy_equipped') || 'starter');
-          const [shipAdProgress, setShipAdProgress] = useState(() => JSON.parse(safeStorage.getItem('galaxy_ship_ads') || '{}'));
+          const [equippedShip, setEquippedShip] = useState(() => safeStorage.getItem('equipped_ship') || 'starter');
+          const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(safeStorage.getItem('unlocked_ships') || '["starter"]'));
+          const [shipAdProgress, setShipAdProgress] = useState(() => JSON.parse(safeStorage.getItem('ship_ad_progress') || '{}'));
 
-          // Sync coins
-          useEffect(() => { safeStorage.setItem('galaxy_coins', coins.toString()); }, [coins]);
-          useEffect(() => { safeStorage.setItem('galaxy_unlocked', JSON.stringify(unlockedShips)); }, [unlockedShips]);
-          useEffect(() => { safeStorage.setItem('galaxy_equipped', equippedShip); }, [equippedShip]);
-          useEffect(() => { safeStorage.setItem('galaxy_ship_ads', JSON.stringify(shipAdProgress)); }, [shipAdProgress]);
+          useEffect(() => { safeStorage.setItem('coins', coins.toString()); }, [coins]);
+          useEffect(() => { safeStorage.setItem('equipped_ship', equippedShip); }, [equippedShip]);
+          useEffect(() => { safeStorage.setItem('unlocked_ships', JSON.stringify(unlockedShips)); }, [unlockedShips]);
+          useEffect(() => { safeStorage.setItem('ship_ad_progress', JSON.stringify(shipAdProgress)); }, [shipAdProgress]);
 
-          const addCoins = (amount) => { 
-              setCoins(c => {
-                  const newVal = Math.max(0, c + amount);
-                  if (amount > 0) playSound('buy');
-                  return newVal;
-              }); 
-          };
+          const addCoins = (amount) => setCoins(c => Math.max(0, c + amount));
 
-          const handleShipAdWatch = (shipId, requiredAds) => {
+          const handleShipAdWatch = (shipId, cost) => {
               const current = shipAdProgress[shipId] || 0;
-              if (current < requiredAds) {
-                  const next = current + 1;
-                  setShipAdProgress(p => ({ ...p, [shipId]: next }));
-                  if (next >= requiredAds) {
-                      setUnlockedShips(prev => [...prev, shipId]);
-                      playSound('win');
-                  }
+              if (current + 1 >= cost) {
+                  setUnlockedShips(prev => [...prev, shipId]);
+                  setEquippedShip(shipId);
+                  setShipAdProgress(prev => { const n = { ...prev }; delete n[shipId]; return n; });
+                  playSound('levelup');
+              } else {
+                  setShipAdProgress(prev => ({ ...prev, [shipId]: current + 1 }));
               }
           };
 
-          // --- MENU SCREEN ---
-          if (screen === 'menu') {
-              return (
-                  <div className="w-full h-full premium-bg flex flex-col items-center justify-center p-4 safe-area-padding">
-                      <div className="scanlines"></div>
-                      <div className="z-10 w-full max-w-md flex flex-col gap-6 animate-fade-in">
-                          <div className="text-center mb-4">
-                              <h1 className="hero-title text-6xl">JOGOS<br/><span className="text-blue-500">ONLINE</span></h1>
-                              <p className="text-gray-400 tracking-[0.5em] text-xs mt-2 uppercase">Arcade • Farm • Logic</p>
-                          </div>
-                          
-                          <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
-                              <div className="flex items-center gap-2">
-                                  {user ? (
-                                      <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs">{user.email[0].toUpperCase()}</div><div className="text-xs text-gray-300">Conectado</div></div>
-                                  ) : (
-                                      <button onClick={() => { playSound('ui_click'); setShowAuth(true); }} className="text-xs font-bold text-blue-400 flex items-center gap-1 hover:text-white"><LogIn size={14} /> LOGIN / SALVAR</button>
-                                  )}
-                              </div>
-                              <div className="flex items-center gap-2 font-bold text-yellow-400 bg-black/40 px-3 py-1 rounded-full border border-yellow-500/20"><Coins size={16} /> {coins}</div>
-                          </div>
+          const renderScreen = () => {
+              switch(screen) {
+                  case 'hub': return <MainHub onSelect={setScreen} coins={coins} />;
+                  case 'galaxy': return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('hub')} coins={coins} />;
+                  case 'galaxy_game': return <GalaxyInvader onBack={() => setScreen('galaxy')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+                  case 'galaxy_shop': return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} equipShip={setEquippedShip} unlockedShips={unlockedShips} equippedShip={equippedShip} onBack={() => setScreen('galaxy')} />;
+                  case 'farm': return <FarmGame onBack={() => setScreen('hub')} addCoins={addCoins} coins={coins} />;
+                  case 'hangman': return <HangmanGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
+                  case 'blaze': return <BlazeSignalBot onBack={() => setScreen('hub')} />;
+                  default: return <MainHub onSelect={setScreen} coins={coins} />;
+              }
+          };
 
-                          <div className="grid gap-4">
-                              <button onClick={() => { playSound('ui_click'); setScreen('galaxy_menu'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
-                                  <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Rocket size={32} /></div>
-                                  <div className="flex-1 text-left"><div className="font-bold text-xl">GALAXY INVADER</div><div className="text-xs text-gray-400">Combate Espacial 3D</div></div>
-                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
-                              </button>
-                              
-                              <button onClick={() => { playSound('ui_click'); setScreen('farm'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
-                                  <div className="p-3 bg-green-500/20 rounded-lg text-green-400 group-hover:bg-green-500 group-hover:text-white transition-colors"><Sprout size={32} /></div>
-                                  <div className="flex-1 text-left"><div className="font-bold text-xl">FAZENDA 3D</div><div className="text-xs text-gray-400">Plante, Cultive e Lucre</div></div>
-                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
-                              </button>
-
-                              <button onClick={() => { playSound('ui_click'); setScreen('hangman'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group">
-                                  <div className="p-3 bg-purple-500/20 rounded-lg text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors"><Brain size={32} /></div>
-                                  <div className="flex-1 text-left"><div className="font-bold text-xl">HANGMAN</div><div className="text-xs text-gray-400">Desafie seu vocabulário</div></div>
-                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
-                              </button>
-
-                              <button onClick={() => { playSound('ui_click'); setScreen('blaze_ai'); }} className="premium-btn h-24 rounded-2xl flex items-center px-6 gap-4 group border-emerald-500/30">
-                                  <div className="p-3 bg-emerald-500/20 rounded-lg text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors animate-pulse"><Zap size={32} /></div>
-                                  <div className="flex-1 text-left"><div className="font-bold text-xl text-emerald-400 text-glow">BLAZE SIGNALS AI</div><div className="text-xs text-gray-400">Bot Double & Crash</div></div>
-                                  <ChevronLeft className="rotate-180 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition" />
-                              </button>
-                          </div>
-                      </div>
-                      
-                      <InstallButton />
-                      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={setUser} />}
-                  </div>
-              );
-          }
-
-          // --- ROUTING ---
-          if (screen === 'galaxy_menu') return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('menu')} coins={coins} />;
-          if (screen === 'galaxy_shop') return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} unlockedShips={unlockedShips} equipShip={setEquippedShip} equippedShip={equippedShip} onBack={() => setScreen('galaxy_menu')} />;
-          if (screen === 'galaxy_game') return <GalaxyInvader onBack={() => setScreen('galaxy_menu')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
-          if (screen === 'farm') return <FarmGame onBack={() => setScreen('menu')} addCoins={addCoins} coins={coins} />;
-          if (screen === 'hangman') return <HangmanGame onBack={() => setScreen('menu')} addCoins={addCoins} />;
-          if (screen === 'blaze_ai') return <BlazeSignalBot onBack={() => setScreen('menu')} />;
-
-          return null;
+          return (
+              <>
+                  <InstallButton />
+                  {renderScreen()}
+              </>
+          );
       };
 
       const root = createRoot(document.getElementById('root'));
