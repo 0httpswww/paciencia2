@@ -16,9 +16,9 @@ const URLS_TO_CACHE = [
     './manifest.json',
     'https://cdn.tailwindcss.com',
     'https://unpkg.com/@babel/standalone/babel.min.js',
-    'https://aistudiocdn.com/react@^19.2.0',
-    'https://aistudiocdn.com/react-dom@^19.2.0/client',
-    'https://aistudiocdn.com/lucide-react@^0.554.0',
+    'https://esm.sh/react@18.3.1?dev',
+    'https://esm.sh/react-dom@18.3.1/client?dev',
+    'https://esm.sh/lucide-react@0.344.0?deps=react@18.3.1',
     'https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png'
 ];
 
