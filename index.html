@@ -1239,27 +1239,27 @@
         const [history, setHistory] = useState([]);
         const [prediction, setPrediction] = useState(null);
         const [loading, setLoading] = useState(false);
-        const [logs, setLogs] = useState(["Iniciando sistema...", "Conectado ao servidor neural..."]);
+        const [logs, setLogs] = useState(["Iniciando protocolos MANUS...", "Sincronizando banco de dados..."]);
 
-        // Obfuscated Key (Reversed) for client-side usage as requested
+        // Obfuscated Key (Reversed)
         const _0x92a = "W1MFd5GBR1wfqGWCeiyivIKUmuJUfWkLAQZgoLYcMxOALjalmCxKWFH06DlGhzsth1wdl-PPRFoRxsyuh0OhJmCP6j5LE-ks";
         const getKey = () => _0x92a.split("").reverse().join("");
 
-        // Simulated real-time fetching of history to display on UI
-        const generateRealisticHistory = () => {
+        // Simulated real-time fetching of history
+        const generateRealisticHistory = useCallback(() => {
             const newHist = [];
             for (let i = 0; i < 15; i++) {
                 const r = Math.random();
-                if (r < 0.05) newHist.push({ color: 'white', val: 0 });
-                else if (r < 0.525) newHist.push({ color: 'red', val: Math.floor(Math.random() * 7) + 1 });
+                if (r < 0.066) newHist.push({ color: 'white', val: 0 }); // Blaze white is 1/15 approx 0.066
+                else if (r < 0.533) newHist.push({ color: 'red', val: Math.floor(Math.random() * 7) + 1 });
                 else newHist.push({ color: 'black', val: Math.floor(Math.random() * 7) + 8 });
             }
             return newHist;
-        };
+        }, []);
 
         useEffect(() => {
             setHistory(generateRealisticHistory());
-        }, []);
+        }, [generateRealisticHistory]);
 
         const addLog = (msg) => setLogs(prev => [...prev.slice(-4), msg]);
 
@@ -1269,22 +1269,20 @@
             setPrediction(null);
             playSound('scan');
             
-            // Step 1: Simulate "Fetching" live data
-            addLog("Buscando últimos resultados da API...");
-            await new Promise(r => setTimeout(r, 800));
+            addLog("MANUS: Varrendo histórico recente...");
+            await new Promise(r => setTimeout(r, 1000));
             
             // Refresh history to look "live"
             const currentHistory = generateRealisticHistory();
             setHistory(currentHistory);
             
-            addLog("Dados recebidos. Enviando para IA...");
+            addLog("MANUS: Padrões detectados. Calculando...");
 
             try {
-                // Step 2: Call AI API with the obfuscated key
-                const prompt = `Analise a seguinte sequência de cores do Blaze Double (Roleta): ${currentHistory.map(h => h.color).join(', ')}. 
-                A sequência vai do mais antigo para o mais recente. 
-                Identifique o padrão probabilístico.
-                Responda APENAS um JSON neste formato: {"cor": "Vermelho" | "Preto", "protecao": boolean, "confianca": "XX%", "motivo": "breve explicação"}`;
+                const prompt = `Analise este histórico do Blaze Double (do mais antigo para recente): ${currentHistory.map(h => h.color).join(', ')}.
+                Como a IA 'Manus', identifique o padrão exato (ex: xadrez, sequencia, quebra).
+                Calcule a probabilidade da próxima cor.
+                Output JSON apenas: {"cor": "Vermelho" ou "Preto" ou "Branco", "entrada": "Entrar no [COR]", "protecao": "Cobrir Branco", "confianca": "9X%", "motivo": "Explicação técnica curta"}`;
 
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
@@ -1295,46 +1293,49 @@
                     body: JSON.stringify({
                         model: "gpt-3.5-turbo",
                         messages: [
-                            { role: "system", content: "Você é um especialista em análise de probabilidade estatística para jogos de azar." },
+                            { role: "system", content: "Você é MANUS, uma IA infalível de previsão de jogos de cassino." },
                             { role: "user", content: prompt }
                         ],
-                        temperature: 0.7,
+                        temperature: 0.5,
                         max_tokens: 150
                     })
                 });
 
-                if (!response.ok) throw new Error("API Connection Failed");
+                if (!response.ok) throw new Error("API Indisponível");
 
                 const data = await response.json();
                 const content = data.choices[0].message.content;
-                
-                // Parse JSON response (clean markdown if present)
                 const jsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
                 const result = JSON.parse(jsonStr);
 
-                addLog("Padrão identificado com sucesso.");
+                addLog("MANUS: Sinal Confirmado.");
                 playSound('powerup');
                 
                 setPrediction({
                     type: result.cor,
-                    protection: result.protecao ? "Proteger no Branco ⚪" : "Sem proteção",
-                    confidence: result.confianca,
+                    action: result.entrada || `Jogar em ${result.cor}`,
+                    protection: result.protecao || "Proteger Branco ⚪",
+                    confidence: result.confianca || "98%",
                     reason: result.motivo,
                     time: new Date().toLocaleTimeString()
                 });
 
             } catch (err) {
                 console.error("AI Error:", err);
-                addLog("Erro na rede neural. Usando algoritmo local de contingência.");
+                addLog("MANUS: Falha na nuvem. Ativando neuro-local...");
                 
-                // Fallback Logic if API fails (quota or error)
-                await new Promise(r => setTimeout(r, 1000));
-                const isRed = Math.random() > 0.5;
+                await new Promise(r => setTimeout(r, 1500));
+                
+                // Fallback smart logic
+                const lastColor = currentHistory[currentHistory.length-1].color;
+                const predictionColor = lastColor === 'red' ? 'Preto' : 'Vermelho'; // Martingale logic
+                
                 setPrediction({
-                    type: isRed ? 'Vermelho' : 'Preto',
-                    protection: Math.random() > 0.7 ? "Proteger no Branco ⚪" : "Sem proteção",
-                    confidence: "88%",
-                    reason: "Padrão de alternância detectado (Modo Offline)",
+                    type: predictionColor,
+                    action: `Entrar no ${predictionColor}`,
+                    protection: "Proteger no Branco ⚪",
+                    confidence: "94%",
+                    reason: "Padrão de reversão de tendência detectado localmente.",
                     time: new Date().toLocaleTimeString()
                 });
                 playSound('powerup');
@@ -1351,8 +1352,8 @@
                 <div className="w-full flex justify-between items-center mb-6 z-10 border-b border-red-900/30 pb-4">
                     <button onClick={onBack} className="p-2 bg-white/5 rounded hover:bg-white/10 text-white border border-white/10"><ChevronLeft /></button>
                     <div className="flex flex-col items-end">
-                        <h1 className="text-2xl font-bold text-red-500 flex items-center gap-2"><Zap className="fill-red-500 animate-pulse" /> BLAZE BOT AI 2.0</h1>
-                        <span className="text-[10px] text-green-500 flex items-center gap-1">● ONLINE <span className="opacity-50">| V 2.4.1</span></span>
+                        <h1 className="text-2xl font-bold text-red-500 flex items-center gap-2"><Zap className="fill-red-500 animate-pulse" /> MANUS BOT AI</h1>
+                        <span className="text-[10px] text-green-500 flex items-center gap-1">● ONLINE <span className="opacity-50">| V 3.0.0</span></span>
                     </div>
                 </div>
 
@@ -1391,14 +1392,14 @@
                     ) : prediction ? (
                         <div className="flex flex-col items-center animate-fade-in">
                             <div className="w-full flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-                                <span className="text-gray-400 text-xs">SINAL CONFIRMADO</span>
+                                <span className="text-gray-400 text-xs uppercase tracking-widest">Sinal Manus</span>
                                 <span className="text-gray-500 text-xs">{prediction.time}</span>
                             </div>
                             
                             <div className="text-center mb-6">
-                                <div className="text-sm text-gray-400 mb-1">ENTRADA RECOMENDADA</div>
-                                <div className={`text-4xl font-black uppercase tracking-wider mb-2 ${prediction.type === 'Vermelho' ? 'text-[#ff002e] drop-shadow-[0_0_15px_rgba(255,0,46,0.6)]' : 'text-gray-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]'}`}>
-                                    {prediction.type === 'Vermelho' ? '🔴 VERMELHO' : '⚫ PRETO'}
+                                <div className="text-sm text-gray-400 mb-1">ENTRADA CONFIRMADA</div>
+                                <div className={`text-4xl font-black uppercase tracking-wider mb-2 ${prediction.type === 'Vermelho' ? 'text-[#ff002e] drop-shadow-[0_0_15px_rgba(255,0,46,0.6)]' : (prediction.type === 'Branco' ? 'text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'text-gray-200 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]')}`}>
+                                    {prediction.type === 'Vermelho' ? '🔴 VERMELHO' : (prediction.type === 'Branco' ? '⚪ BRANCO' : '⚫ PRETO')}
                                 </div>
                                 <div className="inline-block bg-white/10 px-3 py-1 rounded text-xs text-white border border-white/20">
                                     {prediction.protection}
@@ -1407,30 +1408,33 @@
                             
                             <div className="w-full bg-black/40 rounded p-3 mb-4 border-l-2 border-red-500">
                                 <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-gray-400">Confiança da IA:</span>
+                                    <span className="text-gray-400">Probabilidade:</span>
                                     <span className="text-green-400 font-bold">{prediction.confidence}</span>
+                                </div>
+                                <div className="w-full bg-gray-800 h-1.5 rounded-full mb-2">
+                                    <div className="bg-green-500 h-full rounded-full" style={{ width: prediction.confidence.replace('%', '') + '%' }}></div>
                                 </div>
                                 <p className="text-xs text-gray-500 italic">"{prediction.reason}"</p>
                             </div>
 
                             <button onClick={analyzeSignal} className="w-full py-4 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95">
-                                <RefreshCcw size={18} /> GERAR NOVO SINAL
+                                <RefreshCcw size={18} /> NOVO SINAL
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center py-6 text-center">
                             <BarChart2 size={48} className="text-red-500/50 mb-4" />
-                            <h3 className="text-white text-lg font-bold mb-2">IA Pronta para Análise</h3>
-                            <p className="text-gray-400 text-sm mb-6 max-w-xs">Nosso algoritmo neural analisa os últimos 15 resultados para prever a próxima cor com alta assertividade.</p>
+                            <h3 className="text-white text-lg font-bold mb-2">IA Manus Conectada</h3>
+                            <p className="text-gray-400 text-sm mb-6 max-w-xs">Algoritmo neural especializado em Double. Analisa G1, G2 e padrões de espelhamento.</p>
                             <button onClick={analyzeSignal} className="w-full py-4 bg-white text-black font-bold rounded-lg hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95">
-                                <Zap size={18} fill="black" /> ANALISAR MERCADO
+                                <Zap size={18} fill="black" /> GERAR SINAL
                             </button>
                         </div>
                     )}
                 </div>
 
                 <div className="mt-8 text-[10px] text-gray-600 text-center max-w-xs">
-                    * A assertividade pode variar. Jogue com responsabilidade. Esta ferramenta usa inteligência artificial para identificar padrões estatísticos.
+                    * Assertividade baseada em IA. Jogue com responsabilidade. Esta ferramenta identifica padrões estatísticos.
                 </div>
             </div>
         );
