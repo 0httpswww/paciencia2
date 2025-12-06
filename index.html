@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -476,10 +477,11 @@
               let animationFrameId; let lastTime = 0;
               const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
               const playerImg = generatePlayerSprite(shipDef.palette);
-              // --- PHYSICS CONSTANTS ---
-              const ACCEL = 0.8; 
-              const FRICTION = 0.92; 
-              const MAX_SPEED = 15;
+              
+              // --- PHYSICS / GAMEPLAY CONSTANTS ---
+              // Adjusted for tighter, more arcade-like feel using LERP
+              const LERP_FACTOR = 0.2; // Higher = snappier, Lower = smoother/driftier
+              const MAX_SPEED = 20;
               
               let player = { 
                   x: canvas.width/2, 
@@ -514,72 +516,90 @@
                   if (gameStateRef.current !== 'playing') { animationFrameId = requestAnimationFrame(() => update(Date.now())); return; }
                   const dt = time - lastTime; lastTime = time;
 
-                  // --- PHYSICS MOVEMENT ---
+                  // --- IMPROVED MOVEMENT (LERP) ---
                   if (input.active) {
-                      const dx = input.x - player.x;
-                      const dy = input.y - player.y;
-                      const dist = Math.sqrt(dx*dx + dy*dy);
+                      // Target position (offset slightly above finger)
+                      const targetX = input.x;
+                      const targetY = input.y - 50;
                       
-                      // Normalize direction
-                      const dirX = dist > 0 ? dx / dist : 0;
-                      const dirY = dist > 0 ? dy / dist : 0;
-
-                      // Accelerate towards finger
-                      if (dist > 5) {
-                          player.vx += dirX * ACCEL;
-                          player.vy += dirY * ACCEL;
-                      } else {
-                          // Slow down if very close to target
-                          player.vx *= FRICTION;
-                          player.vy *= FRICTION;
-                      }
+                      // Smoothly follow the target
+                      const dx = targetX - player.x;
+                      const dy = targetY - player.y;
+                      
+                      player.x += dx * LERP_FACTOR;
+                      player.y += dy * LERP_FACTOR;
+                      
+                      // Calculate velocity for banking effect based on delta
+                      player.vx = dx * 0.5;
                   } else {
-                      // Apply friction when no input
-                      player.vx *= FRICTION;
-                      player.vy *= FRICTION;
+                      // Dampen velocity when not touching
+                      player.vx *= 0.9;
                   }
-
-                  // Cap speed
-                  const speed = Math.sqrt(player.vx*player.vx + player.vy*player.vy);
-                  if (speed > MAX_SPEED) {
-                      player.vx = (player.vx / speed) * MAX_SPEED;
-                      player.vy = (player.vy / speed) * MAX_SPEED;
-                  }
-
-                  // Apply Velocity
-                  player.x += player.vx;
-                  player.y += player.vy;
-
-                  // Banking Effect (Tilt)
-                  player.bank = player.vx * 0.1;
+                  
+                  // Clamp Bank Angle
+                  player.bank = Math.max(-0.5, Math.min(0.5, player.vx * 0.05));
 
                   // Bounds
-                  if (player.x < 20) { player.x = 20; player.vx *= -0.5; }
-                  if (player.x > canvas.width - 20) { player.x = canvas.width - 20; player.vx *= -0.5; }
-                  if (player.y < 50) { player.y = 50; player.vy *= -0.5; }
-                  if (player.y > canvas.height - 20) { player.y = canvas.height - 20; player.vy *= -0.5; }
+                  if (player.x < 20) { player.x = 20; player.vx = 0; }
+                  if (player.x > canvas.width - 20) { player.x = canvas.width - 20; player.vx = 0; }
+                  if (player.y < 50) { player.y = 50; }
+                  if (player.y > canvas.height - 20) { player.y = canvas.height - 20; }
+                  
+                  // --- ENGINE TRAILS ---
+                  if (Math.random() > 0.3) {
+                      particles.push({ 
+                          x: player.x - 5 + Math.random()*10, 
+                          y: player.y + 20, 
+                          vx: (Math.random()-0.5), 
+                          vy: Math.random()*2 + 2, 
+                          life: 15, 
+                          color: '#38bdf8', 
+                          alpha: 0.6 
+                      });
+                  }
 
-                  if (time - player.lastShot > 250 - (player.weaponLevel * 20)) {
-                      const scale = getScale(player.y); const bSpeed = -10 * scale;
-                      bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: player.vx * 0.2, type: 'player', width: 4*scale, height: 10*scale, color: '#38bdf8' });
-                      if (player.weaponLevel >= 2) { bullets.push({ x: player.x - 10, y: player.y, vy: bSpeed * 0.9, vx: -1, type: 'player', width: 3*scale, height: 8*scale, color: '#38bdf8' }); bullets.push({ x: player.x + 10, y: player.y, vy: bSpeed * 0.9, vx: 1, type: 'player', width: 3*scale, height: 8*scale, color: '#38bdf8' }); }
+                  // --- FASTER SHOOTING ---
+                  const fireRate = Math.max(100, 250 - (player.weaponLevel * 30));
+                  if (time - player.lastShot > fireRate) {
+                      const scale = getScale(player.y); 
+                      const bSpeed = -20 * scale; // Increased bullet speed
+                      
+                      // Muzzle Flash
+                      particles.push({ x: player.x, y: player.y - 15, vx: 0, vy: 0, life: 5, color: 'white', alpha: 1, size: 10 });
+                      
+                      bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: player.vx * 0.1, type: 'player', width: 4*scale, height: 12*scale, color: '#38bdf8' });
+                      
+                      if (player.weaponLevel >= 2) { 
+                          bullets.push({ x: player.x - 12, y: player.y, vy: bSpeed * 0.95, vx: -1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
+                          bullets.push({ x: player.x + 12, y: player.y, vy: bSpeed * 0.95, vx: 1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
+                      }
+                      if (player.weaponLevel >= 3) {
+                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: -2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
+                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: 2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
+                      }
                       playSound('shoot'); player.lastShot = time;
                   }
 
-                  if (Math.random() < 0.02 + (stats.wave * 0.005) && !boss) spawnEnemy();
-                  if (player.score > stats.wave * 2500 && !boss) spawnBoss();
+                  if (Math.random() < 0.03 + (stats.wave * 0.005) && !boss) spawnEnemy();
+                  if (player.score > stats.wave * 3000 && !boss) spawnBoss();
 
                   for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; b.y += b.vy; b.x += b.vx; if (b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1); }
 
                   for (let i = enemies.length - 1; i >= 0; i--) {
                       let e = enemies[i]; const scale = getScale(e.y);
                       e.y += e.vy * scale; e.x += e.vx * scale; e.renderW = e.width * scale; e.renderH = e.height * scale;
+                      
+                      // Wiggle movement for enemies
+                      e.x += Math.sin(time / 200 + i) * 1;
+
                       if (Math.random() < 0.01 * stats.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
+                      
                       for (let j = bullets.length - 1; j >= 0; j--) {
                           let b = bullets[j];
                           if (b.type === 'player' && Math.abs(b.x - e.x) < e.renderW/2 + 10 && Math.abs(b.y - e.y) < e.renderH/2 + 10) {
-                              e.hp -= 1; bullets.splice(j, 1); for(let k=0; k<3; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: 'yellow' });
-                              if (e.hp <= 0) { enemies.splice(i, 1); player.score += (e.type === 'tank' ? 50 : 10); player.xp += (e.type === 'tank' ? 20 : 5); addCoins(1); playSound('explosion'); triggerShake(); for(let k=0; k<10; k++) particles.push({ x: e.x, y: e.y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 20, color: e.color }); if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon_up' }); break; }
+                              e.hp -= 1; bullets.splice(j, 1); 
+                              for(let k=0; k<3; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: 'yellow', alpha: 1 });
+                              if (e.hp <= 0) { enemies.splice(i, 1); player.score += (e.type === 'tank' ? 50 : 10); player.xp += (e.type === 'tank' ? 20 : 5); addCoins(1); playSound('explosion'); triggerShake(); for(let k=0; k<12; k++) particles.push({ x: e.x, y: e.y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 25, color: e.color, alpha: 1 }); if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon_up' }); break; }
                           }
                       }
                       if (Math.abs(e.x - player.x) < (e.renderW + player.width)/2 && Math.abs(e.y - player.y) < (e.renderH + player.height)/2) { enemies.splice(i, 1); player.hp -= 20; triggerShake(); playSound('explosion'); }
@@ -590,7 +610,7 @@
                       const scale = getScale(boss.y); boss.renderW = boss.width * scale; boss.renderH = boss.height * scale;
                       if (boss.phase === 'enter') { boss.y += 1; if (boss.y > 100) boss.phase = 'attack'; } 
                       else { boss.x += boss.vx; if (boss.x > canvas.width - 50 || boss.x < 50) boss.vx *= -1; if (Math.random() < 0.05) { const angle = Math.atan2(player.y - boss.y, player.x - boss.x); bullets.push({ x: boss.x, y: boss.y + 40, vy: Math.sin(angle)*6, vx: Math.cos(angle)*6, type: 'enemy', width: 8, height: 8, color: '#f0f' }); } }
-                      for (let j = bullets.length - 1; j >= 0; j--) { let b = bullets[j]; if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); if (boss.hp <= 0) { boss = null; player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); for(let k=0; k<50; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple' }); } } }
+                      for (let j = bullets.length - 1; j >= 0; j--) { let b = bullets[j]; if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); if (boss.hp <= 0) { boss = null; player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); for(let k=0; k<50; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple', alpha: 1 }); } } }
                   }
 
                   for (let i = powerups.length - 1; i >= 0; i--) { let p = powerups[i]; p.y += 2; if (Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) { player.weaponLevel = Math.min(3, player.weaponLevel + 1); player.hp = Math.min(100, player.hp + 20); powerups.splice(i, 1); playSound('powerup'); } }
@@ -601,14 +621,40 @@
                   if (player.hp <= 0) { setGameState('gameover'); }
 
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
-                  for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 20; ctx.fillRect(p.x, p.y, 4, 4); if (p.life <= 0) particles.splice(i, 1); } ctx.globalAlpha = 1;
+                  
+                  // Render Particles
+                  for (let i = particles.length - 1; i >= 0; i--) { 
+                      let p = particles[i]; 
+                      p.x += p.vx; p.y += p.vy; p.life--; 
+                      ctx.fillStyle = p.color; 
+                      ctx.globalAlpha = p.alpha ? (p.life / 20) * p.alpha : p.life / 20; 
+                      const size = p.size || 4;
+                      ctx.fillRect(p.x, p.y, size, size); 
+                      if (p.life <= 0) particles.splice(i, 1); 
+                  } 
+                  ctx.globalAlpha = 1;
 
                   const pScale = getScale(player.y);
+                  
+                  // Shadow
                   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 30*pScale, 15*pScale, 5*pScale, 0, 0, Math.PI*2); ctx.fill();
-                  ctx.save(); ctx.translate(player.x, player.y); ctx.scale(pScale, pScale); 
-                  // Apply banking rotation
+                  
+                  // Ship Render with Rotation
+                  ctx.save(); 
+                  ctx.translate(player.x, player.y); 
+                  ctx.scale(pScale, pScale); 
                   ctx.rotate(player.bank); 
-                  if (playerImg.complete) ctx.drawImage(playerImg, -20, -20, 40, 40); ctx.restore();
+                  if (playerImg.complete) ctx.drawImage(playerImg, -20, -20, 40, 40); 
+                  
+                  // Engine Glow
+                  ctx.fillStyle = '#38bdf8';
+                  ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+                  ctx.beginPath();
+                  ctx.arc(0, 15, 5, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.globalAlpha = 1;
+                  
+                  ctx.restore();
 
                   enemies.forEach(e => { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(e.x, e.y + e.renderH, e.renderW/3, e.renderH/5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = e.color; ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2, e.renderW, e.renderH); ctx.shadowBlur = 0; ctx.fillStyle = 'red'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW, 3); ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * (e.hp / (2+player.level)), 3); });
                   if (boss) { ctx.fillStyle = 'rgba(128,0,128,0.8)'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y - boss.renderH/2); ctx.lineTo(boss.x + boss.renderW/2, boss.y + boss.renderH/2); ctx.lineTo(boss.x - boss.renderW/2, boss.y + boss.renderH/2); ctx.fill(); ctx.fillStyle = 'gray'; ctx.fillRect(boss.x - 50, boss.y - 70, 100, 8); ctx.fillStyle = '#d946ef'; ctx.fillRect(boss.x - 50, boss.y - 70, 100 * (boss.hp / boss.maxHp), 8); ctx.strokeStyle = 'white'; ctx.strokeRect(boss.x - 50, boss.y - 70, 100, 8); }
