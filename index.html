@@ -194,7 +194,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -1054,8 +1054,41 @@
            return { ...rand, guessed: [], errors: 0, status: 'playing' };
         });
 
+        // --- PRESENTER LOGIC ---
+        const [voiceEnabled, setVoiceEnabled] = useState(true);
+        
+        const speak = useCallback((text, force = false) => {
+            if (!voiceEnabled && !force) return;
+            try {
+                window.speechSynthesis.cancel(); // Interrupt previous
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'pt-BR';
+                u.rate = 1.1; // Slightly faster for excitement
+                u.pitch = 1.0;
+                
+                // Attempt to find a Brazilian voice
+                const voices = window.speechSynthesis.getVoices();
+                // Prefer Google Português do Brasil if available, or any pt-BR
+                const ptVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('pt-BR')) || 
+                                voices.find(v => v.lang === 'pt-BR') || 
+                                voices.find(v => v.lang.includes('pt'));
+                                
+                if (ptVoice) u.voice = ptVoice;
+                window.speechSynthesis.speak(u);
+            } catch (e) { console.warn("Speech synthesis error", e); }
+        }, [voiceEnabled]);
+
+        // Intro
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                 speak("Olá! Bem vindo ao jogo da forca! Sou seu apresentador. Vamos descobrir a palavra secreta juntos!");
+            }, 800);
+            return () => { clearTimeout(timer); window.speechSynthesis.cancel(); };
+        }, []);
+
         const handleGuess = (letter) => {
             if (game.status !== 'playing' || game.guessed.includes(letter)) return;
+            
             const newGuessed = [...game.guessed, letter];
             const isError = !game.word.includes(letter);
             const newErrors = isError ? game.errors + 1 : game.errors;
@@ -1063,18 +1096,31 @@
             const isLose = newErrors >= 6;
             
             playSound(isError ? 'ui_click' : 'powerup');
-            if(isWin) playSound('win');
-            if(isLose) playSound('lose');
+            
+            // --- PRESENTER REACTION ---
+            if (isWin) {
+                playSound('win');
+                addCoins(20);
+                setTimeout(() => speak(`Incrível! Você venceu! A palavra era ${game.word}. Parabéns!`), 200);
+            } else if (isLose) {
+                playSound('lose');
+                setTimeout(() => speak(`Ah que pena! Você foi enforcado. A palavra era ${game.word}. Tente na próxima!`), 200);
+            } else if (isError) {
+                const phrases = ["Errou!", "Essa não tem!", "Cuidado com a forca!", "Tente outra letra!", "Ixi, errou feio!", "Preste atenção!"];
+                speak(phrases[Math.floor(Math.random() * phrases.length)]);
+            } else {
+                 const phrases = ["Muito bem!", "Acertou!", "Isso aí!", "Continue assim!", "Boa escolha!", "Essa tem!"];
+                 speak(phrases[Math.floor(Math.random() * phrases.length)]);
+            }
 
             setGame(prev => ({ ...prev, guessed: newGuessed, errors: newErrors, status: isWin ? 'won' : (isLose ? 'lost' : 'playing') }));
-            
-            if (isWin) addCoins(20);
         };
 
         const handleRestart = () => {
             const rand = getNewWord();
             setGame({ ...rand, guessed: [], errors: 0, status: 'playing' });
             playSound('ui_click');
+            speak("Novo jogo iniciado! Qual é a palavra?");
         };
 
         const handleHint = () => {
@@ -1083,6 +1129,7 @@
                  if (hidden.length > 0) {
                      const reveal = hidden[Math.floor(Math.random() * hidden.length)];
                      handleGuess(reveal);
+                     speak("Aqui vai uma ajudinha!");
                  }
                  playSound('powerup');
              });
@@ -1107,10 +1154,13 @@
 
                 {/* Header UI */}
                 <div className="absolute top-0 w-full p-4 flex justify-between items-start z-50">
-                     <button onClick={onBack} className="p-3 bg-black/40 backdrop-blur border border-purple-500/30 rounded-full text-white hover:bg-purple-500/20 transition"><ChevronLeft /></button>
-                     <div className="text-right">
+                     <button onClick={() => { window.speechSynthesis.cancel(); onBack(); }} className="p-3 bg-black/40 backdrop-blur border border-purple-500/30 rounded-full text-white hover:bg-purple-500/20 transition"><ChevronLeft /></button>
+                     <div className="flex flex-col items-center">
                          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">NEON HANGMAN</h1>
                      </div>
+                     <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`p-3 backdrop-blur border rounded-full transition ${voiceEnabled ? 'bg-purple-600/80 border-purple-400 text-white' : 'bg-black/40 border-gray-600 text-gray-500'}`}>
+                        {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                     </button>
                 </div>
 
                 {/* Main 3D Card Container */}
