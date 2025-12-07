@@ -1756,7 +1756,7 @@
         );
       };
 
-      const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick }) => {
+      const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw }) => {
           const GAMES = [
               { id: 'galaxy', name: 'Galaxy Invader', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Space Shooter' },
               { id: 'farm', name: 'Farm Tycoon', icon: <Sprout size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Relaxing Farming Sim' },
@@ -1811,7 +1811,7 @@
                               </div>
                           </div>
                           <div className="z-10">
-                              <button onClick={() => window.location.href = "mailto:joguee.e.ganhe@gmail.com?subject=SOLICITACAO DE SAQUE&body=Minha chave PIX:%0D%0A%0D%0A(Anexar print do painel da missão diária completo)"} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
+                              <button onClick={() => { playSound('ui_click'); onWithdraw(); }} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
                                   <Wallet size={14} /> SACAR
                               </button>
                           </div>
@@ -1973,6 +1973,28 @@
               }
           };
 
+          const handleWithdraw = () => {
+              // Calculate balance to check if withdraw is possible
+              const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0);
+              if (currentBalance <= 0) {
+                  playSound('lose');
+                  alert("Você não possui saldo para sacar.");
+                  return;
+              }
+
+              playSound('ui_click');
+
+              const subject = encodeURIComponent("SOLICITACAO DE SAQUE");
+              const body = encodeURIComponent("Minha chave PIX:\n\n(Segue anexo o print do painel da missão cumprida)");
+
+              window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
+
+              // Zerar saldo
+              const newRewards = { photo: false, video: false };
+              setRewards(newRewards);
+              safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+          };
+
           const renderScreen = () => {
               // Calculate cash balance from missions
               const cashBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0);
@@ -1987,6 +2009,7 @@
                         user={user}
                         onLoginClick={() => { playSound('ui_click'); setShowAuthModal(true); }}
                         onLogoutClick={handleLogout}
+                        onWithdraw={handleWithdraw}
                     />
                   );
                   case 'galaxy': return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('hub')} coins={coins} />;
