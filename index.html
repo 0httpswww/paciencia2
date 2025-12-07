@@ -484,10 +484,17 @@
               // Try to save to Supabase
               let dbError = null;
               if (supabase) {
-                  const { error } = await supabase.from('withdrawals').insert([requestData]);
-                  if (error) {
-                      console.error("Supabase error", error);
-                      dbError = error;
+                  try {
+                      const { error } = await supabase.from('withdrawals').insert([requestData]);
+                      if (error) {
+                          console.error("Supabase error", error);
+                          dbError = error;
+                      } else {
+                          console.log("Withdrawal request saved to Supabase");
+                      }
+                  } catch (err) {
+                      console.error("Critical Supabase error", err);
+                      dbError = err;
                   }
               }
 
@@ -617,6 +624,7 @@
           }, []);
 
           const fetchRequests = async () => {
+              setLoading(true);
               if (!supabase) { setLoading(false); return; }
               const { data, error } = await supabase
                   .from('withdrawals')
@@ -643,6 +651,11 @@
 
           return (
               <Modal title="GESTÃO DE SAQUES" onClose={onClose}>
+                  <div className="flex justify-end mb-2">
+                      <button onClick={() => { playSound('ui_click'); fetchRequests(); }} className="flex items-center gap-1 text-xs font-bold text-blue-400 bg-blue-900/20 px-2 py-1 rounded border border-blue-500/30 hover:bg-blue-900/40">
+                          <RefreshCcw size={12} /> ATUALIZAR
+                      </button>
+                  </div>
                   {loading ? (
                       <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white" /></div>
                   ) : requests.length === 0 ? (
@@ -2099,15 +2112,24 @@
           ];
 
           const [secretCount, setSecretCount] = useState(0);
+          const secretTimerRef = useRef(null);
+
           const handleSecretClick = () => {
+              if (secretTimerRef.current) clearTimeout(secretTimerRef.current);
+              
               const newCount = secretCount + 1;
               setSecretCount(newCount);
-              if (newCount === 5) {
+              
+              if (newCount >= 5) {
+                  playSound('powerup');
                   onAdminAccess();
                   setSecretCount(0);
+              } else {
+                  // Reset count if not reached 5 clicks quickly enough
+                  secretTimerRef.current = setTimeout(() => {
+                      setSecretCount(0);
+                  }, 1000);
               }
-              // Reset count if too slow
-              setTimeout(() => setSecretCount(0), 2000);
           };
 
           return (
@@ -2138,7 +2160,7 @@
                       <header className="flex flex-col gap-4 mb-8">
                           {/* Title moved above buttons as requested */}
                           <div className="flex justify-center items-center text-center">
-                              <div onClick={handleSecretClick}>
+                              <div onClick={handleSecretClick} className="cursor-pointer select-none active:scale-95 transition-transform">
                                   <h1 className="text-4xl md:text-7xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
                                   <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
                               </div>
