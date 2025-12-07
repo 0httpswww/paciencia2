@@ -200,7 +200,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -387,6 +387,80 @@
               </div>
           </div>
       );
+
+      // --- MISSION REWARD MODAL ---
+      const MissionModal = ({ playTime, rewards, onClose }) => {
+          const TIME_PHOTO = 1800; // 30 minutes
+          const TIME_VIDEO = 3600; // 60 minutes
+          
+          const formatTime = (seconds) => {
+              const h = Math.floor(seconds / 3600);
+              const m = Math.floor((seconds % 3600) / 60);
+              const s = seconds % 60;
+              return `${h}h ${m}m ${s}s`;
+          };
+
+          const handleClaim = (type) => {
+              // Placeholder for actual reward viewing
+              playSound('win');
+              triggerAd(() => {
+                  alert("Conteúdo desbloqueado com sucesso!");
+              });
+          };
+
+          return (
+              <Modal title="MISSÃO DIÁRIA" onClose={onClose}>
+                  <div className="flex flex-col gap-6">
+                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Tempo Jogado Hoje</p>
+                          <div className="text-3xl font-bold text-white font-mono">{formatTime(playTime)}</div>
+                      </div>
+
+                      {/* Reward 1: Photo */}
+                      <div className={`p-4 rounded-xl border ${rewards.photo ? 'bg-green-900/20 border-green-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.photo ? 'bg-green-500 text-black' : 'bg-slate-800 text-gray-500'}`}>
+                                  <ImageIcon size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">FOTO SECRETA</h3>
+                                  <p className="text-xs text-gray-400">Jogue 30 minutos</p>
+                              </div>
+                              {rewards.photo ? <CheckCircle className="text-green-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.photo ? (
+                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs">VER FOTO</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_PHOTO) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Reward 2: Video */}
+                      <div className={`p-4 rounded-xl border ${rewards.video ? 'bg-purple-900/20 border-purple-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.video ? 'bg-purple-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                                  <Film size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">VÍDEO SECRETO</h3>
+                                  <p className="text-xs text-gray-400">Jogue 1 hora</p>
+                              </div>
+                              {rewards.video ? <CheckCircle className="text-purple-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.video ? (
+                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs">ASSISTIR VÍDEO</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </Modal>
+          );
+      };
 
       // --- AUTH MODAL ---
       const AuthModal = ({ onClose, onLogin }) => {
@@ -1500,7 +1574,7 @@
         );
       };
 
-      const MainHub = ({ onSelect, coins }) => {
+      const MainHub = ({ onSelect, coins, onOpenMissions }) => {
           const GAMES = [
               { id: 'galaxy', name: 'Galaxy Invader', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Space Shooter' },
               { id: 'farm', name: 'Farm Tycoon', icon: <Sprout size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Relaxing Farming Sim' },
@@ -1515,9 +1589,15 @@
                           <h1 className="text-3xl font-bold hero-title">JOGOS ONLINE</h1>
                           <p className="text-gray-400 text-sm">Arcade • Racing • Learning</p>
                       </div>
-                      <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-yellow-500/30">
-                          <Coins size={20} className="text-yellow-400" />
-                          <span className="font-bold text-yellow-400">{coins}</span>
+                      <div className="flex items-center gap-2">
+                           <button onClick={onOpenMissions} className="flex items-center gap-2 bg-gradient-to-r from-purple-900 to-purple-800 px-3 py-2 rounded-full border border-purple-500/30 animate-pulse">
+                               <Clock size={16} className="text-purple-300" />
+                               <span className="text-xs font-bold text-white">MISSÃO</span>
+                           </button>
+                           <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-yellow-500/30">
+                              <Coins size={20} className="text-yellow-400" />
+                              <span className="font-bold text-yellow-400">{coins}</span>
+                           </div>
                       </div>
                   </header>
 
@@ -1557,6 +1637,68 @@
           const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, farm, hangman, blaze
           const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('coins') || '100'));
           
+          // --- GLOBAL DAILY MISSIONS STATE ---
+          const [playTime, setPlayTime] = useState(() => {
+              const today = new Date().toDateString();
+              const savedDate = safeStorage.getItem('mission_date');
+              if (savedDate !== today) {
+                  // New day, reset time
+                  safeStorage.setItem('mission_date', today);
+                  safeStorage.setItem('daily_play_time', '0');
+                  safeStorage.setItem('daily_rewards', JSON.stringify({ photo: false, video: false }));
+                  return 0;
+              }
+              return parseInt(safeStorage.getItem('daily_play_time') || '0');
+          });
+          
+          const [rewards, setRewards] = useState(() => {
+               try { return JSON.parse(safeStorage.getItem('daily_rewards') || '{"photo": false, "video": false}'); } catch { return { photo: false, video: false }; }
+          });
+          
+          const [showMissionModal, setShowMissionModal] = useState(false);
+          const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video'
+
+          // --- TIMER LOGIC ---
+          useEffect(() => {
+              if (screen === 'hub') return; // Don't count time in menu
+              
+              const interval = setInterval(() => {
+                  setPlayTime(prev => {
+                      const newTime = prev + 1;
+                      
+                      // Save occasionally to avoid spamming storage
+                      if (newTime % 5 === 0) {
+                          safeStorage.setItem('daily_play_time', newTime.toString());
+                      }
+                      
+                      // Check for unlocks
+                      const TIME_PHOTO = 1800; // 30m
+                      const TIME_VIDEO = 3600; // 60m
+                      
+                      if (newTime === TIME_PHOTO && !rewards.photo) {
+                           const newRewards = { ...rewards, photo: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('photo');
+                           playSound('win');
+                      }
+                      
+                      if (newTime === TIME_VIDEO && !rewards.video) {
+                           const newRewards = { ...rewards, video: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('video');
+                           playSound('win');
+                      }
+
+                      return newTime;
+                  });
+              }, 1000);
+              
+              return () => clearInterval(interval);
+          }, [screen, rewards]);
+
+
           // Galaxy State
           const [equippedShip, setEquippedShip] = useState(() => safeStorage.getItem('equipped_ship') || 'starter');
           const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(safeStorage.getItem('unlocked_ships') || '["starter"]'));
@@ -1583,14 +1725,14 @@
 
           const renderScreen = () => {
               switch(screen) {
-                  case 'hub': return <MainHub onSelect={setScreen} coins={coins} />;
+                  case 'hub': return <MainHub onSelect={setScreen} coins={coins} onOpenMissions={() => setShowMissionModal(true)} />;
                   case 'galaxy': return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('hub')} coins={coins} />;
                   case 'galaxy_game': return <GalaxyInvader onBack={() => setScreen('galaxy')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
                   case 'galaxy_shop': return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} equipShip={setEquippedShip} unlockedShips={unlockedShips} equippedShip={equippedShip} onBack={() => setScreen('galaxy')} />;
                   case 'farm': return <FarmGame onBack={() => setScreen('hub')} addCoins={addCoins} coins={coins} />;
                   case 'hangman': return <HangmanGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   case 'blaze': return <BlazeSignalBot onBack={() => setScreen('hub')} />;
-                  default: return <MainHub onSelect={setScreen} coins={coins} />;
+                  default: return <MainHub onSelect={setScreen} coins={coins} onOpenMissions={() => setShowMissionModal(true)} />;
               }
           };
 
@@ -1598,6 +1740,25 @@
               <>
                   <InstallButton />
                   {renderScreen()}
+                  {showMissionModal && <MissionModal playTime={playTime} rewards={rewards} onClose={() => setShowMissionModal(false)} />}
+                  
+                  {/* CONGRATS POPUP */}
+                  {showCongratsModal && (
+                      <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCongratsModal(null)}>
+                          <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-1 rounded-2xl shadow-[0_0_50px_gold]">
+                              <div className="bg-black rounded-xl p-8 text-center max-w-sm">
+                                  <Trophy size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
+                                  <h2 className="text-3xl font-bold text-white mb-2 hero-title">PARABÉNS!</h2>
+                                  <p className="text-gray-300 mb-6">
+                                      Você desbloqueou {showCongratsModal === 'photo' ? 'uma FOTO' : 'um VÍDEO'} exclusivo!
+                                  </p>
+                                  <button onClick={() => { setShowCongratsModal(null); setShowMissionModal(true); }} className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider">
+                                      RESGATAR RECOMPENSA
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
               </>
           );
       };
@@ -1605,5 +1766,3 @@
       const root = createRoot(document.getElementById('root'));
       root.render(<App />);
     </script>
-</body>
-</html>
