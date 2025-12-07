@@ -1260,7 +1260,7 @@
             let playedWords = [];
             try {
                 playedWords = JSON.parse(safeStorage.getItem('hangman_played') || '[]');
-            } catch { playedWords = []; }
+            } catch (e) { playedWords = []; }
 
             const available = WORDS.filter(w => !playedWords.includes(w.word));
             
@@ -1822,31 +1822,35 @@
 
                   <div className="flex-1 overflow-y-auto p-6 w-full max-w-lg md:max-w-5xl mx-auto flex flex-col">
                       <header className="flex flex-col gap-4 mb-8">
-                          {/* NEW: Action Bar (Buttons moved here for repositioning) */}
-                          <div className="flex justify-end items-center gap-2 w-full">
-                                {/* Mission Button */}
-                                <button onClick={onOpenMissions} className="relative group">
-                                     <div className="absolute inset-0 bg-purple-600 rounded-full blur opacity-50 group-hover:opacity-100 transition"></div>
-                                     <div className="relative flex items-center gap-2 bg-black/80 px-3 py-2 rounded-lg border border-purple-500/50 hover:bg-slate-900 transition-colors">
-                                         <Clock size={16} className="text-purple-400" />
-                                         <div className="flex flex-col items-start">
-                                             <span className="text-[10px] font-bold text-white uppercase leading-none">Missão</span>
-                                             <span className="text-[8px] text-gray-400 leading-none mt-0.5">Diária</span>
-                                         </div>
-                                     </div>
-                                </button>
-                                
-                                {/* Login Button */}
-                                <button onClick={user ? onLogoutClick : onLoginClick} className="relative group">
-                                    <div className={`absolute inset-0 ${user ? 'bg-red-600' : 'bg-blue-600'} rounded-full blur opacity-50 group-hover:opacity-100 transition`}></div>
-                                    <div className={`relative flex items-center gap-2 bg-black/80 px-3 py-2 rounded-lg border ${user ? 'border-red-500/50' : 'border-blue-500/50'} hover:bg-slate-900 transition-colors`}>
-                                        {user ? <LogOut size={16} className="text-red-400" /> : <LogIn size={16} className="text-blue-400" />}
-                                        <div className="flex flex-col items-start">
-                                            <span className="text-[9px] font-bold text-white uppercase leading-none">{user ? 'SAIR' : 'ENTRAR'}</span>
-                                            {user && <span className="text-[8px] text-gray-400 max-w-[60px] truncate leading-none mt-0.5">{user.email.split('@')[0]}</span>}
-                                        </div>
-                                    </div>
-                                </button>
+                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved from small floating buttons to prominent grid */}
+                          <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                              {/* Mission Button */}
+                              <button onClick={onOpenMissions} className="relative group w-full">
+                                   <div className="absolute inset-0 bg-purple-600 rounded-xl blur opacity-30 group-hover:opacity-60 transition"></div>
+                                   <div className="relative flex items-center justify-center gap-3 bg-slate-900/80 px-4 py-3 rounded-xl border border-purple-500/30 hover:bg-slate-800 transition-colors">
+                                       <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                                          <Clock size={18} className="text-purple-400" />
+                                       </div>
+                                       <div className="flex flex-col items-start">
+                                           <span className="text-xs font-bold text-white uppercase tracking-wider">Missão</span>
+                                           <span className="text-[9px] text-gray-400">Prêmios Diários</span>
+                                       </div>
+                                   </div>
+                              </button>
+                              
+                              {/* Login Button */}
+                              <button onClick={user ? onLogoutClick : onLoginClick} className="relative group w-full">
+                                  <div className={`absolute inset-0 ${user ? 'bg-red-600' : 'bg-blue-600'} rounded-xl blur opacity-30 group-hover:opacity-60 transition`}></div>
+                                  <div className={`relative flex items-center justify-center gap-3 bg-slate-900/80 px-4 py-3 rounded-xl border ${user ? 'border-red-500/30' : 'border-blue-500/30'} hover:bg-slate-800 transition-colors`}>
+                                      <div className={`p-1.5 rounded-lg ${user ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
+                                          {user ? <LogOut size={18} className="text-red-400" /> : <LogIn size={18} className="text-blue-400" />}
+                                      </div>
+                                      <div className="flex flex-col items-start">
+                                          <span className="text-xs font-bold text-white uppercase tracking-wider">{user ? 'Sair' : 'Entrar'}</span>
+                                          <span className="text-[9px] text-gray-400">{user ? 'Conta Ativa' : 'Salvar Progresso'}</span>
+                                      </div>
+                                  </div>
+                              </button>
                           </div>
 
                           <div className="flex justify-between items-start">
@@ -1898,7 +1902,7 @@
                                           <div className="text-left">
                                               <h3 className="text-lg font-bold text-white uppercase tracking-wider drop-shadow-md">{game.name}</h3>
                                               <p className="text-xs text-green-300 font-bold flex items-center gap-1">
-                                                  <Zap size={10} /> JOGAR AGORA
+                                                  <Zap size={10} /> $ JOGAR PARA GANHAR $
                                               </p>
                                           </div>
                                       </div>
