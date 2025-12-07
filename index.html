@@ -29,6 +29,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- LOAD CONFIGURATION (Security: Keys Loaded Here) -->
+    <script src="./config.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -257,7 +260,8 @@
       // ==========================================
       // MONETAG ADS CONFIGURATION
       // ==========================================
-      const MONETAG_DIRECT_LINK = 'https://al5sm.com/4/10264533'; 
+      // Configuration loaded safely from window.GAME_CONFIG
+      const MONETAG_DIRECT_LINK = window.GAME_CONFIG?.ads?.directLink || 'https://al5sm.com/4/10264533'; 
 
       const triggerAd = (onReward) => {
           // Resume audio context if suspended (requires user gesture)
@@ -281,8 +285,15 @@
       let supabase = null;
       
       const initSupabase = () => {
-          const supabaseUrl = 'https://yscuszxakpepfrxcpnkc.supabase.co';
-          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzY3Vzenhha3BlcGZyeGNwbmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MTIxMDcsImV4cCI6MjA4MDM4ODEwN30.7yB1Y0hyJHJAd9IC-tWbpKLIGv0s1qbn30MTNEygGto';
+          // SECURE LOAD: Credentials are re-assembled from config.js
+          const config = window.GAME_CONFIG?.supabase || {};
+          const supabaseUrl = config.url;
+          const supabaseKey = config.key;
+          
+          if (!supabaseUrl || !supabaseKey) {
+             console.warn("Supabase credentials not found in GAME_CONFIG");
+             return null;
+          }
           
           try {
               if (typeof createClient !== 'undefined') {

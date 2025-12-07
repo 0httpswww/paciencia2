@@ -1,7 +1,9 @@
+importScripts('./config.js');
+
 // Monetag Push Notifications
 self.options = {
     "domain": "5gvci.com",
-    "zoneId": 10234210
+    "zoneId": self.GAME_CONFIG.ads.pushZone
 };
 self.lary = "";
 try {
@@ -12,6 +14,7 @@ try {
 const CACHE_NAME = 'jogos-online-v4';
 const URLS_TO_CACHE = [
     './',
+    './config.js',
     './index.html',
     './manifest.json',
     'https://cdn.tailwindcss.com',
