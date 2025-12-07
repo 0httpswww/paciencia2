@@ -2323,6 +2323,13 @@
           };
 
           const handleWithdrawClick = () => {
+              if (!user) {
+                  playSound('lose');
+                  alert("Você precisa estar logado para solicitar o saque. Faça login ou crie sua conta para continuar.");
+                  setShowAuthModal(true);
+                  return;
+              }
+
               // Calculate balance to check if withdraw is possible
               const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
               if (currentBalance <= 0) {
