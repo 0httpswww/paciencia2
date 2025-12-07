@@ -452,7 +452,7 @@
       // --- MISSION REWARD MODAL ---
       const MissionModal = ({ playTime, rewards, onClose }) => {
           const [now, setNow] = useState(new Date());
-          const [showPixModal, setShowPixModal] = useState(null); // '0.05' or '0.10'
+          const [showPixModal, setShowPixModal] = useState(null); // '0.05', '0.10', or '0.30'
 
           useEffect(() => {
             const timer = setInterval(() => setNow(new Date()), 1000);
@@ -461,6 +461,7 @@
 
           const TIME_PHOTO = 1800; // 30 minutes
           const TIME_VIDEO = 3600; // 60 minutes
+          const TIME_SUPER = 18000; // 5 hours
           
           const formatTime = (seconds) => {
               const h = Math.floor(seconds / 3600);
@@ -472,7 +473,11 @@
           const handleClaim = (type) => {
               playSound('win');
               triggerAd(() => {
-                  setShowPixModal(type === 'photo' ? '0.05' : '0.10');
+                  let val = '0.00';
+                  if (type === 'photo') val = '0.05';
+                  else if (type === 'video') val = '0.10';
+                  else if (type === 'super') val = '0.30';
+                  setShowPixModal(val);
               });
           };
 
@@ -559,6 +564,27 @@
                           ) : (
                               <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                   <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Reward 3: 0.30 */}
+                      <div className={`p-4 rounded-xl border ${rewards.super ? 'bg-red-900/20 border-red-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.super ? 'bg-red-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                                  <Crown size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">R$ 0,30 NO PIX</h3>
+                                  <p className="text-xs text-gray-400">Jogue 5 horas</p>
+                              </div>
+                              {rewards.super ? <CheckCircle className="text-red-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.super ? (
+                              <button onClick={() => handleClaim('super')} className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,30</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_SUPER) * 100)}%` }}></div>
                               </div>
                           )}
                       </div>
@@ -1895,18 +1921,25 @@
                   // New day, reset time
                   safeStorage.setItem('mission_date', today);
                   safeStorage.setItem('daily_play_time', '0');
-                  safeStorage.setItem('daily_rewards', JSON.stringify({ photo: false, video: false }));
+                  safeStorage.setItem('daily_rewards', JSON.stringify({ photo: false, video: false, super: false }));
                   return 0;
               }
               return parseInt(safeStorage.getItem('daily_play_time') || '0');
           });
           
           const [rewards, setRewards] = useState(() => {
-               try { return JSON.parse(safeStorage.getItem('daily_rewards') || '{"photo": false, "video": false}'); } catch { return { photo: false, video: false }; }
+               try { 
+                  const stored = JSON.parse(safeStorage.getItem('daily_rewards') || '{}');
+                  return { 
+                      photo: stored.photo || false, 
+                      video: stored.video || false, 
+                      super: stored.super || false 
+                  };
+               } catch { return { photo: false, video: false, super: false }; }
           });
           
           const [showMissionModal, setShowMissionModal] = useState(false);
-          const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video'
+          const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video' | 'super'
 
           // --- TIMER LOGIC ---
           useEffect(() => {
@@ -1924,6 +1957,7 @@
                       // Check for unlocks
                       const TIME_PHOTO = 1800; // 30m
                       const TIME_VIDEO = 3600; // 60m
+                      const TIME_SUPER = 18000; // 5h
                       
                       if (newTime === TIME_PHOTO && !rewards.photo) {
                            const newRewards = { ...rewards, photo: true };
@@ -1938,6 +1972,14 @@
                            setRewards(newRewards);
                            safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
                            setShowCongratsModal('video');
+                           playSound('win');
+                      }
+
+                      if (newTime === TIME_SUPER && !rewards.super) {
+                           const newRewards = { ...rewards, super: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('super');
                            playSound('win');
                       }
 
@@ -1975,7 +2017,7 @@
 
           const handleWithdraw = () => {
               // Calculate balance to check if withdraw is possible
-              const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0);
+              const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
               if (currentBalance <= 0) {
                   playSound('lose');
                   alert("Você não possui saldo para sacar.");
@@ -1990,14 +2032,14 @@
               window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
 
               // Zerar saldo
-              const newRewards = { photo: false, video: false };
+              const newRewards = { photo: false, video: false, super: false };
               setRewards(newRewards);
               safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
           };
 
           const renderScreen = () => {
               // Calculate cash balance from missions
-              const cashBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0);
+              const cashBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
 
               switch(screen) {
                   case 'hub': return (
@@ -2037,7 +2079,7 @@
                                   <Trophy size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
                                   <h2 className="text-3xl font-bold text-white mb-2 hero-title">PARABÉNS!</h2>
                                   <p className="text-gray-300 mb-6">
-                                      Você desbloqueou {showCongratsModal === 'photo' ? 'R$ 0,05' : 'R$ 0,10'} no PIX!
+                                      Você desbloqueou {showCongratsModal === 'photo' ? 'R$ 0,05' : showCongratsModal === 'video' ? 'R$ 0,10' : 'R$ 0,30'} no PIX!
                                   </p>
                                   <button onClick={() => { setShowCongratsModal(null); setShowMissionModal(true); }} className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider">
                                       RESGATAR RECOMPENSA
