@@ -1822,7 +1822,15 @@
 
                   <div className="flex-1 overflow-y-auto p-6 w-full max-w-lg md:max-w-5xl mx-auto flex flex-col">
                       <header className="flex flex-col gap-4 mb-8">
-                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved from small floating buttons to prominent grid */}
+                          {/* Title moved above buttons as requested */}
+                          <div className="flex justify-center items-center text-center">
+                              <div>
+                                  <h1 className="text-4xl md:text-7xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
+                                  <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
+                              </div>
+                          </div>
+
+                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved below title */}
                           <div className="grid grid-cols-2 gap-3 w-full mb-2">
                               {/* Mission Button */}
                               <button onClick={onOpenMissions} className="relative group w-full">
@@ -1851,13 +1859,6 @@
                                       </div>
                                   </div>
                               </button>
-                          </div>
-
-                          <div className="flex justify-between items-start">
-                              <div>
-                                  <h1 className="text-4xl md:text-7xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
-                                  <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
-                              </div>
                           </div>
                           
                           {/* Wealth Balance Card */}
