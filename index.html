@@ -431,6 +431,7 @@
       // --- MISSION REWARD MODAL ---
       const MissionModal = ({ playTime, rewards, onClose }) => {
           const [now, setNow] = useState(new Date());
+          const [showPixModal, setShowPixModal] = useState(null); // '0.05' or '0.10'
 
           useEffect(() => {
             const timer = setInterval(() => setNow(new Date()), 1000);
@@ -448,15 +449,42 @@
           };
 
           const handleClaim = (type) => {
-              // Placeholder for actual reward viewing
               playSound('win');
               triggerAd(() => {
-                  alert("Conteúdo desbloqueado com sucesso!");
+                  setShowPixModal(type === 'photo' ? '0.05' : '0.10');
               });
           };
 
           const dateString = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           const timeString = now.toLocaleTimeString('pt-BR');
+
+          if (showPixModal) {
+              return (
+                  <Modal title="SAQUE PIX" onClose={() => setShowPixModal(null)}>
+                      <div className="text-center p-4">
+                          <div className="text-5xl mb-4 animate-bounce">💸</div>
+                          <h3 className="text-white font-bold text-xl mb-3">Você ganhou R$ {showPixModal}!</h3>
+                          <div className="bg-yellow-900/30 border border-yellow-600/50 p-4 rounded-lg mb-4">
+                              <p className="text-gray-200 text-sm mb-2 font-bold">
+                                  Para receber seu pagamento:
+                              </p>
+                              <p className="text-gray-400 text-xs mb-3">
+                                  Envie um e-mail com sua chave PIX para:
+                              </p>
+                              <div className="bg-black/50 p-3 rounded border border-white/10 font-mono text-yellow-400 select-all">
+                                  pagamentos@jogosonline.com
+                              </div>
+                          </div>
+                          <p className="text-[10px] text-gray-500 mb-6 italic">
+                              *O pagamento será processado em até 24 horas úteis após a verificação.
+                          </p>
+                          <button onClick={() => setShowPixModal(null)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg">
+                              ENTENDI
+                          </button>
+                      </div>
+                  </Modal>
+              );
+          }
 
           return (
               <Modal title="MISSÃO DIÁRIA" onClose={onClose}>
@@ -472,20 +500,20 @@
                           <div className="text-3xl font-bold text-white font-mono">{formatTime(playTime)}</div>
                       </div>
 
-                      {/* Reward 1: Photo */}
+                      {/* Reward 1: 0.05 */}
                       <div className={`p-4 rounded-xl border ${rewards.photo ? 'bg-green-900/20 border-green-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
                           <div className="flex items-center gap-3 mb-3">
                               <div className={`p-2 rounded-lg ${rewards.photo ? 'bg-green-500 text-black' : 'bg-slate-800 text-gray-500'}`}>
-                                  <ImageIcon size={24} />
+                                  <Wallet size={24} />
                               </div>
                               <div className="flex-1">
-                                  <h3 className="font-bold text-white">FOTO SECRETA</h3>
+                                  <h3 className="font-bold text-white">R$ 0,05 NO PIX</h3>
                                   <p className="text-xs text-gray-400">Jogue 30 minutos</p>
                               </div>
                               {rewards.photo ? <CheckCircle className="text-green-500" /> : <Lock size={16} className="text-gray-600" />}
                           </div>
                           {rewards.photo ? (
-                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs">VER FOTO</button>
+                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,05</button>
                           ) : (
                               <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                   <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_PHOTO) * 100)}%` }}></div>
@@ -493,20 +521,20 @@
                           )}
                       </div>
 
-                      {/* Reward 2: Video */}
+                      {/* Reward 2: 0.10 */}
                       <div className={`p-4 rounded-xl border ${rewards.video ? 'bg-purple-900/20 border-purple-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
                           <div className="flex items-center gap-3 mb-3">
                               <div className={`p-2 rounded-lg ${rewards.video ? 'bg-purple-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
-                                  <Film size={24} />
+                                  <DollarSign size={24} />
                               </div>
                               <div className="flex-1">
-                                  <h3 className="font-bold text-white">VÍDEO SECRETO</h3>
+                                  <h3 className="font-bold text-white">R$ 0,10 NO PIX</h3>
                                   <p className="text-xs text-gray-400">Jogue 1 hora</p>
                               </div>
                               {rewards.video ? <CheckCircle className="text-purple-500" /> : <Lock size={16} className="text-gray-600" />}
                           </div>
                           {rewards.video ? (
-                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs">ASSISTIR VÍDEO</button>
+                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,10</button>
                           ) : (
                               <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                   <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
@@ -1833,7 +1861,7 @@
                                   <Trophy size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
                                   <h2 className="text-3xl font-bold text-white mb-2 hero-title">PARABÉNS!</h2>
                                   <p className="text-gray-300 mb-6">
-                                      Você desbloqueou {showCongratsModal === 'photo' ? 'uma FOTO' : 'um VÍDEO'} exclusivo!
+                                      Você desbloqueou {showCongratsModal === 'photo' ? 'R$ 0,05' : 'R$ 0,10'} no PIX!
                                   </p>
                                   <button onClick={() => { setShowCongratsModal(null); setShowMissionModal(true); }} className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider">
                                       RESGATAR RECOMPENSA
