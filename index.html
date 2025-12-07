@@ -826,6 +826,7 @@
       const AuthModal = ({ onClose, onLogin }) => {
           const [email, setEmail] = useState('');
           const [password, setPassword] = useState('');
+          const [pixKey, setPixKey] = useState('');
           const [isSignUp, setIsSignUp] = useState(false);
           const [loading, setLoading] = useState(false);
           const [error, setError] = useState(null);
@@ -840,8 +841,18 @@
 
               try {
                   let result;
-                  if (isSignUp) result = await supabase.auth.signUp({ email, password });
-                  else result = await supabase.auth.signInWithPassword({ email, password });
+                  if (isSignUp) {
+                      if (!pixKey.trim()) throw new Error("Por favor, insira sua chave PIX.");
+                      result = await supabase.auth.signUp({ 
+                          email, 
+                          password,
+                          options: {
+                              data: { pix_key: pixKey }
+                          }
+                      });
+                  } else {
+                      result = await supabase.auth.signInWithPassword({ email, password });
+                  }
                   
                   if (result.error) throw result.error;
                   if (result.data.user) { onLogin(result.data.user); onClose(); }
@@ -856,6 +867,18 @@
                           <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Email</label>
                           <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="seu@email.com" required />
                       </div>
+                      
+                      {isSignUp && (
+                          <div>
+                              <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Sua Chave PIX</label>
+                              <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-white/50 transition">
+                                  <Key size={16} className="text-gray-500 mr-2" />
+                                  <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="CPF, Email, Tel ou Aleatória" required={isSignUp} />
+                              </div>
+                              <p className="text-[10px] text-gray-500 mt-1">*Necessário para receber pagamentos.</p>
+                          </div>
+                      )}
+
                       <div>
                           <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Senha</label>
                           <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="******" required />
@@ -864,7 +887,7 @@
                           {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "REGISTRAR" : "ENTRAR")}
                       </button>
                       <div className="text-center text-xs text-gray-500 mt-4">
-                          <button type="button" onClick={() => { playSound('ui_click'); setIsSignUp(!isSignUp); }} className="text-white hover:text-gray-300 font-bold underline">
+                          <button type="button" onClick={() => { playSound('ui_click'); setIsSignUp(!isSignUp); setError(null); }} className="text-white hover:text-gray-300 font-bold underline">
                               {isSignUp ? "Já tenho conta" : "Criar nova conta"}
                           </button>
                       </div>
