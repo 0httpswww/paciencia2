@@ -469,10 +469,10 @@
                                   Para receber seu pagamento:
                               </p>
                               <p className="text-gray-400 text-xs mb-3">
-                                  Envie um e-mail com sua chave PIX para:
+                                  Envie um e-mail com sua chave PIX e print do painel para:
                               </p>
-                              <div className="bg-black/50 p-3 rounded border border-white/10 font-mono text-yellow-400 select-all">
-                                  pagamentos@jogosonline.com
+                              <div className="bg-black/50 p-3 rounded border border-white/10 font-mono text-yellow-400 select-all text-xs break-all">
+                                  joguee.e.ganhe@gmail.com
                               </div>
                           </div>
                           <p className="text-[10px] text-gray-500 mb-6 italic">
@@ -1691,14 +1691,14 @@
                                   <DollarSign size={24} className="text-black" />
                               </div>
                               <div>
-                                  <div className="text-xs text-green-400 font-bold uppercase tracking-wider">Seu Saldo</div>
+                                  <div className="text-xs text-green-400 font-bold uppercase tracking-wider">SALDO MISSÃO</div>
                                   <div className="text-3xl font-mono font-bold text-white drop-shadow-md flex items-baseline gap-1">
                                       R$ {cashBalance.toFixed(2).replace('.', ',')}
                                   </div>
                               </div>
                           </div>
                           <div className="z-10">
-                              <button onClick={() => window.location.href = "mailto:joguee.e.ganhe@gmail.com?subject=SOLICITACAO DE SAQUE&body=Minha chave PIX:"} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
+                              <button onClick={() => window.location.href = "mailto:joguee.e.ganhe@gmail.com?subject=SOLICITACAO DE SAQUE&body=Minha chave PIX:%0D%0A%0D%0A(Anexar print do painel da missão diária completo)"} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
                                   <Wallet size={14} /> SACAR
                               </button>
                           </div>
@@ -1737,8 +1737,9 @@
                       ))}
                   </div>
                   
-                  <footer className="mt-auto pt-4 text-center text-gray-600 text-[10px] uppercase tracking-widest">
-                      Jogue e Ganhe $ &copy; 2024
+                  <footer className="mt-auto pt-6 pb-2 text-center text-gray-600 text-[10px] uppercase tracking-widest flex flex-col gap-1">
+                      <div>CONTATO: joguee.e.ganhe@gmail.com</div>
+                      <div>JOGUE E GANHA $ &copy; 2026</div>
                   </footer>
               </div>
           );
