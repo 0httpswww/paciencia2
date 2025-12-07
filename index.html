@@ -457,11 +457,13 @@
 
       // --- WITHDRAWAL & ADMIN COMPONENTS ---
       
-      const WithdrawModal = ({ onClose, balance, onConfirm }) => {
+      const WithdrawModal = ({ onClose, balance, onConfirm, user }) => {
           const [name, setName] = useState('');
           const [pixType, setPixType] = useState('cpf');
-          const [pixKey, setPixKey] = useState('');
-          const [email, setEmail] = useState('');
+          // Pre-fill pix key if available in user metadata
+          const [pixKey, setPixKey] = useState(user?.user_metadata?.pix_key || '');
+          // Pre-fill email from logged in user to ensure history consistency
+          const [email, setEmail] = useState(user?.email || '');
           const [loading, setLoading] = useState(false);
           const [success, setSuccess] = useState(false);
 
@@ -2462,6 +2464,7 @@
                           balance={currentBalance}
                           onClose={() => setShowWithdrawModal(false)}
                           onConfirm={processWithdrawal}
+                          user={user}
                       />
                   )}
 
