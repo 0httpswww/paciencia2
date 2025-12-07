@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>JoGos Online</title>
-    <meta name="description" content="JoGos Online - Arcade, Racing & Learning.">
+    <title>JOGUE E GANHE $</title>
+    <meta name="description" content="Jogue e Ganhe Recompensas! Arcade, Racing & Learning.">
     <meta name="theme-color" content="#0a0a0a">
 
     <!-- ========================================== -->
@@ -47,7 +47,7 @@
             height: 100vh;
         }
 
-        /* --- PREMIUM DARK GRID BACKGROUND --- */
+        /* --- WEALTH THEME BACKGROUNDS --- */
         .premium-bg {
             background-color: #050505;
             background-image: 
@@ -63,6 +63,17 @@
             top: 0; left: 0; right: 0; height: 50%;
             background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
             pointer-events: none;
+        }
+
+        .wealth-bg {
+            background-color: #020602;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.15) 0%, transparent 30%),
+                linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            position: relative;
         }
 
         /* --- VIGNETTE & SCANLINES --- */
@@ -127,6 +138,35 @@
             filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
             letter-spacing: 2px;
             text-transform: uppercase;
+        }
+        
+        .gold-gradient-text {
+            background: linear-gradient(to bottom, #FFD700, #FDB931, #C5961B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            font-weight: 800;
+        }
+        
+        .money-card {
+            background: linear-gradient(145deg, rgba(10, 40, 10, 0.8), rgba(0, 20, 0, 0.9));
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
+        }
+        
+        .money-card:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        @keyframes moneyPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+        
+        .animate-money-pulse {
+            animation: moneyPulse 2s infinite;
         }
 
         /* --- UTILS --- */
@@ -200,7 +240,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -358,7 +398,7 @@
 
           return (
               <>
-                  <button onClick={handleInstall} className="absolute top-4 left-4 p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-white/20">
+                  <button onClick={handleInstall} className="absolute top-4 left-4 p-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-yellow-300">
                       <Download size={16} /> APP
                   </button>
                   {showIOS && (
@@ -423,7 +463,7 @@
                   <div className="flex flex-col gap-4">
                       {/* Date and Time Header */}
                       <div className="flex flex-col items-center justify-center pb-2 border-b border-white/10">
-                          <div className="text-xs text-cyan-400 uppercase tracking-widest mb-1">{dateString}</div>
+                          <div className="text-xs text-yellow-400 uppercase tracking-widest mb-1">{dateString}</div>
                           <div className="text-2xl font-bold font-mono text-white tracking-widest">{timeString}</div>
                       </div>
 
@@ -1599,51 +1639,78 @@
           ];
 
           return (
-              <div className="w-full h-full premium-bg flex flex-col p-6 overflow-y-auto safe-area-padding">
-                  <header className="flex justify-between items-center mb-8">
-                      <div>
-                          <h1 className="text-3xl font-bold hero-title">JOGOS ONLINE</h1>
-                          <p className="text-gray-400 text-sm">Arcade • Racing • Learning</p>
+              <div className="w-full h-full wealth-bg flex flex-col p-6 overflow-y-auto safe-area-padding">
+                  <header className="flex flex-col gap-4 mb-8">
+                      <div className="flex justify-between items-start">
+                          <div>
+                              <h1 className="text-4xl font-bold hero-title gold-gradient-text tracking-tighter">JOGUE E<br/>GANHE $</h1>
+                              <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
+                          </div>
+                          <button onClick={onOpenMissions} className="relative group">
+                               <div className="absolute inset-0 bg-purple-600 rounded-full blur opacity-50 group-hover:opacity-100 transition"></div>
+                               <div className="relative flex flex-col items-center bg-black/80 px-4 py-2 rounded-xl border border-purple-500/50">
+                                   <Clock size={20} className="text-purple-400 mb-1" />
+                                   <span className="text-[10px] font-bold text-white uppercase">Missão</span>
+                               </div>
+                          </button>
                       </div>
-                      <div className="flex items-center gap-2">
-                           <button onClick={onOpenMissions} className="flex items-center gap-2 bg-gradient-to-r from-purple-900 to-purple-800 px-3 py-2 rounded-full border border-purple-500/30 animate-pulse">
-                               <Clock size={16} className="text-purple-300" />
-                               <span className="text-xs font-bold text-white">MISSÃO</span>
-                           </button>
-                           <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-yellow-500/30">
-                              <Coins size={20} className="text-yellow-400" />
-                              <span className="font-bold text-yellow-400">{coins}</span>
-                           </div>
+                      
+                      {/* Wealth Balance Card */}
+                      <div className="w-full bg-gradient-to-r from-green-900/40 to-black rounded-2xl p-4 border border-green-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(34,197,94,0.1)] relative overflow-hidden">
+                          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                          <div className="z-10 flex items-center gap-3">
+                              <div className="p-3 bg-yellow-500 rounded-full shadow-lg">
+                                  <DollarSign size={24} className="text-black" />
+                              </div>
+                              <div>
+                                  <div className="text-xs text-green-400 font-bold uppercase tracking-wider">Seu Saldo</div>
+                                  <div className="text-3xl font-mono font-bold text-white drop-shadow-md flex items-baseline gap-1">
+                                      {coins} <span className="text-sm text-yellow-500">M.V.</span>
+                                  </div>
+                              </div>
+                          </div>
+                          <div className="z-10">
+                              <button className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
+                                  <PlusCircle size={14} /> GANHAR
+                              </button>
+                          </div>
                       </div>
                   </header>
 
-                  <div className="grid grid-cols-1 gap-4 max-w-md mx-auto w-full">
+                  <div className="grid grid-cols-1 gap-4 max-w-md mx-auto w-full pb-8">
+                      <h2 className="text-white font-bold text-sm uppercase tracking-widest pl-2 border-l-2 border-yellow-500">Oportunidades de Ganho</h2>
                       {GAMES.map(game => (
                           <button 
                               key={game.id}
                               onClick={() => { playSound('ui_click'); onSelect(game.id); }}
-                              className={`relative h-28 rounded-2xl overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
+                              className={`money-card relative h-28 rounded-2xl overflow-hidden group transition-all duration-300 transform hover:scale-[1.02]`}
                           >
-                              <div className={`absolute inset-0 bg-gradient-to-r ${game.color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
-                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                              <div className="absolute inset-0 flex items-center justify-between p-6 z-10">
+                              <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition">
+                                  <TrendingUp size={100} className="text-white/5 -rotate-12 translate-x-4 -translate-y-4" />
+                              </div>
+                              
+                              <div className="absolute inset-0 flex items-center justify-between p-5 z-10">
                                   <div className="flex items-center gap-4">
-                                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner">
+                                      <div className={`p-4 rounded-xl backdrop-blur-md shadow-inner bg-gradient-to-br ${game.color} animate-money-pulse border border-white/10`}>
                                           {game.icon}
                                       </div>
                                       <div className="text-left">
-                                          <h3 className="text-xl font-bold text-white uppercase tracking-wider">{game.name}</h3>
-                                          <p className="text-xs text-blue-100 font-medium">{game.desc}</p>
+                                          <h3 className="text-lg font-bold text-white uppercase tracking-wider drop-shadow-md">{game.name}</h3>
+                                          <p className="text-xs text-green-300 font-bold flex items-center gap-1">
+                                              <Zap size={10} /> JOGAR AGORA
+                                          </p>
                                       </div>
                                   </div>
-                                  <ChevronLeft className="rotate-180 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" size={24} />
+                                  <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20 group-hover:bg-yellow-500 group-hover:text-black transition-colors">
+                                      <PlayCircle size={20} />
+                                  </div>
                               </div>
                           </button>
                       ))}
                   </div>
                   
-                  <footer className="mt-auto pt-8 text-center text-gray-600 text-xs">
-                      &copy; 2024 Jogos Online. All rights reserved.
+                  <footer className="mt-auto pt-4 text-center text-gray-600 text-[10px] uppercase tracking-widest">
+                      Jogue e Ganhe $ &copy; 2024
                   </footer>
               </div>
           );
