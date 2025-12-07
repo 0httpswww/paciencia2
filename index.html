@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -195,7 +193,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -613,7 +611,22 @@
                       const scale = getScale(boss.y); boss.renderW = boss.width * scale; boss.renderH = boss.height * scale;
                       if (boss.phase === 'enter') { boss.y += 1; if (boss.y > 100) boss.phase = 'attack'; } 
                       else { boss.x += boss.vx; if (boss.x > canvas.width - 50 || boss.x < 50) boss.vx *= -1; if (Math.random() < 0.05) { const angle = Math.atan2(player.y - boss.y, player.x - boss.x); bullets.push({ x: boss.x, y: boss.y + 40, vy: Math.sin(angle)*6, vx: Math.cos(angle)*6, type: 'enemy', width: 8, height: 8, color: '#f0f' }); } }
-                      for (let j = bullets.length - 1; j >= 0; j--) { let b = bullets[j]; if (b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); if (boss.hp <= 0) { boss = null; player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); for(let k=0; k<50; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple', alpha: 1 }); } } }
+                      
+                      // FIX: Safe loop with break to prevent accessing boss after it's null
+                      for (let j = bullets.length - 1; j >= 0; j--) { 
+                          let b = bullets[j]; 
+                          if (boss && b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { 
+                              boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); 
+                              if (boss.hp <= 0) { 
+                                  // Boss Dead logic
+                                  const deathX = boss.x; const deathY = boss.y;
+                                  boss = null; 
+                                  player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); 
+                                  for(let k=0; k<50; k++) particles.push({ x: deathX, y: deathY, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple', alpha: 1 }); 
+                                  break; // CRITICAL FIX: Exit loop immediately
+                              } 
+                          } 
+                      }
                   }
 
                   for (let i = powerups.length - 1; i >= 0; i--) { let p = powerups[i]; p.y += 2; if (Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) { player.weaponLevel = Math.min(3, player.weaponLevel + 1); player.hp = Math.min(100, player.hp + 20); powerups.splice(i, 1); playSound('powerup'); } }
@@ -1254,6 +1267,7 @@
                             <div className="relative bg-[#0f172a] border border-cyan-500/30 p-8 rounded-2xl flex flex-col items-center gap-3 animate-[zoomIn_0.3s] shadow-[0_0_50px_rgba(6,182,212,0.15)] max-w-xs w-full text-center">
                                 {game.status === 'won' ? (
                                     <>
+                                        <Trophy size={48} className="text-yellow-400 mb-2 drop-shadow-[0_0_15px_gold] animate-bounce" />
                                         <h2 className="text-2xl font-bold text-white tracking-widest">VITORIA</h2>
                                         <div className="text-cyan-400 text-sm">Palavra: <span className="text-white font-mono font-bold">{game.word}</span></div>
                                         <div className="text-xs text-gray-400">+20 moedas</div>
