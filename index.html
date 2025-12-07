@@ -251,7 +251,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -445,7 +445,7 @@
       // --- Reusable Components ---
       const Modal = ({ title, onClose, children }) => (
           <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
-              <div className="bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col max-h-[80%] relative">
+              <div className="bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col max-h-[90%] relative">
                   <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#151515]">
                       <h2 className="text-xl font-bold text-white hero-title">{title}</h2>
                       <button onClick={() => { playSound('ui_click'); onClose(); }}><X className="text-gray-400 hover:text-white" /></button>
@@ -454,6 +454,235 @@
               </div>
           </div>
       );
+
+      // --- WITHDRAWAL & ADMIN COMPONENTS ---
+      
+      const WithdrawModal = ({ onClose, balance, onConfirm }) => {
+          const [name, setName] = useState('');
+          const [pixType, setPixType] = useState('cpf');
+          const [pixKey, setPixKey] = useState('');
+          const [email, setEmail] = useState('');
+          const [loading, setLoading] = useState(false);
+          const [success, setSuccess] = useState(false);
+
+          const handleSubmit = async (e) => {
+              e.preventDefault();
+              setLoading(true);
+
+              const requestData = {
+                  name,
+                  email,
+                  pix_key: pixKey,
+                  pix_type: pixType,
+                  amount: balance,
+                  status: 'pending',
+                  created_at: new Date().toISOString()
+              };
+
+              // Try to save to Supabase
+              let dbError = null;
+              if (supabase) {
+                  const { error } = await supabase.from('withdrawals').insert([requestData]);
+                  if (error) {
+                      console.error("Supabase error", error);
+                      dbError = error;
+                  }
+              }
+
+              setLoading(false);
+              setSuccess(true);
+              
+              // Delay closing and triggering callback to allow user to see success msg
+              setTimeout(() => {
+                  onConfirm(requestData);
+              }, 1500);
+          };
+
+          if (success) {
+               return (
+                  <Modal title="SOLICITAÇÃO ENVIADA" onClose={onClose}>
+                      <div className="text-center py-8">
+                          <CheckCircle size={64} className="mx-auto text-green-500 mb-4 animate-bounce" />
+                          <h3 className="text-white font-bold text-lg">Sucesso!</h3>
+                          <p className="text-gray-400 text-sm mt-2">Sua solicitação foi registrada.</p>
+                          <p className="text-xs text-gray-500 mt-4">Redirecionando para notificação...</p>
+                      </div>
+                  </Modal>
+               );
+          }
+
+          return (
+              <Modal title="SOLICITAR SAQUE PIX" onClose={onClose}>
+                  <div className="bg-yellow-900/20 border border-yellow-600/30 p-3 rounded mb-4 text-center">
+                      <div className="text-xs text-gray-400 uppercase tracking-widest">Saldo Disponível</div>
+                      <div className="text-2xl font-bold text-yellow-400 font-mono">R$ {balance.toFixed(2)}</div>
+                  </div>
+                  
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Nome Completo</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <User size={16} className="text-gray-500 mr-2" />
+                              <input type="text" value={name} onChange={e => setName(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Seu nome" required />
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Tipo de Chave PIX</label>
+                          <div className="flex gap-2 mt-1">
+                              {['cpf', 'email', 'phone', 'random'].map(type => (
+                                  <button 
+                                      key={type}
+                                      type="button"
+                                      onClick={() => setPixType(type)}
+                                      className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border ${pixType === type ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-[#050505] border-white/10 text-gray-500'}`}
+                                  >
+                                      {type}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Chave PIX</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <Key size={16} className="text-gray-500 mr-2" />
+                              <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Sua chave pix" required />
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Seu Email (Para contato)</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <Mail size={16} className="text-gray-500 mr-2" />
+                              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="email@exemplo.com" required />
+                          </div>
+                      </div>
+
+                      <button type="submit" disabled={loading} className="mt-2 w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2">
+                          {loading ? <Loader2 className="animate-spin" /> : <><Wallet size={18} /> CONFIRMAR SAQUE</>}
+                      </button>
+                      <p className="text-[10px] text-center text-gray-500 mt-2">
+                          *Ao confirmar, a solicitação será enviada para análise manual.
+                      </p>
+                  </form>
+              </Modal>
+          );
+      };
+
+      const AdminLoginModal = ({ onClose, onSuccess }) => {
+          const [pass, setPass] = useState('');
+          const [error, setError] = useState(false);
+
+          const handleLogin = (e) => {
+              e.preventDefault();
+              if (pass === 'admin' || pass === '1234') { // Simple hardcoded password
+                  playSound('powerup');
+                  onSuccess();
+              } else {
+                  playSound('lose');
+                  setError(true);
+              }
+          };
+
+          return (
+              <Modal title="PAINEL ADMIN" onClose={onClose}>
+                  <form onSubmit={handleLogin} className="flex flex-col gap-4 py-4">
+                      <div className="text-center text-yellow-500 mb-2">
+                          <Lock size={48} className="mx-auto mb-2" />
+                          <p className="text-xs uppercase tracking-widest">Acesso Restrito</p>
+                      </div>
+                      <input 
+                          type="password" 
+                          value={pass} 
+                          onChange={e => { setPass(e.target.value); setError(false); }} 
+                          className={`w-full bg-black border ${error ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white text-center tracking-widest outline-none`}
+                          placeholder="SENHA"
+                          autoFocus
+                      />
+                      <button type="submit" className="w-full py-3 bg-white text-black font-bold rounded">ENTRAR</button>
+                  </form>
+              </Modal>
+          );
+      };
+
+      const AdminPanel = ({ onClose }) => {
+          const [requests, setRequests] = useState([]);
+          const [loading, setLoading] = useState(true);
+
+          useEffect(() => {
+              fetchRequests();
+          }, []);
+
+          const fetchRequests = async () => {
+              if (!supabase) { setLoading(false); return; }
+              const { data, error } = await supabase
+                  .from('withdrawals')
+                  .select('*')
+                  .order('created_at', { ascending: false });
+              
+              if (data) setRequests(data);
+              setLoading(false);
+          };
+
+          const markAsPaid = async (id) => {
+              if (!supabase) return;
+              playSound('ui_click');
+              const { error } = await supabase
+                  .from('withdrawals')
+                  .update({ status: 'paid' })
+                  .eq('id', id);
+              
+              if (!error) {
+                  setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
+                  playSound('win');
+              }
+          };
+
+          return (
+              <Modal title="GESTÃO DE SAQUES" onClose={onClose}>
+                  {loading ? (
+                      <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white" /></div>
+                  ) : requests.length === 0 ? (
+                      <div className="text-center text-gray-500 p-8">Nenhuma solicitação encontrada.</div>
+                  ) : (
+                      <div className="flex flex-col gap-3">
+                          {requests.map(req => (
+                              <div key={req.id} className="bg-[#1a1a1a] p-3 rounded border border-white/5 relative">
+                                  <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                          <div className="text-white font-bold text-sm">{req.name || 'Sem nome'}</div>
+                                          <div className="text-xs text-gray-400">{req.email}</div>
+                                      </div>
+                                      <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${req.status === 'paid' ? 'bg-green-900 text-green-400' : 'bg-yellow-900 text-yellow-400'}`}>
+                                          {req.status === 'paid' ? 'PAGO' : 'PENDENTE'}
+                                      </div>
+                                  </div>
+                                  <div className="bg-black/50 p-2 rounded mb-2 font-mono text-xs text-gray-300 break-all border border-white/5">
+                                      <span className="text-gray-500 select-none mr-2">{req.pix_type}:</span>
+                                      <span className="text-white select-all">{req.pix_key}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center mt-2">
+                                      <div className="text-green-400 font-bold font-mono">R$ {req.amount}</div>
+                                      {req.status !== 'paid' && (
+                                          <button 
+                                              onClick={() => markAsPaid(req.id)}
+                                              className="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1"
+                                          >
+                                              <Check size={12} /> MARCAR PAGO
+                                          </button>
+                                      )}
+                                  </div>
+                                  <div className="text-[9px] text-gray-600 mt-2 text-right">
+                                      {new Date(req.created_at).toLocaleString('pt-BR')}
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </Modal>
+          );
+      };
 
       // --- MISSION REWARD MODAL ---
       const MissionModal = ({ playTime, rewards, onClose }) => {
@@ -498,18 +727,12 @@
                           <h3 className="text-white font-bold text-xl mb-3">Você ganhou R$ {showPixModal}!</h3>
                           <div className="bg-yellow-900/30 border border-yellow-600/50 p-4 rounded-lg mb-4">
                               <p className="text-gray-200 text-sm mb-2 font-bold">
-                                  Para receber seu pagamento:
+                                  Recompensa Desbloqueada!
                               </p>
                               <p className="text-gray-400 text-xs mb-3">
-                                  Envie um e-mail com sua chave PIX e print do painel para:
+                                  Vá para o menu principal e clique em "SACAR" para solicitar seu pagamento via PIX.
                               </p>
-                              <div className="bg-black/50 p-3 rounded border border-white/10 font-mono text-yellow-400 select-all text-xs break-all">
-                                  joguee.e.ganhe@gmail.com
-                              </div>
                           </div>
-                          <p className="text-[10px] text-gray-500 mb-6 italic">
-                              *O pagamento será processado em até 24 horas úteis após a verificação.
-                          </p>
                           <button onClick={() => setShowPixModal(null)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg">
                               ENTENDI
                           </button>
@@ -1788,13 +2011,25 @@
         );
       };
 
-      const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw }) => {
+      const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw, onAdminAccess }) => {
           const GAMES = [
               { id: 'galaxy', name: 'Galaxy Invader', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Space Shooter' },
               { id: 'farm', name: 'Farm Tycoon', icon: <Sprout size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Relaxing Farming Sim' },
               { id: 'hangman', name: 'Neon Hangman', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Cyberpunk Word Puzzle' },
               { id: 'checkers', name: 'Royal Checkers', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Classic Strategy 3D' }
           ];
+
+          const [secretCount, setSecretCount] = useState(0);
+          const handleSecretClick = () => {
+              const newCount = secretCount + 1;
+              setSecretCount(newCount);
+              if (newCount === 5) {
+                  onAdminAccess();
+                  setSecretCount(0);
+              }
+              // Reset count if too slow
+              setTimeout(() => setSecretCount(0), 2000);
+          };
 
           return (
               <div className="w-full h-full wealth-bg flex flex-col overflow-hidden safe-area-padding">
@@ -1824,7 +2059,7 @@
                       <header className="flex flex-col gap-4 mb-8">
                           {/* Title moved above buttons as requested */}
                           <div className="flex justify-center items-center text-center">
-                              <div>
+                              <div onClick={handleSecretClick}>
                                   <h1 className="text-4xl md:text-7xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
                                   <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
                               </div>
@@ -1980,6 +2215,11 @@
           
           const [showMissionModal, setShowMissionModal] = useState(false);
           const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video' | 'super'
+          
+          // --- MANUAL WITHDRAWAL STATE ---
+          const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+          const [showAdminLogin, setShowAdminLogin] = useState(false);
+          const [showAdminPanel, setShowAdminPanel] = useState(false);
 
           // --- TIMER LOGIC ---
           useEffect(() => {
@@ -2055,7 +2295,7 @@
               }
           };
 
-          const handleWithdraw = () => {
+          const handleWithdrawClick = () => {
               // Calculate balance to check if withdraw is possible
               const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
               if (currentBalance <= 0) {
@@ -2063,18 +2303,27 @@
                   alert("Você não possui saldo para sacar.");
                   return;
               }
-
               playSound('ui_click');
+              setShowWithdrawModal(true);
+          };
 
-              const subject = encodeURIComponent("SOLICITACAO DE SAQUE");
-              const body = encodeURIComponent("Minha chave PIX:\n\n(Segue anexo o print do painel da missão cumprida)");
-
+          const processWithdrawal = async (data) => {
+              // Send email notification (Backup for Admin)
+              const subject = encodeURIComponent("SOLICITAÇÃO DE SAQUE - " + data.name);
+              const body = encodeURIComponent(`Solicitação de Saque\n\nNome: ${data.name}\nChave PIX: ${data.pix_key} (${data.pix_type})\nValor: R$ ${data.amount.toFixed(2)}\nEmail: ${data.email}\n\nPor favor, realize o pagamento.`);
+              
               window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
-
+              
               // Zerar saldo
               const newRewards = { photo: false, video: false, super: false };
               setRewards(newRewards);
               safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+              setShowWithdrawModal(false);
+              playSound('win');
+          };
+
+          const handleAdminAccess = () => {
+              setShowAdminLogin(true);
           };
 
           const renderScreen = () => {
@@ -2091,7 +2340,8 @@
                         user={user}
                         onLoginClick={() => { playSound('ui_click'); setShowAuthModal(true); }}
                         onLogoutClick={handleLogout}
-                        onWithdraw={handleWithdraw}
+                        onWithdraw={handleWithdrawClick}
+                        onAdminAccess={handleAdminAccess}
                     />
                   );
                   case 'galaxy': return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('hub')} coins={coins} />;
@@ -2104,6 +2354,9 @@
               }
           };
 
+          // Helper to get current balance for modal prop
+          const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
+
           return (
               <>
                   <InstallButton />
@@ -2111,6 +2364,27 @@
                   {showMissionModal && <MissionModal playTime={playTime} rewards={rewards} onClose={() => setShowMissionModal(false)} />}
                   {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={() => {}} />}
                   
+                  {/* WITHDRAWAL MODAL */}
+                  {showWithdrawModal && (
+                      <WithdrawModal 
+                          balance={currentBalance}
+                          onClose={() => setShowWithdrawModal(false)}
+                          onConfirm={processWithdrawal}
+                      />
+                  )}
+
+                  {/* ADMIN MODALS */}
+                  {showAdminLogin && (
+                      <AdminLoginModal 
+                          onClose={() => setShowAdminLogin(false)}
+                          onSuccess={() => { setShowAdminLogin(false); setShowAdminPanel(true); }}
+                      />
+                  )}
+                  
+                  {showAdminPanel && (
+                      <AdminPanel onClose={() => setShowAdminPanel(false)} />
+                  )}
+
                   {/* CONGRATS POPUP */}
                   {showCongratsModal && (
                       <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCongratsModal(null)}>
