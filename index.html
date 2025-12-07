@@ -472,6 +472,7 @@
               setLoading(true);
 
               const requestData = {
+                  user_id: user?.id, // Added for RLS security
                   name,
                   email,
                   pix_key: pixKey,
