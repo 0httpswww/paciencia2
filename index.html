@@ -585,7 +585,23 @@
 
           const handleLogin = (e) => {
               e.preventDefault();
-              if (pass === 'admin' || pass === '1234') { // Simple hardcoded password
+              
+              // Simple hash to hide plain text passwords
+              const hash = (str) => {
+                  let h = 0;
+                  for (let i = 0; i < str.length; i++) {
+                      h = ((h << 5) - h) + str.charCodeAt(i);
+                      h |= 0;
+                  }
+                  return h.toString();
+              };
+
+              // Hashes corresponding to valid passwords
+              // 92668751 represents 'admin'
+              // 1509442 represents '1234'
+              const validHashes = ['92668751', '1509442'];
+
+              if (validHashes.includes(hash(pass))) {
                   playSound('powerup');
                   onSuccess();
               } else {
