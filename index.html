@@ -2358,11 +2358,23 @@
           const [showAdminLogin, setShowAdminLogin] = useState(false);
           const [showAdminPanel, setShowAdminPanel] = useState(false);
 
+          // --- IDLE DETECTION ---
+          const lastActivityRef = useRef(Date.now());
+          useEffect(() => {
+              const updateActivity = () => { lastActivityRef.current = Date.now(); };
+              const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'touchmove', 'click'];
+              events.forEach(e => window.addEventListener(e, updateActivity));
+              return () => events.forEach(e => window.removeEventListener(e, updateActivity));
+          }, []);
+
           // --- TIMER LOGIC ---
           useEffect(() => {
               if (screen === 'hub') return; // Don't count time in menu
               
               const interval = setInterval(() => {
+                  // IDLE CHECK: If no activity for 10 seconds, stop counting
+                  if (Date.now() - lastActivityRef.current > 10000) return;
+
                   setPlayTime(prev => {
                       const newTime = prev + 1;
                       
