@@ -1,83 +1,2571 @@
-importScripts('./config.js');
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JOGUE E GANHE $</title>
+    <meta name="description" content="Jogue e Ganhe Recompensas! Arcade, Racing & Learning.">
+    <meta name="theme-color" content="#0a0a0a">
 
-// Monetag Push Notifications
-self.options = {
-    "domain": "5gvci.com",
-    "zoneId": self.GAME_CONFIG.ads.pushZone
-};
-self.lary = "";
-try {
-    importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
-} catch (e) {}
+    <!-- ========================================== -->
+    <!-- MONETAG ADS CONFIGURATION                  -->
+    <!-- ========================================== -->
+    
+    <!-- 1. Popunder (OnClick) - Zone: 10264533 -->
+    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    
+    <!-- 2. Push Notifications - Zone: 10234210 -->
+    <script src="https://5gvci.com/pfe/current/tag.min.js?z=10234210" data-cfasync="false" async></script>
+    
+    <!-- 3. Vignette (Interstitial) - Zone: 10273879 -->
+    <script>(function(s){s.dataset.zone='10273879',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    
+    <!-- SEGURANÇA: Content Security Policy (CSP) - Permissive for Ads -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data: blob: 'unsafe-inline';">
 
-// Offline Caching
-const CACHE_NAME = 'jogos-online-v5';
-const URLS_TO_CACHE = [
-    './',
-    './config.js',
-    './index.html',
-    './manifest.json',
-    'https://cdn.tailwindcss.com',
-    'https://unpkg.com/@babel/standalone/babel.min.js',
-    'https://esm.sh/react@18.2.0',
-    'https://esm.sh/react-dom@18.2.0/client',
-    'https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0',
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js',
-    'https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png'
-];
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="https://r2.erweima.ai/img/compressed/47748805f42289196b6134a65b3c58e4.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-self.addEventListener('install', event => {
-    self.skipWaiting(); // Force new SW to activate immediately
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(URLS_TO_CACHE))
-    );
-});
+    <!-- LOAD CONFIGURATION (Security: Keys Loaded Here) -->
+    <script src="./config.js"></script>
 
-self.addEventListener('activate', event => {
-    // Delete old caches
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-});
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
+        body { 
+            overscroll-behavior: none; 
+            touch-action: none; 
+            -webkit-tap-highlight-color: transparent; 
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #e2e8f0; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- WEALTH THEME BACKGROUNDS --- */
+        .premium-bg {
+            background-color: #050505;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: relative;
+        }
+        
+        .premium-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 50%;
+            background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .wealth-bg {
+            background-color: #020602;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.15) 0%, transparent 30%),
+                linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            position: relative;
+        }
+
+        /* --- VIGNETTE & SCANLINES --- */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.3;
+        }
+
+        /* --- PREMIUM BUTTONS --- */
+        .premium-btn {
+            position: relative;
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .premium-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            background: rgba(30, 30, 30, 0.9);
+        }
+
+        .premium-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* White Shine Effect */
+        .premium-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .premium-btn:hover::after {
+            left: 100%;
+        }
+
+        /* --- TYPOGRAPHY & TITLES --- */
+        .hero-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .gold-gradient-text {
+            background: linear-gradient(to bottom, #FFD700, #FDB931, #C5961B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            font-weight: 800;
+        }
+        
+        .money-card {
+            background: linear-gradient(145deg, rgba(10, 40, 10, 0.8), rgba(0, 20, 0, 0.9));
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
+        }
+        
+        .money-card:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        @keyframes moneyPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+        
+        .animate-money-pulse {
+            animation: moneyPulse 2s infinite;
+        }
+
+        /* --- UTILS --- */
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
+
+        /* --- GAME SPECIFIC PRESERVED STYLES --- */
+        .space-3d { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); perspective: 1000px; overflow: hidden; }
+        .grid-floor { position: absolute; bottom: -50%; left: -50%; width: 200%; height: 100%; background-image: linear-gradient(rgba(56, 189, 248, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.2) 1px, transparent 1px); background-size: 80px 80px; transform: rotateX(60deg); animation: gridMove 4s linear infinite; z-index: 0; mask-image: linear-gradient(to top, black 0%, transparent 60%); }
+        @keyframes gridMove { 0% { transform: rotateX(60deg) translateY(0); } 100% { transform: rotateX(60deg) translateY(80px); } }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes swing { 0% { transform: rotate(2deg); } 50% { transform: rotate(-2deg); } 100% { transform: rotate(2deg); } }
+        .hangman-swing { transform-origin: 140px 20px; animation: swing 3s infinite ease-in-out; }
+        .farm-scene { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
+        .farm-perspective { perspective: 1000px; }
+        .farm-grid-3d { transform-style: preserve-3d; transition: transform 0.1s ease-out; }
+        .farm-plot { background: #0f172a; box-shadow: inset 0 0 20px #000, 5px 5px 15px rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); transform-style: preserve-3d; transition: border-color 0.3s, box-shadow 0.3s; }
+        .farm-plot:hover { border-color: rgba(56, 189, 248, 0.5); }
+        .farm-plot.ready { border-color: #facc15; box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
+        @keyframes walker { 0% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } 50% { transform: translateZ(50px) rotateX(-45deg) rotateY(45deg) translateY(-5px); } 100% { transform: translateZ(40px) rotateX(-45deg) rotateY(45deg) translateY(0); } }
+        .farmer-anim { animation: walker 1.5s infinite ease-in-out; transform-style: preserve-3d; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
+        .level-up-anim { animation: levelUp 2s ease-out forwards; }
+        @keyframes levelUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+        
+        /* New Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .safe-area-padding {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Matrix/Hacker Text */
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        .text-glow { text-shadow: 0 0 5px currentColor; }
+        .animate-blink { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        
+        /* Checkers 3D */
+        .checkers-3d-scene { perspective: 800px; overflow: hidden; }
+        .checkers-board { transform-style: preserve-3d; transform: rotateX(45deg); transition: transform 0.5s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .checker-piece { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .checker-piece:hover { transform: translateY(-5px); }
+        .king-crown { text-shadow: 0 0 5px gold; }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
+      }
+    }
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="touch-none overflow-hidden">
+    <div id="root" class="h-screen w-screen overflow-hidden flex flex-col touch-none"></div>
+
+    <script type="text/babel" data-type="module" data-presets="typescript,react">
+      import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History } from 'lucide-react';
+      import { createClient } from '@supabase/supabase-js';
+
+      // ==========================================
+      // MONETAG ADS CONFIGURATION
+      // ==========================================
+      // Configuration loaded safely from window.GAME_CONFIG
+      const MONETAG_DIRECT_LINK = window.GAME_CONFIG?.ads?.directLink || 'https://al5sm.com/4/10264533'; 
+
+      const triggerAd = (onReward) => {
+          // Resume audio context if suspended (requires user gesture)
+          const ctx = getAudioContext();
+          if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+
+          playSound('ui_click');
+          
+          // Open Direct Link
+          window.open(MONETAG_DIRECT_LINK, '_blank');
+          
+          // Simulate ad watch time and grant reward
+          setTimeout(() => {
+              if (onReward) onReward();
+          }, 2000);
+      };
+
+      // ==========================================
+      // SUPABASE CONFIG
+      // ==========================================
+      let supabase = null;
+      
+      const initSupabase = () => {
+          // SECURE LOAD: Credentials are re-assembled from config.js
+          const config = window.GAME_CONFIG?.supabase || {};
+          const supabaseUrl = config.url;
+          const supabaseKey = config.key;
+          
+          if (!supabaseUrl || !supabaseKey) {
+             console.warn("Supabase credentials not found in GAME_CONFIG");
+             return null;
+          }
+          
+          try {
+              if (typeof createClient !== 'undefined') {
+                  return createClient(supabaseUrl, supabaseKey, {
+                      auth: { 
+                        persistSession: true, 
+                        storageKey: 'galaxy_auth_token',
+                        autoRefreshToken: true,
+                        detectSessionInUrl: false
+                      }
+                  });
+              }
+          } catch(e) { console.warn("Supabase initialization skipped due to error:", e); }
+          return null;
+      };
+
+      // Safely initialize Supabase
+      try {
+        supabase = initSupabase();
+      } catch (err) {
+        console.warn("Critical error during Supabase init:", err);
+      }
+
+      const safeStorage = {
+          getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+          setItem: (key, value) => { try { localStorage.setItem(key, value); } catch(e) {} }
+      };
+
+      let audioContext = null;
+      const getAudioContext = () => {
+          try {
+            if (!audioContext) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) audioContext = new AudioCtx();
+            }
+            return audioContext;
+          } catch (e) { return null; }
+      };
+
+      // --- SOUND ENGINE ---
+      const playSound = (type) => {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          try {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            const now = ctx.currentTime;
+
+            switch(type) {
+                case 'ui_hover': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gainNode.gain.setValueAtTime(0.02, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05); osc.start(now); osc.stop(now + 0.05); break;
+                case 'ui_click': osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'shoot': osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'explosion': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.4); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); break;
+                case 'powerup': osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'win': osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1000, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'lose': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.linearRampToValueAtTime(100, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
+                case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'buy': osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'plant': // Digging sound
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                    break;
+                case 'harvest': // High pitched success
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                    break;
+                case 'scan': // Sci-fi scan sound
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                    break;
+                case 'move_piece': // Wood thud
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                    break;
+                case 'capture': // Sharp hit
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                    break;
+            }
+          } catch(e) {}
+      };
+
+      const toggleFullScreen = (e) => {
+        if (e) e.stopPropagation();
+        playSound('ui_click');
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else if (document.exitFullscreen) document.exitFullscreen();
+      };
+
+      // --- Install Button ---
+      const InstallButton = () => {
+          const [deferredPrompt, setDeferredPrompt] = useState(null);
+          const [showIOS, setShowIOS] = useState(false);
+          const [isIOS, setIsIOS] = useState(false);
+          const [isStandalone, setIsStandalone] = useState(false);
+
+          useEffect(() => {
+              setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone);
+              setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
+              const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+              window.addEventListener('beforeinstallprompt', handler);
+              return () => window.removeEventListener('beforeinstallprompt', handler);
+          }, []);
+
+          const handleInstall = async () => {
+              playSound('ui_click');
+              if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  const { outcome } = await deferredPrompt.userChoice;
+                  if (outcome === 'accepted') setDeferredPrompt(null);
+              } else if (isIOS) setShowIOS(true);
+          };
+
+          if (isStandalone || (!deferredPrompt && !isIOS)) return null; 
+
+          return (
+              <>
+                  <button onClick={handleInstall} className="absolute top-4 left-4 p-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-black rounded-full shadow-lg animate-pulse flex items-center gap-2 text-xs font-bold z-50 border border-yellow-300">
+                      <Download size={16} /> APP
+                  </button>
+                  {showIOS && (
+                      <div className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-6 text-center" onClick={() => setShowIOS(false)}>
+                          <div className="bg-slate-900 p-6 rounded-xl border border-white/20 max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                              <div className="flex justify-center mb-4 text-purple-400"><Download size={48} /></div>
+                              <h3 className="text-xl font-bold text-white mb-4">Instalar no iOS</h3>
+                              <p className="text-gray-300 mb-6 text-sm">Toque em Compartilhar e depois em Adicionar à Tela de Início.</p>
+                              <button onClick={() => setShowIOS(false)} className="mt-6 w-full py-3 bg-purple-600 rounded-lg font-bold text-white">ENTENDI</button>
+                          </div>
+                      </div>
+                  )}
+              </>
+          );
+      };
+
+      // --- Reusable Components ---
+      const Modal = ({ title, onClose, children }) => (
+          <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
+              <div className="bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col max-h-[90%] relative">
+                  <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#151515]">
+                      <h2 className="text-xl font-bold text-white hero-title">{title}</h2>
+                      <button onClick={() => { playSound('ui_click'); onClose(); }}><X className="text-gray-400 hover:text-white" /></button>
+                  </div>
+                  <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
+              </div>
+          </div>
+      );
+
+      // --- WITHDRAWAL & ADMIN COMPONENTS ---
+      
+      const WithdrawModal = ({ onClose, balance, onConfirm, user }) => {
+          const [name, setName] = useState('');
+          const [pixType, setPixType] = useState('cpf');
+          // Pre-fill pix key if available in user metadata
+          const [pixKey, setPixKey] = useState(user?.user_metadata?.pix_key || '');
+          // Pre-fill email from logged in user to ensure history consistency
+          const [email, setEmail] = useState(user?.email || '');
+          const [loading, setLoading] = useState(false);
+          const [success, setSuccess] = useState(false);
+
+          const handleSubmit = async (e) => {
+              e.preventDefault();
+              setLoading(true);
+
+              const requestData = {
+                  user_id: user?.id, // Added for RLS security
+                  name,
+                  email,
+                  pix_key: pixKey,
+                  pix_type: pixType,
+                  amount: balance,
+                  status: 'pending',
+                  created_at: new Date().toISOString()
+              };
+
+              // Try to save to Supabase
+              let dbError = null;
+              if (supabase) {
+                  try {
+                      const { error } = await supabase.from('withdrawals').insert([requestData]);
+                      if (error) {
+                          console.error("Supabase error", error);
+                          dbError = error;
+                      } else {
+                          console.log("Withdrawal request saved to Supabase");
+                      }
+                  } catch (err) {
+                      console.error("Critical Supabase error", err);
+                      dbError = err;
+                  }
+              }
+
+              setLoading(false);
+              setSuccess(true);
+              
+              // Delay closing and triggering callback to allow user to see success msg
+              setTimeout(() => {
+                  onConfirm(requestData);
+              }, 1500);
+          };
+
+          if (success) {
+               return (
+                  <Modal title="SOLICITAÇÃO ENVIADA" onClose={onClose}>
+                      <div className="text-center py-8">
+                          <CheckCircle size={64} className="mx-auto text-green-500 mb-4 animate-bounce" />
+                          <h3 className="text-white font-bold text-lg">Sucesso!</h3>
+                          <p className="text-gray-400 text-sm mt-2">Sua solicitação foi registrada.</p>
+                          <p className="text-xs text-gray-500 mt-4">Redirecionando para notificação...</p>
+                      </div>
+                  </Modal>
+               );
+          }
+
+          return (
+              <Modal title="SOLICITAR SAQUE PIX" onClose={onClose}>
+                  <div className="bg-yellow-900/20 border border-yellow-600/30 p-3 rounded mb-4 text-center">
+                      <div className="text-xs text-gray-400 uppercase tracking-widest">Saldo Disponível</div>
+                      <div className="text-2xl font-bold text-yellow-400 font-mono">R$ {balance.toFixed(2)}</div>
+                  </div>
+                  
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Nome Completo</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <User size={16} className="text-gray-500 mr-2" />
+                              <input type="text" value={name} onChange={e => setName(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Seu nome" required />
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Tipo de Chave PIX</label>
+                          <div className="flex gap-2 mt-1">
+                              {['cpf', 'email', 'phone', 'random'].map(type => (
+                                  <button 
+                                      key={type}
+                                      type="button"
+                                      onClick={() => setPixType(type)}
+                                      className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border ${pixType === type ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-[#050505] border-white/10 text-gray-500'}`}
+                                  >
+                                      {type}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Chave PIX</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <Key size={16} className="text-gray-500 mr-2" />
+                              <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Sua chave pix" required />
+                          </div>
+                      </div>
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Seu Email (Para contato)</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                              <Mail size={16} className="text-gray-500 mr-2" />
+                              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="email@exemplo.com" required />
+                          </div>
+                      </div>
+
+                      <button type="submit" disabled={loading} className="mt-2 w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2">
+                          {loading ? <Loader2 className="animate-spin" /> : <><Wallet size={18} /> CONFIRMAR SAQUE</>}
+                      </button>
+                      <p className="text-[10px] text-center text-gray-500 mt-2">
+                          *Ao confirmar, a solicitação será enviada para análise manual.
+                      </p>
+                  </form>
+              </Modal>
+          );
+      };
+
+      const AdminLoginModal = ({ onClose, onSuccess }) => {
+          const [pass, setPass] = useState('');
+          const [error, setError] = useState(false);
+
+          const handleLogin = (e) => {
+              e.preventDefault();
+              
+              // Simple hash to hide plain text passwords
+              const hash = (str) => {
+                  let h = 0;
+                  for (let i = 0; i < str.length; i++) {
+                      h = ((h << 5) - h) + str.charCodeAt(i);
+                      h |= 0;
+                  }
+                  return h.toString();
+              };
+
+              // Hashes corresponding to valid passwords
+              // 92668751 represents 'admin'
+              // 1509442 represents '1234'
+              const validHashes = ['92668751', '1509442'];
+
+              if (validHashes.includes(hash(pass))) {
+                  playSound('powerup');
+                  onSuccess();
+              } else {
+                  playSound('lose');
+                  setError(true);
+              }
+          };
+
+          return (
+              <Modal title="PAINEL ADMIN" onClose={onClose}>
+                  <form onSubmit={handleLogin} className="flex flex-col gap-4 py-4">
+                      <div className="text-center text-yellow-500 mb-2">
+                          <Lock size={48} className="mx-auto mb-2" />
+                          <p className="text-xs uppercase tracking-widest">Acesso Restrito</p>
+                      </div>
+                      <input 
+                          type="password" 
+                          value={pass} 
+                          onChange={e => { setPass(e.target.value); setError(false); }} 
+                          className={`w-full bg-black border ${error ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white text-center tracking-widest outline-none`}
+                          placeholder="SENHA"
+                          autoFocus
+                      />
+                      <button type="submit" className="w-full py-3 bg-white text-black font-bold rounded">ENTRAR</button>
+                  </form>
+              </Modal>
+          );
+      };
+
+      const AdminPanel = ({ onClose }) => {
+          const [requests, setRequests] = useState([]);
+          const [loading, setLoading] = useState(true);
+
+          useEffect(() => {
+              fetchRequests();
+          }, []);
+
+          const fetchRequests = async () => {
+              setLoading(true);
+              if (!supabase) { setLoading(false); return; }
+              const { data, error } = await supabase
+                  .from('withdrawals')
+                  .select('*')
+                  .order('created_at', { ascending: false });
+              
+              if (data) setRequests(data);
+              setLoading(false);
+          };
+
+          const markAsPaid = async (id) => {
+              if (!supabase) return;
+              playSound('ui_click');
+              const { error } = await supabase
+                  .from('withdrawals')
+                  .update({ status: 'paid' })
+                  .eq('id', id);
+              
+              if (!error) {
+                  setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
+                  playSound('win');
+              }
+          };
+
+          return (
+              <Modal title="GESTÃO DE SAQUES" onClose={onClose}>
+                  <div className="flex justify-end mb-2">
+                      <button onClick={() => { playSound('ui_click'); fetchRequests(); }} className="flex items-center gap-1 text-xs font-bold text-blue-400 bg-blue-900/20 px-2 py-1 rounded border border-blue-500/30 hover:bg-blue-900/40">
+                          <RefreshCcw size={12} /> ATUALIZAR
+                      </button>
+                  </div>
+                  {loading ? (
+                      <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white" /></div>
+                  ) : requests.length === 0 ? (
+                      <div className="text-center text-gray-500 p-8">Nenhuma solicitação encontrada.</div>
+                  ) : (
+                      <div className="flex flex-col gap-3">
+                          {requests.map(req => (
+                              <div key={req.id} className="bg-[#1a1a1a] p-3 rounded border border-white/5 relative">
+                                  <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                          <div className="text-white font-bold text-sm">{req.name || 'Sem nome'}</div>
+                                          <div className="text-xs text-gray-400">{req.email}</div>
+                                      </div>
+                                      <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${req.status === 'paid' ? 'bg-green-900 text-green-400' : 'bg-yellow-900 text-yellow-400'}`}>
+                                          {req.status === 'paid' ? 'PAGO' : 'PENDENTE'}
+                                      </div>
+                                  </div>
+                                  <div className="bg-black/50 p-2 rounded mb-2 font-mono text-xs text-gray-300 break-all border border-white/5">
+                                      <span className="text-gray-500 select-none mr-2">{req.pix_type}:</span>
+                                      <span className="text-white select-all">{req.pix_key}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center mt-2">
+                                      <div className="text-green-400 font-bold font-mono">R$ {req.amount}</div>
+                                      {req.status !== 'paid' && (
+                                          <button 
+                                              onClick={() => markAsPaid(req.id)}
+                                              className="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-1"
+                                          >
+                                              <Check size={12} /> MARCAR PAGO
+                                          </button>
+                                      )}
+                                  </div>
+                                  <div className="text-[9px] text-gray-600 mt-2 text-right">
+                                      {new Date(req.created_at).toLocaleString('pt-BR')}
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </Modal>
+          );
+      };
+
+      // --- MISSION REWARD MODAL ---
+      const MissionModal = ({ playTime, rewards, onClose }) => {
+          const [now, setNow] = useState(new Date());
+          const [showPixModal, setShowPixModal] = useState(null); // '0.05', '0.10', or '0.30'
+
+          useEffect(() => {
+            const timer = setInterval(() => setNow(new Date()), 1000);
+            return () => clearInterval(timer);
+          }, []);
+
+          const TIME_PHOTO = 1800; // 30 minutes
+          const TIME_VIDEO = 3600; // 60 minutes
+          const TIME_SUPER = 18000; // 5 hours
+          
+          const formatTime = (seconds) => {
+              const h = Math.floor(seconds / 3600);
+              const m = Math.floor((seconds % 3600) / 60);
+              const s = seconds % 60;
+              return `${h}h ${m}m ${s}s`;
+          };
+
+          const handleClaim = (type) => {
+              playSound('win');
+              triggerAd(() => {
+                  let val = '0.00';
+                  if (type === 'photo') val = '0.05';
+                  else if (type === 'video') val = '0.10';
+                  else if (type === 'super') val = '0.30';
+                  setShowPixModal(val);
+              });
+          };
+
+          const dateString = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          const timeString = now.toLocaleTimeString('pt-BR');
+
+          if (showPixModal) {
+              return (
+                  <Modal title="SAQUE PIX" onClose={() => setShowPixModal(null)}>
+                      <div className="text-center p-4">
+                          <div className="text-5xl mb-4 animate-bounce">💸</div>
+                          <h3 className="text-white font-bold text-xl mb-3">Você ganhou R$ {showPixModal}!</h3>
+                          <div className="bg-yellow-900/30 border border-yellow-600/50 p-4 rounded-lg mb-4">
+                              <p className="text-gray-200 text-sm mb-2 font-bold">
+                                  Recompensa Desbloqueada!
+                              </p>
+                              <p className="text-gray-400 text-xs mb-3">
+                                  Vá para o menu principal e clique em "SACAR" para solicitar seu pagamento via PIX.
+                              </p>
+                          </div>
+                          <button onClick={() => setShowPixModal(null)} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg">
+                              ENTENDI
+                          </button>
+                      </div>
+                  </Modal>
+              );
+          }
+
+          return (
+              <Modal title="MISSÃO DIÁRIA" onClose={onClose}>
+                  <div className="flex flex-col gap-4">
+                      {/* Date and Time Header */}
+                      <div className="flex flex-col items-center justify-center pb-2 border-b border-white/10">
+                          <div className="text-xs text-yellow-400 uppercase tracking-widest mb-1">{dateString}</div>
+                          <div className="text-2xl font-bold font-mono text-white tracking-widest">{timeString}</div>
+                      </div>
+
+                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Tempo Jogado Hoje</p>
+                          <div className="text-3xl font-bold text-white font-mono">{formatTime(playTime)}</div>
+                      </div>
+
+                      {/* Reward 1: 0.05 */}
+                      <div className={`p-4 rounded-xl border ${rewards.photo ? 'bg-green-900/20 border-green-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.photo ? 'bg-green-500 text-black' : 'bg-slate-800 text-gray-500'}`}>
+                                  <Wallet size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">R$ 0,05 NO PIX</h3>
+                                  <p className="text-xs text-gray-400">Jogue 30 minutos</p>
+                              </div>
+                              {rewards.photo ? <CheckCircle className="text-green-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.photo ? (
+                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,05</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_PHOTO) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Reward 2: 0.10 */}
+                      <div className={`p-4 rounded-xl border ${rewards.video ? 'bg-purple-900/20 border-purple-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.video ? 'bg-purple-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                                  <DollarSign size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">R$ 0,10 NO PIX</h3>
+                                  <p className="text-xs text-gray-400">Jogue 1 hora</p>
+                              </div>
+                              {rewards.video ? <CheckCircle className="text-purple-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.video ? (
+                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,10</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Reward 3: 0.30 */}
+                      <div className={`p-4 rounded-xl border ${rewards.super ? 'bg-red-900/20 border-red-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                              <div className={`p-2 rounded-lg ${rewards.super ? 'bg-red-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                                  <Crown size={24} />
+                              </div>
+                              <div className="flex-1">
+                                  <h3 className="font-bold text-white">R$ 0,30 NO PIX</h3>
+                                  <p className="text-xs text-gray-400">Jogue 5 horas</p>
+                              </div>
+                              {rewards.super ? <CheckCircle className="text-red-500" /> : <Lock size={16} className="text-gray-600" />}
+                          </div>
+                          {rewards.super ? (
+                              <button onClick={() => handleClaim('super')} className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,30</button>
+                          ) : (
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_SUPER) * 100)}%` }}></div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </Modal>
+          );
+      };
+
+      // --- AUTH MODAL ---
+      const AuthModal = ({ onClose, onLogin }) => {
+          const [email, setEmail] = useState('');
+          const [password, setPassword] = useState('');
+          const [pixKey, setPixKey] = useState('');
+          const [isSignUp, setIsSignUp] = useState(false);
+          const [loading, setLoading] = useState(false);
+          const [error, setError] = useState(null);
+
+          const handleSubmit = async (e) => {
+              e.preventDefault();
+              playSound('ui_click');
+              setLoading(true);
+              setError(null);
+              
+              if (!supabase) { setError("Erro de conexão (Supabase offline)."); setLoading(false); return; }
+
+              try {
+                  let result;
+                  if (isSignUp) {
+                      if (!pixKey.trim()) throw new Error("Por favor, insira sua chave PIX.");
+                      result = await supabase.auth.signUp({ 
+                          email, 
+                          password,
+                          options: {
+                              data: { pix_key: pixKey }
+                          }
+                      });
+                  } else {
+                      result = await supabase.auth.signInWithPassword({ email, password });
+                  }
+                  
+                  if (result.error) throw result.error;
+                  if (result.data.user) { onLogin(result.data.user); onClose(); }
+              } catch (err) { setError(err.message || "Erro de autenticação"); } finally { setLoading(false); }
+          };
+
+          return (
+              <Modal title={isSignUp ? "CRIAR CONTA" : "LOGIN"} onClose={onClose}>
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                      {error && <div className="bg-red-500/20 text-red-400 p-2 rounded text-xs border border-red-500/30">{error}</div>}
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Email</label>
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="seu@email.com" required />
+                      </div>
+                      
+                      {isSignUp && (
+                          <div>
+                              <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Sua Chave PIX</label>
+                              <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-white/50 transition">
+                                  <Key size={16} className="text-gray-500 mr-2" />
+                                  <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="CPF, Email, Tel ou Aleatória" required={isSignUp} />
+                              </div>
+                              <p className="text-[10px] text-gray-500 mt-1">*Necessário para receber pagamentos.</p>
+                          </div>
+                      )}
+
+                      <div>
+                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Senha</label>
+                          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="******" required />
+                      </div>
+                      <button type="submit" disabled={loading} className="premium-btn w-full py-3 rounded mt-2 flex justify-center font-bold tracking-wider">
+                          {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "REGISTRAR" : "ENTRAR")}
+                      </button>
+                      <div className="text-center text-xs text-gray-500 mt-4">
+                          <button type="button" onClick={() => { playSound('ui_click'); setIsSignUp(!isSignUp); setError(null); }} className="text-white hover:text-gray-300 font-bold underline">
+                              {isSignUp ? "Já tenho conta" : "Criar nova conta"}
+                          </button>
+                      </div>
+                  </form>
+              </Modal>
+          );
+      };
+
+      // --- GAME 1: GALAXY INVADER 3D ---
+      const SHIPS = [
+          { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
+          { id: 'blue', name: 'Interceptor', adCost: 5, palette: { main: '#3b82f6', dark: '#1e3a8a', light: '#60a5fa', cockpit: '#06b6d4', engine: '#3b82f6' } },
+          { id: 'purple', name: 'Void Walker', adCost: 10, palette: { main: '#7c3aed', dark: '#4c1d95', light: '#8b5cf6', cockpit: '#22d3ee', engine: '#d946ef' } },
+          { id: 'green', name: 'Venom Striker', adCost: 15, palette: { main: '#22c55e', dark: '#14532d', light: '#4ade80', cockpit: '#facc15', engine: '#84cc16' } },
+          { id: 'yellow', name: 'Solar Flare', adCost: 20, palette: { main: '#f97316', dark: '#9a3412', light: '#fbbf24', cockpit: '#38bdf8', engine: '#ef4444' } },
+          { id: 'red', name: 'Crimson Fury', adCost: 25, palette: { main: '#ef4444', dark: '#7f1d1d', light: '#f87171', cockpit: '#10b981', engine: '#f59e0b' } },
+          { id: 'legendary', name: 'Abyssal King', adCost: 30, palette: { main: '#172554', dark: '#020617', light: '#2563eb', cockpit: '#00ffff', engine: '#00ffff' } },
+      ];
+      
+      const generatePlayerSprite = (palette) => {
+          const canvas = document.createElement('canvas');
+          const size = 32; canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const P = palette.main; const D = palette.dark; const L = palette.light;
+          const C = palette.cockpit; const W = '#ffffff'; const B = palette.engine;
+          const pixelSize = 2;
+          const grid = ["      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ", "   12233221   ", "   12233221   ", "  1222222221  ", "  1222222221  ", " 122114411221 ", " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "];
+          const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
+          for(let y=0; y<grid.length; y++) { for(let x=0; x<grid[y].length; x++) { const char = grid[y][x]; if(colorMap[char]) { ctx.fillStyle = colorMap[char]; ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } }
+          const img = new Image(); img.src = canvas.toDataURL(); return img;
+      };
+
+      const GalaxyInvader = ({ onBack, equippedShipId, addCoins, currentCoins }) => {
+          const canvasRef = useRef(null);
+          const [gameState, setGameState] = useState('playing'); 
+          const [stats, setStats] = useState({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 });
+          const [shake, setShake] = useState(false);
+          const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
+
+          const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
+          
+          const handleRespawn = () => { 
+              triggerAd(() => {
+                setStats(prev => ({ ...prev, hp: 100 })); 
+                setGameState('playing'); 
+                playSound('powerup');
+              });
+          };
+          
+          useEffect(() => {
+              const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
+              let animationFrameId; let lastTime = 0;
+              const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
+              const playerImg = generatePlayerSprite(shipDef.palette);
+              
+              // --- PHYSICS / GAMEPLAY CONSTANTS ---
+              // Adjusted for tighter, more arcade-like feel using LERP
+              const LERP_FACTOR = 0.2; // Higher = snappier, Lower = smoother/driftier
+              const MAX_SPEED = 20;
+              
+              let player = { 
+                  x: canvas.width/2, 
+                  y: canvas.height - 100, 
+                  vx: 0, 
+                  vy: 0, 
+                  width: 40, 
+                  height: 40, 
+                  hp: 100, 
+                  weaponLevel: 1, 
+                  lastShot: 0, 
+                  score: 0, 
+                  level: 1, 
+                  xp: 0,
+                  bank: 0 // For tilting effect
+              };
+              let bullets = [], enemies = [], particles = [], powerups = [], boss = null;
+              let input = { x: null, y: null, active: false };
+              const getScale = (y) => 0.6 + (y / canvas.height) * 0.4;
+              
+              const spawnEnemy = (isBoss = false) => {
+                  if (boss && !isBoss) return;
+                  const typeRoll = Math.random(); const startX = Math.random() * (canvas.width - 60) + 30;
+                  let enemy = { x: startX, y: -50, z: 0, width: 40, height: 40, hp: 2 + player.level, type: 'drone', vy: 3 + Math.random(), vx: Math.sin(Date.now()/500), color: '#ef4444' };
+                  if (stats.wave > 2 && typeRoll > 0.7) enemy = { ...enemy, type: 'interceptor', hp: 5, vy: 5, color: '#f59e0b', width: 30 };
+                  if (stats.wave > 4 && typeRoll > 0.9) enemy = { ...enemy, type: 'tank', hp: 20, vy: 1, width: 60, height: 60, color: '#3b82f6' };
+                  enemies.push(enemy);
+              };
+              const spawnBoss = () => { boss = { x: canvas.width/2, y: -100, width: 120, height: 100, hp: 100 * stats.wave, maxHp: 100 * stats.wave, phase: 'enter', vx: 2, vy: 1 }; playSound('levelup'); };
+
+              const update = (time) => {
+                  if (gameStateRef.current !== 'playing') { animationFrameId = requestAnimationFrame(() => update(Date.now())); return; }
+                  const dt = time - lastTime; lastTime = time;
+
+                  // --- IMPROVED MOVEMENT (LERP) ---
+                  if (input.active) {
+                      // Target position (offset slightly above finger)
+                      const targetX = input.x;
+                      const targetY = input.y - 50;
+                      
+                      // Smoothly follow the target
+                      const dx = targetX - player.x;
+                      const dy = targetY - player.y;
+                      
+                      player.x += dx * LERP_FACTOR;
+                      player.y += dy * LERP_FACTOR;
+                      
+                      // Calculate velocity for banking effect based on delta
+                      player.vx = dx * 0.5;
+                  } else {
+                      // Dampen velocity when not touching
+                      player.vx *= 0.9;
+                  }
+                  
+                  // Clamp Bank Angle
+                  player.bank = Math.max(-0.5, Math.min(0.5, player.vx * 0.05));
+
+                  // Bounds
+                  if (player.x < 20) { player.x = 20; player.vx = 0; }
+                  if (player.x > canvas.width - 20) { player.x = canvas.width - 20; player.vx = 0; }
+                  if (player.y < 50) { player.y = 50; }
+                  if (player.y > canvas.height - 20) { player.y = canvas.height - 20; }
+                  
+                  // --- ENGINE TRAILS ---
+                  if (Math.random() > 0.3) {
+                      particles.push({ 
+                          x: player.x - 5 + Math.random()*10, 
+                          y: player.y + 20, 
+                          vx: (Math.random()-0.5), 
+                          vy: Math.random()*2 + 2, 
+                          life: 15, 
+                          color: '#38bdf8', 
+                          alpha: 0.6 
+                      });
+                  }
+
+                  // --- FASTER SHOOTING ---
+                  const fireRate = Math.max(100, 250 - (player.weaponLevel * 30));
+                  if (time - player.lastShot > fireRate) {
+                      const scale = getScale(player.y); 
+                      const bSpeed = -20 * scale; // Increased bullet speed
+                      
+                      // Muzzle Flash
+                      particles.push({ x: player.x, y: player.y - 15, vx: 0, vy: 0, life: 5, color: 'white', alpha: 1, size: 10 });
+                      
+                      bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: player.vx * 0.1, type: 'player', width: 4*scale, height: 12*scale, color: '#38bdf8' });
+                      
+                      if (player.weaponLevel >= 2) { 
+                          bullets.push({ x: player.x - 12, y: player.y, vy: bSpeed * 0.95, vx: -1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
+                          bullets.push({ x: player.x + 12, y: player.y, vy: bSpeed * 0.95, vx: 1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
+                      }
+                      if (player.weaponLevel >= 3) {
+                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: -2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
+                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: 2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
+                      }
+                      playSound('shoot'); player.lastShot = time;
+                  }
+
+                  if (Math.random() < 0.03 + (stats.wave * 0.005) && !boss) spawnEnemy();
+                  if (player.score > stats.wave * 3000 && !boss) spawnBoss();
+
+                  for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; b.y += b.vy; b.x += b.vx; if (b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1); }
+
+                  for (let i = enemies.length - 1; i >= 0; i--) {
+                      let e = enemies[i]; const scale = getScale(e.y);
+                      e.y += e.vy * scale; e.x += e.vx * scale; e.renderW = e.width * scale; e.renderH = e.height * scale;
+                      
+                      // Wiggle movement for enemies
+                      e.x += Math.sin(time / 200 + i) * 1;
+
+                      if (Math.random() < 0.01 * stats.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
+                      
+                      for (let j = bullets.length - 1; j >= 0; j--) {
+                          let b = bullets[j];
+                          if (b.type === 'player' && Math.abs(b.x - e.x) < e.renderW/2 + 10 && Math.abs(b.y - e.y) < e.renderH/2 + 10) {
+                              e.hp -= 1; bullets.splice(j, 1); 
+                              for(let k=0; k<3; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: 'yellow', alpha: 1 });
+                              if (e.hp <= 0) { enemies.splice(i, 1); player.score += (e.type === 'tank' ? 50 : 10); player.xp += (e.type === 'tank' ? 20 : 5); addCoins(1); playSound('explosion'); triggerShake(); for(let k=0; k<12; k++) particles.push({ x: e.x, y: e.y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 25, color: e.color, alpha: 1 }); if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon_up' }); break; }
+                          }
+                      }
+                      if (Math.abs(e.x - player.x) < (e.renderW + player.width)/2 && Math.abs(e.y - player.y) < (e.renderH + player.height)/2) { enemies.splice(i, 1); player.hp -= 20; triggerShake(); playSound('explosion'); }
+                      if (e.y > canvas.height + 50) enemies.splice(i, 1);
+                  }
+
+                  if (boss) {
+                      const scale = getScale(boss.y); boss.renderW = boss.width * scale; boss.renderH = boss.height * scale;
+                      if (boss.phase === 'enter') { boss.y += 1; if (boss.y > 100) boss.phase = 'attack'; } 
+                      else { boss.x += boss.vx; if (boss.x > canvas.width - 50 || boss.x < 50) boss.vx *= -1; if (Math.random() < 0.05) { const angle = Math.atan2(player.y - boss.y, player.x - boss.x); bullets.push({ x: boss.x, y: boss.y + 40, vy: Math.sin(angle)*6, vx: Math.cos(angle)*6, type: 'enemy', width: 8, height: 8, color: '#f0f' }); } }
+                      
+                      // FIX: Safe loop with break to prevent accessing boss after it's null
+                      for (let j = bullets.length - 1; j >= 0; j--) { 
+                          let b = bullets[j]; 
+                          if (boss && b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { 
+                              boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); 
+                              if (boss.hp <= 0) { 
+                                  // Boss Dead logic
+                                  const deathX = boss.x; const deathY = boss.y;
+                                  boss = null; 
+                                  player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); 
+                                  for(let k=0; k<50; k++) particles.push({ x: deathX, y: deathY, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple', alpha: 1 }); 
+                                  break; // CRITICAL FIX: Exit loop immediately
+                              } 
+                          } 
+                      }
+                  }
+
+                  for (let i = powerups.length - 1; i >= 0; i--) { let p = powerups[i]; p.y += 2; if (Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 30) { player.weaponLevel = Math.min(3, player.weaponLevel + 1); player.hp = Math.min(100, player.hp + 20); powerups.splice(i, 1); playSound('powerup'); } }
+                  for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; if (b.type === 'enemy' && Math.abs(b.x - player.x) < player.width/2 && Math.abs(b.y - player.y) < player.height/2) { player.hp -= 10; bullets.splice(i, 1); triggerShake(); playSound('explosion'); } }
+
+                  if (player.xp >= player.level * 100) { player.xp -= player.level * 100; player.level++; playSound('levelup'); }
+                  if (time % 60 === 0) { setStats({ score: player.score, hp: player.hp, wave: stats.wave, level: player.level, xp: player.xp }); }
+                  if (player.hp <= 0) { setGameState('gameover'); }
+
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Render Particles
+                  for (let i = particles.length - 1; i >= 0; i--) { 
+                      let p = particles[i]; 
+                      p.x += p.vx; p.y += p.vy; p.life--; 
+                      ctx.fillStyle = p.color; 
+                      ctx.globalAlpha = p.alpha ? (p.life / 20) * p.alpha : p.life / 20; 
+                      const size = p.size || 4;
+                      ctx.fillRect(p.x, p.y, size, size); 
+                      if (p.life <= 0) particles.splice(i, 1); 
+                  } 
+                  ctx.globalAlpha = 1;
+
+                  const pScale = getScale(player.y);
+                  
+                  // Shadow
+                  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 30*pScale, 15*pScale, 5*pScale, 0, 0, Math.PI*2); ctx.fill();
+                  
+                  // Ship Render with Rotation
+                  ctx.save(); 
+                  ctx.translate(player.x, player.y); 
+                  ctx.scale(pScale, pScale); 
+                  ctx.rotate(player.bank); 
+                  if (playerImg.complete) ctx.drawImage(playerImg, -20, -20, 40, 40); 
+                  
+                  // Engine Glow
+                  ctx.fillStyle = '#38bdf8';
+                  ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+                  ctx.beginPath();
+                  ctx.arc(0, 15, 5, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.globalAlpha = 1;
+                  
+                  ctx.restore();
+
+                  enemies.forEach(e => { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(e.x, e.y + e.renderH, e.renderW/3, e.renderH/5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = e.color; ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2, e.renderW, e.renderH); ctx.shadowBlur = 0; ctx.fillStyle = 'red'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW, 3); ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * (e.hp / (2+player.level)), 3); });
+                  if (boss) { ctx.fillStyle = 'rgba(128,0,128,0.8)'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y - boss.renderH/2); ctx.lineTo(boss.x + boss.renderW/2, boss.y + boss.renderH/2); ctx.lineTo(boss.x - boss.renderW/2, boss.y + boss.renderH/2); ctx.fill(); ctx.fillStyle = 'gray'; ctx.fillRect(boss.x - 50, boss.y - 70, 100, 8); ctx.fillStyle = '#d946ef'; ctx.fillRect(boss.x - 50, boss.y - 70, 100 * (boss.hp / boss.maxHp), 8); ctx.strokeStyle = 'white'; ctx.strokeRect(boss.x - 50, boss.y - 70, 100, 8); }
+                  bullets.forEach(b => { ctx.fillStyle = b.color; ctx.shadowBlur = 5; ctx.shadowColor = b.color; ctx.fillRect(b.x - b.width/2, b.y - b.height/2, b.width, b.height); ctx.shadowBlur = 0; });
+                  powerups.forEach(p => { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); });
+
+                  if (gameStateRef.current === 'playing') animationFrameId = requestAnimationFrame(() => update(Date.now()));
+              };
+
+              const handleResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }; window.addEventListener('resize', handleResize); handleResize(); update(Date.now());
+              const onTouchMove = (e) => { e.preventDefault(); input = { x: e.touches[0].clientX, y: e.touches[0].clientY, active: true }; };
+              const onMouseMove = (e) => { input = { x: e.clientX, y: e.clientY, active: true }; };
+              const onEnd = () => { input.active = false; };
+              canvas.addEventListener('touchmove', onTouchMove, { passive: false }); canvas.addEventListener('touchend', onEnd); canvas.addEventListener('mousemove', onMouseMove); canvas.addEventListener('mouseup', onEnd);
+              return () => { window.removeEventListener('resize', handleResize); cancelAnimationFrame(animationFrameId); canvas.removeEventListener('touchmove', onTouchMove); };
+          }, [equippedShipId, gameState]);
+
+          return (
+              <div className={`relative w-full h-full space-3d ${shake ? 'shake' : ''}`}>
+                  <div className="grid-floor"></div>
+                  <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
+                  <div className="absolute top-0 w-full p-4 flex justify-between items-start z-20 pointer-events-none safe-area-padding">
+                      <div className="flex flex-col gap-1">
+                          <div className="text-sm font-bold text-cyan-400 drop-shadow">SCORE: {stats.score}</div>
+                          <div className="flex items-center gap-1"><Heart size={16} className="text-green-400" /><div className="w-32 h-3 bg-gray-800 rounded border border-gray-600"><div className={`h-full transition-all ${stats.hp > 30 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${Math.max(0, stats.hp)}%` }}></div></div></div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                          <button onClick={() => { playSound('ui_click'); setGameState(g => g === 'paused' ? 'playing' : 'paused'); }} className="pointer-events-auto p-2 bg-white/10 rounded-full mb-2"><Pause size={20} /></button>
+                          <div className="text-xs font-bold text-purple-400">WAVE {stats.wave}</div>
+                          <div className="text-xs font-bold text-yellow-400">LVL {stats.level}</div>
+                          <div className="w-24 h-1 bg-gray-800 rounded"><div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (stats.xp / (stats.level*100))*100)}%` }}></div></div>
+                      </div>
+                  </div>
+                  {gameState === 'paused' && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                          <h2 className="text-4xl font-bold text-white mb-6 tracking-widest">PAUSED</h2>
+                          <button onClick={() => { playSound('ui_click'); setGameState('playing'); }} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold mb-4 w-48">RESUME</button>
+                          <button onClick={() => { playSound('ui_click'); onBack(); }} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold w-48">EXIT</button>
+                      </div>
+                  )}
+                  {gameState === 'gameover' && (
+                      <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
+                          <Skull size={64} className="text-red-500 mb-4 animate-pulse" />
+                          <h2 className="text-5xl font-bold text-red-500 mb-2 neon-title">MISSION FAILED</h2>
+                          <div className="text-2xl text-white mb-8">Final Score: <span className="text-yellow-400">{stats.score}</span></div>
+                          <div className="flex flex-col gap-4 w-64">
+                              <button onClick={() => { playSound('ui_click'); handleRespawn(); }} className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-transform hover:scale-105"><PlayCircle size={24} /> REVIVE (AD)</button>
+                              <button onClick={() => { playSound('ui_click'); setStats({ score: 0, wave: 1, xp: 0, level: 1, hp: 100 }); setGameState('playing'); }} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white flex items-center justify-center gap-2"><RefreshCw size={20} /> RESTART MISSION</button>
+                              <button onClick={() => { playSound('ui_click'); onBack(); }} className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-gray-300">RETURN TO BASE</button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
+      const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => (
+          <div className="w-full h-full flex flex-col items-center justify-center relative premium-bg safe-area-padding">
+               <div className="scanlines"></div>
+               <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4 animate-fade-in">
+                   <div className="relative">
+                      <Rocket size={100} className="text-blue-500 drop-shadow-[0_0_30px_rgba(59,130,246,0.8)]" />
+                      <div className="absolute -inset-8 bg-blue-500/20 blur-2xl rounded-full"></div>
+                   </div>
+                   <h1 className="text-5xl md:text-6xl font-bold text-center hero-title leading-tight">GALAXY<br/><span className="text-blue-400">INVADER</span></h1>
+                   <div className="flex items-center gap-3 bg-black/60 px-6 py-3 rounded-full border border-yellow-500/30 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+                        <Coins size={24} className="text-yellow-400 drop-shadow-[0_0_10px_gold]" />
+                        <span className="font-bold text-2xl text-yellow-400 tracking-wider">{coins}</span>
+                   </div>
+                   <div className="w-full grid gap-6 mt-8">
+                       <button onClick={() => { playSound('ui_click'); onStart(); }} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-center gap-4 text-2xl font-bold tracking-widest group">
+                            <span className="group-hover:text-blue-400 transition-colors">START MISSION</span>
+                            <ChevronLeft className="rotate-180 group-hover:translate-x-2 transition-transform" size={28} />
+                       </button>
+                       <button onClick={() => { playSound('ui_click'); onShop(); }} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-20 rounded-2xl flex items-center justify-center gap-4 text-xl font-bold tracking-wider text-yellow-400 group">
+                            <ShoppingCart size={24} />
+                            <span>HANGAR SHOP</span>
+                       </button>
+                   </div>
+                   <button onClick={() => { playSound('ui_click'); onBack(); }} className="mt-8 flex items-center gap-2 text-gray-400 hover:text-white transition uppercase text-sm font-bold tracking-widest px-6 py-3 hover:bg-white/5 rounded-full border border-transparent hover:border-white/10"><ChevronLeft size={16} /> Back to Hub</button>
+               </div>
+               <button onClick={toggleFullScreen} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-400 hover:text-white"><Maximize size={24}/></button>
+          </div>
+      );
+
+      // --- COMPONENT: Shop Screen ---
+      const ShopScreen = ({ adProgress, handleShipAdWatch, equipShip, unlockedShips, equippedShip, onBack }) => {
+          const ShipCard = ({ ship }) => {
+              const isUnlocked = unlockedShips.includes(ship.id);
+              const isEquipped = equippedShip === ship.id;
+              const spriteUrl = useMemo(() => generatePlayerSprite(ship.palette).src, [ship]);
+              const currentAds = adProgress[ship.id] || 0;
+              const reqAds = ship.adCost;
+
+              const handleAction = () => {
+                  if (isUnlocked) {
+                      equipShip(ship.id);
+                      playSound('powerup');
+                  } else {
+                      // Trigger Direct Link via click and give reward
+                      triggerAd(() => {
+                          handleShipAdWatch(ship.id, reqAds);
+                          playSound('buy');
+                      });
+                  }
+              };
+
+              return (
+                  <div className={`premium-btn relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                      <div className="text-sm font-bold text-gray-300">{ship.name}</div>
+                      <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                           <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
+                           {!isUnlocked && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                   <Lock size={20} className="text-gray-400" />
+                               </div>
+                           )}
+                      </div>
+                      
+                      {isUnlocked ? (
+                          <button 
+                              onClick={handleAction}
+                              disabled={isEquipped}
+                              className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1
+                                  ${isEquipped ? 'bg-green-600/50 text-white cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                          >
+                              {isEquipped ? <><Check size={12} /> EQUIPPED</> : 'SELECT'}
+                          </button>
+                      ) : (
+                          <div className="w-full flex flex-col gap-1">
+                              <button 
+                                  onClick={handleAction}
+                                  className={`w-full py-2 rounded font-bold text-xs flex items-center justify-center gap-1 bg-yellow-600 hover:bg-yellow-500 text-white`}
+                              >
+                                  <PlayCircle size={12} /> WATCH AD ({currentAds}/{reqAds})
+                              </button>
+                              <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                  <div className="h-full bg-yellow-400" style={{ width: `${Math.min(100, (currentAds / reqAds) * 100)}%` }}></div>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#050505] flex flex-col premium-bg safe-area-padding">
+                   <div className="scanlines"></div>
+                   <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
+                      <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
+                      <h1 className="text-xl font-bold hero-title">HANGAR SHOP</h1>
+                      <div className="w-10"></div>
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                       {SHIPS.map(ship => (
+                           <ShipCard key={ship.id} ship={ship} />
+                       ))}
+                   </div>
+              </div>
+          );
+      };
+
+      // --- GAME 2: FARM GAME ---
+      const FarmGame = ({ onBack, addCoins, coins }) => {
+          const CROPS = { 'wheat': { id: 'wheat', name: 'Trigo', cost: 0, reward: 5, xp: 5, time: 5000, icon: '🌾', adCost: 0, reqLevel: 1 }, 'corn': { id: 'corn', name: 'Milho', cost: 10, reward: 25, xp: 10, time: 10000, icon: '🌽', adCost: 0, reqLevel: 2 }, 'carrot': { id: 'carrot', name: 'Cenoura', cost: 30, reward: 70, xp: 20, time: 20000, icon: '🥕', adCost: 1, reqLevel: 3 }, 'tomato': { id: 'tomato', name: 'Tomate', cost: 80, reward: 180, xp: 40, time: 45000, icon: '🍅', adCost: 2, reqLevel: 5 }, 'strawberry': { id: 'strawberry', name: 'Morango', cost: 150, reward: 350, xp: 80, time: 90000, icon: '🍓', adCost: 3, reqLevel: 8 }, 'grape': { id: 'grape', name: 'Uva', cost: 300, reward: 800, xp: 150, time: 180000, icon: '🍇', adCost: 5, reqLevel: 10 } };
+          const ANIMALS = { 'chicken': { id: 'chicken', name: 'Galinha', cost: 50, reward: 100, xp: 50, time: 30000, icon: '🐔', product: 'Ovo', adCost: 0, reqLevel: 2 }, 'pig': { id: 'pig', name: 'Porco', cost: 150, reward: 250, xp: 100, time: 60000, icon: '🐷', product: 'Bacon', adCost: 0, reqLevel: 4 }, 'cow': { id: 'cow', name: 'Vaca', cost: 500, reward: 800, xp: 250, time: 120000, icon: '🐮', product: 'Leite', adCost: 1, reqLevel: 7 }, 'sheep': { id: 'sheep', name: 'Ovelha', cost: 1000, reward: 1500, xp: 500, time: 300000, icon: '🐑', product: 'Lã', adCost: 2, reqLevel: 12 } };
+          
+          const [grid, setGrid] = useState(() => { try { return JSON.parse(localStorage.getItem('farm_grid_v2') || '[]'); } catch { return []; } });
+          const [selectedItem, setSelectedItem] = useState('wheat'); 
+          const [category, setCategory] = useState('plants'); 
+          const [now, setNow] = useState(Date.now()); 
+          const [showMissions, setShowMissions] = useState(false); 
+          const [showExpand, setShowExpand] = useState(false);
+          
+          // Persistence
+          const [landLevel, setLandLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_land') || '6'); } catch { return 6; } });
+          const [level, setLevel] = useState(() => { try { return parseInt(localStorage.getItem('farm_level') || '1'); } catch { return 1; } });
+          const [xp, setXp] = useState(() => { try { return parseInt(localStorage.getItem('farm_xp') || '0'); } catch { return 0; } });
+          const [cropAdProgress, setCropAdProgress] = useState(() => { try { return JSON.parse(localStorage.getItem('farm_crop_ads') || '{}'); } catch { return {}; } });
+          
+          const [levelUpNotif, setLevelUpNotif] = useState(false); const maxXp = level * 100;
+          
+          const addXp = (amount) => { setXp(prev => { const newXp = prev + amount; if (newXp >= maxXp) { setLevel(l => l + 1); setLevelUpNotif(true); playSound('levelup'); setTimeout(() => setLevelUpNotif(false), 3000); return newXp - maxXp; } return newXp; }); };
+          const [missions, setMissions] = useState(() => { try { const saved = safeStorage.getItem('farm_missions'); return saved ? JSON.parse(saved) : [{ id: 1, text: "Colher 5 Trigos", target: 'wheat', count: 5, progress: 0, reward: 50, claimed: false }, { id: 2, text: "Colher 3 Milhos", target: 'corn', count: 3, progress: 0, reward: 100, claimed: false }, { id: 3, text: "Lucrar 200 Moedas", type: 'earn', count: 200, progress: 0, reward: 50, claimed: false }]; } catch { return []; } });
+
+          useEffect(() => { if (grid.length < landLevel) { const newGrid = [...grid]; while(newGrid.length < landLevel) newGrid.push({ id: Date.now() + Math.random(), crop: null, plantedAt: null }); setGrid(newGrid); } const interval = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(interval); }, [landLevel]);
+          useEffect(() => safeStorage.setItem('farm_grid_v2', JSON.stringify(grid)), [grid]); useEffect(() => safeStorage.setItem('farm_land', landLevel.toString()), [landLevel]); useEffect(() => safeStorage.setItem('farm_missions', JSON.stringify(missions)), [missions]); useEffect(() => safeStorage.setItem('farm_level', level.toString()), [level]); useEffect(() => safeStorage.setItem('farm_xp', xp.toString()), [xp]);
+          useEffect(() => safeStorage.setItem('farm_crop_ads', JSON.stringify(cropAdProgress)), [cropAdProgress]);
+
+          const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
+          const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
+          
+          const handlePlotClick = (index, e) => { 
+            const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
+          };
+          
+          const handleExpand = () => { 
+              triggerAd(() => {
+                setLandLevel(prev => prev + 2); 
+                setShowExpand(false); 
+                playSound('buy');
+              });
+          };
+          const handleTurbo = () => { 
+              triggerAd(() => {
+                const SKIP_MS = 600000; 
+                setGrid(prev => prev.map(p => { if (p.crop && p.plantedAt) return { ...p, plantedAt: p.plantedAt - SKIP_MS }; return p; })); 
+                playSound('powerup');
+              });
+          };
+          
+          const handleItemAdWatch = (id, cost) => {
+              triggerAd(() => {
+                const current = cropAdProgress[id] || 0;
+                if (current < cost) {
+                    setCropAdProgress(prev => ({ ...prev, [id]: current + 1 }));
+                    playSound('buy');
                 }
-                // Clone the request
-                const fetchRequest = event.request.clone();
+              });
+          };
 
-                return fetch(fetchRequest).then(
-                    response => {
-                        // Check if we received a valid response
-                        if(!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
-                            return response;
-                        }
+          const availableItems = category === 'animals' ? Object.values(ANIMALS) : Object.values(CROPS);
 
-                        // Clone the response
-                        const responseToCache = response.clone();
+          return (
+              <div className="w-full h-full farm-scene flex flex-col overflow-hidden relative text-white font-sans safe-area-padding">
+                   <div className="absolute top-0 w-full p-4 flex flex-col gap-2 z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                       <div className="flex justify-between items-start">
+                           <button onClick={() => { playSound('ui_click'); onBack(); }} className="pointer-events-auto p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur"><ChevronLeft /></button>
+                           <div className="flex flex-col items-center"><div className="flex items-center gap-2 mb-1"><div className="bg-purple-600 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-purple-400 shadow-lg z-10">{level}</div><div className="w-32 h-4 bg-slate-800 rounded-full border border-slate-600 overflow-hidden relative"><div className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all duration-500" style={{ width: `${Math.min(100, (xp/maxXp)*100)}%` }}></div><div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow">{xp} / {maxXp} XP</div></div></div></div>
+                           <div className="flex items-center gap-2"><button onClick={() => setShowMissions(true)} className="pointer-events-auto bg-blue-600/80 p-2 rounded-full border border-blue-400 shadow-lg animate-pulse relative"><ClipboardList size={20} />{missions.some(m => m.progress >= m.count && !m.claimed) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>}</button><div className="bg-yellow-500/80 px-4 py-1.5 rounded-full font-bold text-white shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-yellow-300 flex items-center gap-2"><Coins size={16} className="text-white fill-white" /> {coins}</div></div>
+                       </div>
+                   </div>
+                   {levelUpNotif && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center"><div className="text-6xl mb-2">⭐</div><h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2><p className="text-xl font-bold text-white">Nível {level}</p></div>}
+                   
+                   {/* Main Game Area - Fixed Camera (No Panning) */}
+                   <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden">
+                       <div 
+                            className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative origin-center" 
+                            style={{ 
+                                transform: 'rotateX(45deg) rotateZ(-45deg) scale(0.8)'
+                            }}
+                       >
+                           <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
+                           <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-7xl farmer-anim z-30 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none">🤖</div>
+                           
+                           {grid.map((plot, i) => { 
+                               const isAnimal = plot.crop && ANIMALS[plot.crop]; 
+                               const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); 
+                               const progress = def ? Math.min(100, ((now - plot.plantedAt)/def.time)*100) : 0; 
+                               const isReady = progress >= 100; 
+                               return (
+                                   <div 
+                                      key={i} 
+                                      onClick={(e) => {
+                                          e.stopPropagation(); 
+                                          handlePlotClick(i, e);
+                                      }} 
+                                      className={`w-28 h-28 rounded-xl farm-plot relative group cursor-pointer ${isReady ? 'ready' : ''}`}
+                                   >
+                                       {def && (<div className={`absolute -top-8 left-0 right-0 text-center transition-all ${isReady ? 'float-ui scale-110 drop-shadow-[0_0_10px_gold]' : 'opacity-80'}`}><span className="text-5xl filter drop-shadow-md">{def.icon}</span></div>)}
+                                       {def && !isReady && (<div className="absolute inset-x-2 bottom-2 h-1 bg-gray-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 shadow-[0_0_10px_cyan]" style={{ width: `${progress}%` }}></div></div>)}
+                                       {!def && <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40"><div className="w-12 h-12 border-2 border-dashed border-white rounded-full"></div></div>}
+                                   </div>
+                               ); 
+                           })}
+                       </div>
+                   </div>
+                   
+                   <button onClick={handleTurbo} className="absolute right-4 bottom-52 z-40 bg-yellow-500 hover:bg-yellow-400 text-black p-3 rounded-full shadow-[0_0_20px_gold] animate-bounce border-2 border-white flex flex-col items-center"><Zap size={24} fill="black" /><span className="text-[10px] font-bold mt-1">TURBO</span><span className="text-[8px] bg-black text-yellow-500 px-1 rounded">AD</span></button>
+                   <div className="neon-bar h-48 w-full z-40 flex flex-col"><div className="flex w-full border-b border-white/10"><button onClick={() => { setCategory('plants'); setSelectedItem('wheat'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'plants' ? 'text-cyan-400 bg-white/5 border-b-2 border-cyan-400' : 'text-gray-500'}`}>Plantas</button><button onClick={() => { setCategory('animals'); setSelectedItem('chicken'); playSound('ui_click'); }} className={`flex-1 py-2 font-bold text-sm uppercase tracking-wider ${category === 'animals' ? 'text-purple-400 bg-white/5 border-b-2 border-purple-400' : 'text-gray-500'}`}>Animais</button></div><div className="flex-1 overflow-x-auto flex gap-4 p-4 items-center">
+                           {availableItems.map(item => { 
+                               const locked = level < item.reqLevel; 
+                               const currentAds = cropAdProgress[item.id] || 0;
+                               const isAdLocked = item.adCost > currentAds;
+                               
+                               return (
+                               <button key={item.id} onClick={() => { 
+                                   if(locked) { playSound('ui_hover'); return; }
+                                   if(isAdLocked) { handleItemAdWatch(item.id, item.adCost); return; }
+                                   setSelectedItem(item.id); playSound('ui_click'); 
+                               }} className={`flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border transition-all active:scale-95 relative overflow-hidden ${selectedItem === item.id ? 'border-cyan-400 bg-cyan-900/20 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'border-slate-700 bg-black/40 hover:border-slate-500'}`}>
+                                   {locked && (<div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center text-gray-400"><Lock size={16} className="mb-1" /><span className="text-[10px] font-bold">NVL {item.reqLevel}</span></div>)}
+                                   {!locked && isAdLocked && (<div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center text-yellow-400 hover:text-yellow-300"><PlayCircle size={20} className="mb-1" /><span className="text-[10px] font-bold">AD {currentAds}/{item.adCost}</span></div>)}
+                                   <div className="text-4xl mb-2 filter drop-shadow-lg">{item.icon}</div><div className="text-[10px] font-bold text-gray-300 uppercase tracking-wide">{item.name}</div><div className="text-[10px] text-yellow-400 font-bold mt-1 bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">{item.cost} 💰</div>{category === 'animals' && <div className="text-[8px] text-purple-300 mt-0.5">{item.product}</div>}
+                               </button>); 
+                           })}
+                           <button onClick={() => setShowExpand(true)} className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center border border-dashed border-green-500/50 bg-green-900/10 hover:bg-green-900/20 text-green-400"><PlusCircle size={24} className="mb-2" /><span className="text-[10px] font-bold uppercase">Expandir</span></button></div></div>
+                   {showMissions && (<Modal title="MISSÕES DIÁRIAS" onClose={() => setShowMissions(false)}><div className="flex flex-col gap-3">{missions.map(m => (<div key={m.id} className="bg-slate-800/80 p-3 rounded-lg border border-slate-700 flex justify-between items-center"><div className="flex-1"><div className="text-sm font-bold text-cyan-100">{m.text}</div><div className="w-full bg-slate-950 h-1.5 mt-2 rounded-full overflow-hidden"><div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (m.progress/m.count)*100)}%` }}></div></div><div className="text-[10px] text-gray-400 mt-1">{m.progress} / {m.count}</div></div>{m.claimed ? (<CheckCircle className="text-green-500 ml-2" />) : (<button disabled={m.progress < m.count} onClick={() => claimMission(m)} className={`ml-3 px-3 py-1 rounded text-xs font-bold ${m.progress >= m.count ? 'bg-yellow-500 text-black animate-pulse shadow-[0_0_10px_gold]' : 'bg-slate-700 text-gray-500'}`}>+{m.reward}</button>)}</div>))}</div></Modal>)}
+                   {showExpand && (<Modal title="EXPANDIR TERRENO" onClose={() => setShowExpand(false)}><div className="text-center p-4"><div className="text-6xl mb-4">🚜</div><h3 className="text-white text-lg font-bold mb-2">Precisa de mais espaço?</h3><p className="text-gray-400 text-sm mb-6">Assista a um anúncio para adicionar 2 novos lotes de plantio.</p><button onClick={handleExpand} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center justify-center gap-2"><PlayCircle size={18} /> EXPANDIR AGORA</button></div></Modal>)}
+              </div>
+          );
+      };
 
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
+      // --- GAME 3: HANGMAN (Luxurious Dark & Cyan) ---
+      const HangmanGame = ({ onBack, addCoins }) => {
+        const WORDS = [
+          // TECH & DEV
+          { word: "JAVASCRIPT", hint: "Linguagem da Web" },
+          { word: "REACT", hint: "Biblioteca UI" },
+          { word: "TYPESCRIPT", hint: "JS com tipos" },
+          { word: "HTML", hint: "Estrutura Web" },
+          { word: "CSS", hint: "Estilo Web" },
+          { word: "DATABASE", hint: "Banco de dados" },
+          { word: "SERVER", hint: "Servidor" },
+          { word: "FRONTEND", hint: "Interface do usuário" },
+          { word: "BACKEND", hint: "Lógica do servidor" },
+          { word: "API", hint: "Interface de Programa" },
+          { word: "BUG", hint: "Erro no código" },
+          { word: "DEBUG", hint: "Corrigir erro" },
+          { word: "COMPILADOR", hint: "Traduz código" },
+          { word: "LINUX", hint: "Sistema Operacional Livre" },
+          { word: "WINDOWS", hint: "SO da Microsoft" },
+          { word: "APPLE", hint: "Dona do iPhone" },
+          { word: "ANDROID", hint: "SO do Google" },
+          { word: "WIFI", hint: "Internet sem fio" },
+          { word: "BLUETOOTH", hint: "Conexão azul" },
+          { word: "ROUTER", hint: "Roteador" },
+          { word: "FIREWALL", hint: "Parede de fogo" },
+          { word: "VIRUS", hint: "Malware" },
+          { word: "HACKER", hint: "Invade sistemas" },
+          { word: "ENCRIPTAR", hint: "Proteger dados" },
+          { word: "SENHA", hint: "Código secreto" },
+          
+          // SPACE & SCI-FI
+          { word: "GALAXY", hint: "Via Láctea é uma" },
+          { word: "UNIVERSO", hint: "Tudo que existe" },
+          { word: "ESTRELA", hint: "Sol é uma" },
+          { word: "PLANETA", hint: "Orbita estrela" },
+          { word: "ASTEROIDE", hint: "Rocha espacial" },
+          { word: "COMETA", hint: "Gelo sujo" },
+          { word: "MARTE", hint: "Planeta Vermelho" },
+          { word: "LUA", hint: "Satélite da Terra" },
+          { word: "FOGUETE", hint: "Veículo espacial" },
+          { word: "GRAVIDADE", hint: "Força de atração" },
+          { word: "ALIEN", hint: "Extraterrestre" },
+          { word: "UFO", hint: "Objeto Voador" },
+          { word: "ROBO", hint: "Máquina inteligente" },
+          { word: "CYBORG", hint: "Meio homem, meio máquina" },
+          { word: "LASER", hint: "Luz focada" },
+          { word: "PLASMA", hint: "Estado da matéria" },
+          { word: "SOL", hint: "Nossa estrela" },
+          { word: "NEBULOSA", hint: "Berçário de estrelas" },
+          { word: "SUPERNOVA", hint: "Explosão estelar" },
+          
+          // GENERAL
+          { word: "FAZENDA", hint: "Local rural" },
+          { word: "TRATOR", hint: "Veículo agrícola" },
+          { word: "COLHEITA", hint: "Recolher frutos" },
+          { word: "PLANTAR", hint: "Semear" },
+          { word: "AGUA", hint: "H2O" },
+          { word: "TERRA", hint: "Nosso planeta" },
+          { word: "FOGO", hint: "Quente e queima" },
+          { word: "AR", hint: "Respiramos" },
+          { word: "VIDA", hint: "Contrário de morte" },
+          { word: "TEMPO", hint: "Relógio mede" },
+          { word: "DINHEIRO", hint: "Moeda de troca" },
+          { word: "OURO", hint: "Metal precioso" },
+          { word: "DIAMANTE", hint: "Carbono duro" },
+          { word: "ESCOLA", hint: "Lugar de aprender" },
+          { word: "LIVRO", hint: "Tem páginas" },
+          { word: "MUSICA", hint: "Sons ritmados" },
+          { word: "FILME", hint: "Cinema" },
+          { word: "JOGO", hint: "Diversão" },
+          { word: "AMIGO", hint: "Companheiro" }
+        ];
 
-                        return response;
+        const getNewWord = () => {
+            let playedWords = [];
+            try {
+                playedWords = JSON.parse(safeStorage.getItem('hangman_played') || '[]');
+            } catch (e) { playedWords = []; }
+
+            const available = WORDS.filter(w => !playedWords.includes(w.word));
+            
+            if (available.length === 0) {
+                // All words played, reset history
+                safeStorage.setItem('hangman_played', '[]');
+                const rand = WORDS[Math.floor(Math.random() * WORDS.length)];
+                safeStorage.setItem('hangman_played', JSON.stringify([rand.word]));
+                return rand;
+            }
+
+            const rand = available[Math.floor(Math.random() * available.length)];
+            
+            // Mark as played
+            playedWords.push(rand.word);
+            safeStorage.setItem('hangman_played', JSON.stringify(playedWords));
+            
+            return rand;
+        };
+
+        const [game, setGame] = useState(() => {
+           const rand = getNewWord();
+           return { ...rand, guessed: [], errors: 0, status: 'playing' };
+        });
+
+        // --- PRESENTER LOGIC ---
+        const [voiceEnabled, setVoiceEnabled] = useState(true);
+        
+        const speak = useCallback((text, force = false) => {
+            if (!voiceEnabled && !force) return;
+            try {
+                window.speechSynthesis.cancel(); // Interrupt previous
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'pt-BR';
+                u.rate = 1.1; // Slightly faster for excitement
+                u.pitch = 1.0;
+                
+                // Attempt to find a Brazilian voice
+                const voices = window.speechSynthesis.getVoices();
+                // Prefer Google Português do Brasil if available, or any pt-BR
+                const ptVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('pt-BR')) || 
+                                voices.find(v => v.lang === 'pt-BR') || 
+                                voices.find(v => v.lang.includes('pt'));
+                                
+                if (ptVoice) u.voice = ptVoice;
+                window.speechSynthesis.speak(u);
+            } catch (e) { console.warn("Speech synthesis error", e); }
+        }, [voiceEnabled]);
+
+        // Intro
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                 speak("Olá! Bem vindo ao jogo da forca! Sou seu apresentador. Vamos descobrir a palavra secreta juntos!");
+            }, 800);
+            return () => { clearTimeout(timer); window.speechSynthesis.cancel(); };
+        }, []);
+
+        const handleGuess = (letter) => {
+            if (game.status !== 'playing' || game.guessed.includes(letter)) return;
+            
+            const newGuessed = [...game.guessed, letter];
+            const isError = !game.word.includes(letter);
+            const newErrors = isError ? game.errors + 1 : game.errors;
+            const isWin = game.word.split('').every(l => newGuessed.includes(l));
+            const isLose = newErrors >= 6;
+            
+            playSound(isError ? 'ui_click' : 'powerup');
+            
+            // --- PRESENTER REACTION ---
+            if (isWin) {
+                playSound('win');
+                addCoins(20);
+                setTimeout(() => speak(`Incrível! Você venceu! A palavra era ${game.word}. Parabéns!`), 200);
+            } else if (isLose) {
+                playSound('lose');
+                setTimeout(() => speak(`Ah que pena! Você foi enforcado. A palavra era ${game.word}. Tente na próxima!`), 200);
+            } else if (isError) {
+                const phrases = ["Errou!", "Essa não tem!", "Cuidado com a forca!", "Tente outra letra!", "Ixi, errou feio!", "Preste atenção!"];
+                speak(phrases[Math.floor(Math.random() * phrases.length)]);
+            } else {
+                 const phrases = ["Muito bem!", "Acertou!", "Isso aí!", "Continue assim!", "Boa escolha!", "Essa tem!"];
+                 speak(phrases[Math.floor(Math.random() * phrases.length)]);
+            }
+
+            setGame(prev => ({ ...prev, guessed: newGuessed, errors: newErrors, status: isWin ? 'won' : (isLose ? 'lost' : 'playing') }));
+        };
+
+        const handleRestart = () => {
+            const rand = getNewWord();
+            setGame({ ...rand, guessed: [], errors: 0, status: 'playing' });
+            playSound('ui_click');
+            speak("Novo jogo iniciado! Qual é a palavra?");
+        };
+
+        const handleHint = () => {
+             triggerAd(() => {
+                 const hidden = game.word.split('').filter(l => !game.guessed.includes(l));
+                 if (hidden.length > 0) {
+                     const reveal = hidden[Math.floor(Math.random() * hidden.length)];
+                     handleGuess(reveal);
+                     speak("Aqui vai uma ajudinha!");
+                 }
+                 playSound('powerup');
+             });
+        };
+
+        return (
+            <div className="w-full h-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden safe-area-padding">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#020617] to-black"></div>
+                
+                {/* Cyan Glow Orbs */}
+                <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+                {/* 3D Grid Floor Effect - Cyan Tint */}
+                <div className="absolute inset-0 opacity-20" style={{ 
+                    backgroundImage: 'linear-gradient(rgba(34, 211, 238, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px)', 
+                    backgroundSize: '40px 40px',
+                    transform: 'perspective(500px) rotateX(60deg) translateY(100px) scale(2)',
+                    transformOrigin: 'bottom center',
+                    maskImage: 'linear-gradient(to top, black 0%, transparent 60%)'
+                }}></div>
+
+                {/* Header UI */}
+                <div className="absolute top-0 w-full p-6 flex justify-between items-start z-50">
+                     <button onClick={() => { window.speechSynthesis.cancel(); onBack(); }} className="group flex items-center justify-center w-12 h-12 bg-black/40 backdrop-blur border border-cyan-500/20 rounded-full text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all duration-300"><ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" /></button>
+                     <div className="flex flex-col items-center">
+                         <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">LUXE HANGMAN</h1>
+                     </div>
+                     <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`w-12 h-12 backdrop-blur border rounded-full transition-all duration-300 flex items-center justify-center ${voiceEnabled ? 'bg-cyan-950/30 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'bg-black/40 border-slate-700 text-slate-500'}`}>
+                        {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                     </button>
+                </div>
+
+                {/* Main Content */}
+                 <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center">
+                    
+                    {/* Gallows Container */}
+                    <div className="mb-8 relative">
+                         <div className="w-56 h-56 rounded-full bg-[#050505]/60 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_40px_rgba(6,182,212,0.05)] flex items-center justify-center relative z-10">
+                            <div className="absolute inset-0 rounded-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #22d3ee 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                            
+                            <svg width="200" height="200" className="drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
+                                <path d="M40 180 L160 180 M80 180 L80 30 L160 30 L160 50" stroke="#22d3ee" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                <g stroke="#ffffff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    {game.errors > 0 && <circle cx="160" cy="70" r="15" className="animate-[fadeIn_0.5s]" />}
+                                    {game.errors > 1 && <path d="M160 85 L160 135" className="animate-[fadeIn_0.5s]" />}
+                                    {game.errors > 2 && <path d="M160 95 L135 120" className="animate-[fadeIn_0.5s]" />}
+                                    {game.errors > 3 && <path d="M160 95 L185 120" className="animate-[fadeIn_0.5s]" />}
+                                    {game.errors > 4 && <path d="M160 135 L140 170" className="animate-[fadeIn_0.5s]" />}
+                                    {game.errors > 5 && <path d="M160 135 L180 170" className="animate-[fadeIn_0.5s]" />}
+                                </g>
+                            </svg>
+                         </div>
+                    </div>
+
+                    {/* Word Display */}
+                    <div className="flex justify-center gap-2 mb-8 flex-wrap">
+                        {game.word.split('').map((l, i) => (
+                            <div key={i} className={`
+                                w-10 h-14 flex items-center justify-center text-2xl font-bold rounded-lg border-b-2 transition-all duration-300
+                                ${game.guessed.includes(l) 
+                                    ? 'text-cyan-50 border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.2)] opacity-100' 
+                                    : 'border-slate-800 bg-white/5 text-transparent'}
+                            `}>
+                                {game.guessed.includes(l) ? l : ''}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Hint */}
+                    <div className="flex justify-center mb-6">
+                        <div className="px-4 py-1.5 bg-[#0f172a] rounded-full border border-cyan-900 flex items-center gap-2 shadow-lg">
+                            <Lightbulb size={12} className="text-cyan-400" />
+                            <span className="text-cyan-400/80 font-mono text-[10px] uppercase tracking-widest">DICA: <span className="text-white font-bold">{game.hint}</span></span>
+                        </div>
+                    </div>
+
+                    {/* Keyboard */}
+                    <div className="w-full max-w-lg grid grid-cols-7 gap-1.5 sm:gap-2 p-4 bg-black/20 rounded-2xl border border-white/5 backdrop-blur-sm">
+                        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').map(l => {
+                            const isGuessed = game.guessed.includes(l);
+                            const isCorrect = isGuessed && game.word.includes(l);
+                            
+                            return (
+                                <button 
+                                    key={l} 
+                                    disabled={game.status !== 'playing' || isGuessed} 
+                                    onClick={() => handleGuess(l)} 
+                                    className={`
+                                        aspect-square rounded-md font-bold text-sm transition-all duration-200
+                                        ${!isGuessed 
+                                            ? 'bg-[#1e293b] text-slate-400 border border-slate-700 hover:border-cyan-500 hover:text-cyan-300 hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
+                                            : isCorrect
+                                                ? 'bg-cyan-600 border border-cyan-400 text-white shadow-[0_0_10px_cyan]'
+                                                : 'bg-red-900/40 border border-red-900 text-red-500 opacity-50'}
+                                    `}
+                                >
+                                    {l}
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {/* Footer Controls */}
+                    <div className="mt-8 flex gap-4 w-full max-w-sm justify-center">
+                        {game.status === 'playing' ? (
+                            <button onClick={handleHint} className="flex-1 py-3 bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-500/50 text-yellow-400 rounded-lg font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] text-xs tracking-wider uppercase">
+                                 <span>Revelar Letra (AD)</span>
+                            </button>
+                        ) : (
+                            <button onClick={handleRestart} className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.02] text-xs uppercase">
+                                 <RefreshCw size={16} /> Novo Jogo
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Results Modal */}
+                     {game.status !== 'playing' && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.5s]" onClick={handleRestart}></div>
+                            <div className="relative bg-[#0f172a] border border-cyan-500/30 p-8 rounded-2xl flex flex-col items-center gap-3 animate-[zoomIn_0.3s] shadow-[0_0_50px_rgba(6,182,212,0.15)] max-w-xs w-full text-center">
+                                {game.status === 'won' ? (
+                                    <>
+                                        <Trophy size={48} className="text-yellow-400 mb-2 drop-shadow-[0_0_15px_gold] animate-bounce" />
+                                        <h2 className="text-2xl font-bold text-white tracking-widest">VITORIA</h2>
+                                        <div className="text-cyan-400 text-sm">Palavra: <span className="text-white font-mono font-bold">{game.word}</span></div>
+                                        <div className="text-xs text-gray-400">+20 moedas</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="text-2xl font-bold text-red-500 tracking-widest">FALHA</h2>
+                                        <div className="text-gray-400 text-sm">Palavra: <span className="text-white font-mono font-bold">{game.word}</span></div>
+                                    </>
+                                )}
+                                <button onClick={handleRestart} className="w-full mt-2 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded transition shadow-lg text-xs uppercase tracking-wider">Continuar</button>
+                            </div>
+                        </div>
+                    )}
+                 </div>
+            </div>
+        );
+      };
+
+      // --- GAME 4: ROYAL CHECKERS 3D ---
+      const CheckersGame = ({ onBack }) => {
+        const BOARD_SIZE = 8;
+        const [board, setBoard] = useState([]);
+        const [turn, setTurn] = useState('player'); // 'player' (Red) or 'ai' (Black)
+        const [selectedPiece, setSelectedPiece] = useState(null); // {r, c}
+        const [validMoves, setValidMoves] = useState([]); // Array of {r, c, isJump}
+        const [difficulty, setDifficulty] = useState('medium'); // easy, medium, hard
+        const [gameStatus, setGameStatus] = useState('playing'); // playing, player_won, ai_won
+        
+        // Initialize Board
+        const initBoard = () => {
+            const newBoard = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if ((r + c) % 2 === 1) {
+                        if (r < 3) newBoard[r][c] = { type: 'ai', isKing: false };
+                        else if (r > 4) newBoard[r][c] = { type: 'player', isKing: false };
                     }
-                );
-            })
-    );
-});
+                }
+            }
+            setBoard(newBoard);
+            setTurn('player');
+            setGameStatus('playing');
+            setSelectedPiece(null);
+            setValidMoves([]);
+        };
+
+        useEffect(() => initBoard(), []);
+
+        // Logic
+        const isValidPos = (r, c) => r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
+
+        const getMoves = (b, r, c) => {
+            const piece = b[r][c];
+            if (!piece) return [];
+            
+            const moves = [];
+            const directions = [];
+            
+            if (piece.type === 'player' || piece.isKing) directions.push([-1, -1], [-1, 1]); // Up
+            if (piece.type === 'ai' || piece.isKing) directions.push([1, -1], [1, 1]); // Down
+            
+            directions.forEach(([dr, dc]) => {
+                // Regular Move
+                if (isValidPos(r + dr, c + dc) && b[r + dr][c + dc] === null) {
+                    moves.push({ r: r + dr, c: c + dc, isJump: false });
+                }
+                // Jump Move
+                if (isValidPos(r + dr * 2, c + dc * 2) && 
+                    b[r + dr * 2][c + dc * 2] === null &&
+                    b[r + dr][c + dc] !== null && 
+                    b[r + dr][c + dc].type !== piece.type) {
+                    moves.push({ r: r + dr * 2, c: c + dc * 2, isJump: true, jumpR: r + dr, jumpC: c + dc });
+                }
+            });
+            return moves;
+        };
+
+        const executeMove = (move) => {
+            if (!selectedPiece) return;
+            
+            const newBoard = board.map(row => [...row]);
+            const piece = newBoard[selectedPiece.r][selectedPiece.c];
+            
+            // Move piece
+            newBoard[move.r][move.c] = piece;
+            newBoard[selectedPiece.r][selectedPiece.c] = null;
+            
+            // Handle Jump (Capture)
+            if (move.isJump) {
+                newBoard[move.jumpR][move.jumpC] = null;
+                playSound('capture');
+            } else {
+                playSound('move_piece');
+            }
+            
+            // King Promotion
+            if (piece.type === 'player' && move.r === 0) { piece.isKing = true; playSound('powerup'); }
+            if (piece.type === 'ai' && move.r === BOARD_SIZE - 1) { piece.isKing = true; playSound('powerup'); }
+            
+            setBoard(newBoard);
+            setSelectedPiece(null);
+            setValidMoves([]);
+            
+            // Check Win Condition
+            let playerCount = 0, aiCount = 0;
+            newBoard.forEach(row => row.forEach(p => {
+                if (p?.type === 'player') playerCount++;
+                if (p?.type === 'ai') aiCount++;
+            }));
+            
+            if (aiCount === 0) { setGameStatus('player_won'); playSound('win'); return; }
+            if (playerCount === 0) { setGameStatus('ai_won'); playSound('lose'); return; }
+
+            // Switch Turn
+            setTurn(prev => prev === 'player' ? 'ai' : 'player');
+        };
+
+        const handleTap = (r, c) => {
+            if (turn !== 'player' || gameStatus !== 'playing') return;
+
+            // If tapping a valid move
+            const move = validMoves.find(m => m.r === r && m.c === c);
+            if (move) {
+                executeMove(move);
+                return;
+            }
+
+            // If tapping own piece
+            const piece = board[r][c];
+            if (piece && piece.type === 'player') {
+                setSelectedPiece({ r, c });
+                setValidMoves(getMoves(board, r, c));
+                playSound('ui_click');
+            } else {
+                setSelectedPiece(null);
+                setValidMoves([]);
+            }
+        };
+
+        // AI Logic
+        useEffect(() => {
+            if (turn === 'ai' && gameStatus === 'playing') {
+                const timer = setTimeout(() => {
+                    // Collect all AI pieces
+                    const aiPieces = [];
+                    for (let r = 0; r < BOARD_SIZE; r++) {
+                        for (let c = 0; c < BOARD_SIZE; c++) {
+                            if (board[r][c]?.type === 'ai') aiPieces.push({ r, c });
+                        }
+                    }
+
+                    // Find all possible moves
+                    let allMoves = [];
+                    aiPieces.forEach(p => {
+                        const moves = getMoves(board, p.r, p.c);
+                        moves.forEach(m => allMoves.push({ from: p, to: m }));
+                    });
+
+                    if (allMoves.length === 0) {
+                        setGameStatus('player_won');
+                        playSound('win');
+                        return;
+                    }
+
+                    // Scoring Strategy
+                    // Jump > King > Edge > Random
+                    allMoves.sort((a, b) => {
+                        const scoreA = (a.to.isJump ? 10 : 0) + (a.to.r === BOARD_SIZE - 1 ? 5 : 0) + (Math.random() * (difficulty === 'hard' ? 2 : 5));
+                        const scoreB = (b.to.isJump ? 10 : 0) + (b.to.r === BOARD_SIZE - 1 ? 5 : 0) + (Math.random() * (difficulty === 'hard' ? 2 : 5));
+                        return scoreB - scoreA;
+                    });
+
+                    const bestMove = allMoves[0];
+                    
+                    // Execute AI Move
+                    const newBoard = board.map(row => [...row]);
+                    const piece = newBoard[bestMove.from.r][bestMove.from.c];
+                    newBoard[bestMove.to.r][bestMove.to.c] = piece;
+                    newBoard[bestMove.from.r][bestMove.from.c] = null;
+                    
+                    if (bestMove.to.isJump) {
+                        newBoard[bestMove.to.jumpR][bestMove.to.jumpC] = null;
+                        playSound('capture');
+                    } else {
+                        playSound('move_piece');
+                    }
+
+                    if (piece.type === 'ai' && bestMove.to.r === BOARD_SIZE - 1) { piece.isKing = true; }
+
+                    setBoard(newBoard);
+                    
+                    // Check Win Condition
+                    let playerCount = 0;
+                    newBoard.forEach(row => row.forEach(p => { if (p?.type === 'player') playerCount++; }));
+                    if (playerCount === 0) { setGameStatus('ai_won'); playSound('lose'); return; }
+
+                    setTurn('player');
+
+                }, 1000); // Thinking delay
+                return () => clearTimeout(timer);
+            }
+        }, [turn, board, difficulty, gameStatus]);
+
+        return (
+            <div className="w-full h-full bg-[#1a0505] flex flex-col items-center justify-center relative font-sans safe-area-padding overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none"></div>
+
+                {/* Header */}
+                <div className="absolute top-0 w-full p-6 flex justify-between items-start z-50">
+                     <button onClick={onBack} className="p-3 bg-white/10 rounded-full hover:bg-white/20 backdrop-blur border border-white/10 shadow-lg text-white"><ChevronLeft size={24} /></button>
+                     <div className="flex flex-col items-center">
+                         <h1 className="text-3xl font-bold text-[#f59e0b] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] flex items-center gap-2"><Crown fill="#f59e0b" /> ROYAL CHECKERS</h1>
+                         <div className="bg-black/40 px-3 py-1 rounded-full border border-white/10 mt-2 text-xs text-gray-300 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <span>Dif:</span>
+                            <button onClick={() => setDifficulty('easy')} className={`${difficulty==='easy'?'text-green-400':'text-gray-600'}`}>Easy</button>|
+                            <button onClick={() => setDifficulty('medium')} className={`${difficulty==='medium'?'text-yellow-400':'text-gray-600'}`}>Med</button>|
+                            <button onClick={() => setDifficulty('hard')} className={`${difficulty==='hard'?'text-red-400':'text-gray-600'}`}>Hard</button>
+                         </div>
+                     </div>
+                     <div className="w-12"></div>
+                </div>
+
+                {/* 3D Scene */}
+                <div className="checkers-3d-scene w-full max-w-lg aspect-square p-4 flex items-center justify-center">
+                    <div className="checkers-board w-full h-full bg-[#2c1a1a] border-[16px] border-[#422] rounded-lg relative grid grid-cols-8 grid-rows-8 shadow-2xl">
+                        {board.map((row, r) => row.map((piece, c) => {
+                            const isDark = (r + c) % 2 === 1;
+                            const isSelected = selectedPiece?.r === r && selectedPiece?.c === c;
+                            const isValidMove = validMoves.some(m => m.r === r && m.c === c);
+                            
+                            return (
+                                <div 
+                                    key={`${r}-${c}`} 
+                                    onClick={() => handleTap(r, c)}
+                                    className={`
+                                        relative w-full h-full flex items-center justify-center
+                                        ${isDark ? 'bg-[#5c3a2a] shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]' : 'bg-[#eecfa1]'}
+                                        ${isValidMove ? 'after:content-[""] after:absolute after:w-4 after:h-4 after:bg-green-500 after:rounded-full after:animate-pulse cursor-pointer shadow-[inset_0_0_20px_rgba(34,197,94,0.5)]' : ''}
+                                    `}
+                                >
+                                    {piece && (
+                                        <div className={`
+                                            checker-piece w-[80%] h-[80%] rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.7),inset_0_-5px_5px_rgba(0,0,0,0.5),inset_0_2px_5px_rgba(255,255,255,0.4)]
+                                            flex items-center justify-center transform transition-transform
+                                            ${piece.type === 'player' 
+                                                ? 'bg-gradient-to-br from-red-600 to-red-900 ring-2 ring-red-900' 
+                                                : 'bg-gradient-to-br from-gray-800 to-black ring-2 ring-black'}
+                                            ${isSelected ? 'scale-110 ring-4 ring-yellow-400 shadow-[0_0_20px_gold]' : ''}
+                                            ${piece.isKing ? 'border-2 border-yellow-400' : ''}
+                                        `}>
+                                            {piece.isKing && <Crown size={20} className="text-yellow-400 king-crown" />}
+                                            {/* Inner detail */}
+                                            <div className="absolute inset-2 rounded-full border border-white/20"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }))}
+                    </div>
+                </div>
+
+                {/* Status Bar */}
+                <div className="absolute bottom-10 w-full px-6 flex justify-center">
+                    <div className="bg-black/60 backdrop-blur px-8 py-3 rounded-xl border border-white/10 flex items-center gap-4 shadow-xl">
+                        <div className={`flex items-center gap-2 ${turn === 'player' ? 'text-red-400 font-bold scale-110' : 'text-gray-500'}`}>
+                             <div className="w-3 h-3 rounded-full bg-red-600"></div> YOU
+                        </div>
+                        <div className="h-6 w-px bg-white/20"></div>
+                        <div className={`flex items-center gap-2 ${turn === 'ai' ? 'text-gray-200 font-bold scale-110' : 'text-gray-500'}`}>
+                             CPU <div className="w-3 h-3 rounded-full bg-black border border-gray-600"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Game Over Modal */}
+                {gameStatus !== 'playing' && (
+                    <div className="absolute inset-0 bg-black/80 z-[60] flex items-center justify-center animate-fade-in p-4">
+                        <div className="bg-[#1a0505] p-8 rounded-2xl border-2 border-yellow-600 text-center shadow-[0_0_50px_rgba(234,197,8,0.2)] max-w-sm w-full">
+                            {gameStatus === 'player_won' ? (
+                                <>
+                                    <Crown size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
+                                    <h2 className="text-3xl font-bold text-white mb-2 hero-title">VITÓRIA REAL!</h2>
+                                    <p className="text-gray-300 mb-6">Você dominou o tabuleiro.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <Skull size={64} className="text-red-500 mx-auto mb-4" />
+                                    <h2 className="text-3xl font-bold text-red-500 mb-2 hero-title">DERROTA</h2>
+                                    <p className="text-gray-400 mb-6">A IA foi superior desta vez.</p>
+                                </>
+                            )}
+                            <button onClick={() => initBoard()} className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg uppercase tracking-wider mb-3">JOGAR NOVAMENTE</button>
+                            <button onClick={onBack} className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg uppercase tracking-wider">VOLTAR AO MENU</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+      };
+
+      const HistoryModal = ({ onClose, user }) => {
+          const [items, setItems] = useState([]);
+          const [loading, setLoading] = useState(true);
+
+          useEffect(() => {
+              const fetchHistory = async () => {
+                  if (!user || !supabase) {
+                      setLoading(false);
+                      return;
+                  }
+                  const { data, error } = await supabase
+                      .from('withdrawals')
+                      .select('*')
+                      .eq('email', user.email)
+                      .order('created_at', { ascending: false });
+                  
+                  if (data) setItems(data);
+                  setLoading(false);
+              };
+              fetchHistory();
+          }, [user]);
+
+          return (
+              <Modal title="HISTÓRICO" onClose={onClose}>
+                  {loading ? (
+                      <div className="flex justify-center p-8"><Loader2 className="animate-spin text-white" /></div>
+                  ) : items.length === 0 ? (
+                      <div className="text-center text-gray-500 p-8">
+                          <History size={48} className="mx-auto mb-2 opacity-50" />
+                          <p>Nenhum registro encontrado.</p>
+                          <p className="text-xs mt-2 text-gray-600">Jogue e solicite seu primeiro saque!</p>
+                      </div>
+                  ) : (
+                      <div className="flex flex-col gap-2">
+                          {items.map(item => (
+                              <div key={item.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-white/5 flex justify-between items-center">
+                                  <div>
+                                      <div className="text-white font-bold text-sm">R$ {item.amount.toFixed(2)}</div>
+                                      <div className="text-[10px] text-gray-500">{new Date(item.created_at).toLocaleDateString('pt-BR')} {new Date(item.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
+                                  </div>
+                                  <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                      item.status === 'paid' ? 'bg-green-900/50 text-green-400 border border-green-500/30' : 'bg-yellow-900/50 text-yellow-400 border border-yellow-500/30'
+                                  }`}>
+                                      {item.status === 'paid' ? 'PAGO' : 'PENDENTE'}
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </Modal>
+          );
+      };
+
+      const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw, onAdminAccess }) => {
+          const [showHistory, setShowHistory] = useState(false);
+          const GAMES = [
+              { id: 'galaxy', name: 'Galaxy Invader', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Space Shooter' },
+              { id: 'farm', name: 'Farm Tycoon', icon: <Sprout size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Relaxing Farming Sim' },
+              { id: 'hangman', name: 'Neon Hangman', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Cyberpunk Word Puzzle' },
+              { id: 'checkers', name: 'Royal Checkers', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Classic Strategy 3D' }
+          ];
+
+          const [secretCount, setSecretCount] = useState(0);
+          const secretTimerRef = useRef(null);
+
+          const handleSecretClick = () => {
+              if (secretTimerRef.current) clearTimeout(secretTimerRef.current);
+              
+              const newCount = secretCount + 1;
+              setSecretCount(newCount);
+              
+              if (newCount >= 5) {
+                  playSound('powerup');
+                  onAdminAccess();
+                  setSecretCount(0);
+              } else {
+                  // Reset count if not reached 5 clicks quickly enough
+                  secretTimerRef.current = setTimeout(() => {
+                      setSecretCount(0);
+                  }, 1000);
+              }
+          };
+
+          return (
+              <div className="w-full h-full wealth-bg flex flex-col overflow-hidden safe-area-padding">
+                   {/* Ticker Section */}
+                   <div className="w-full bg-black/60 border-b border-white/10 backdrop-blur-sm z-30 relative shrink-0">
+                       <div className="overflow-hidden whitespace-nowrap py-2">
+                           <div className="inline-flex items-center gap-6 animate-[marquee_20s_linear_infinite] pl-[100%]">
+                                <Gem size={16} className="text-cyan-400 shrink-0" />
+                                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 tracking-wider text-sm whitespace-nowrap">
+                                    GANHE ATÉ $0,45
+                                </span>
+                                <span className="text-white/50 text-xs">•</span>
+                                <span className="text-gray-200 text-xs font-bold tracking-widest whitespace-nowrap">
+                                    TODOS OS DIAS JOGANDO GRATIS SEM INVESTIR NADA
+                                </span>
+                                <DollarSign size={16} className="text-green-500 shrink-0" />
+                                <span className="text-white/50 text-xs">•</span>
+                                <Gem size={16} className="text-purple-400 shrink-0" />
+                                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-blue-300 tracking-wider text-sm whitespace-nowrap">
+                                    PAGAMENTOS VIA PIX
+                                </span>
+                           </div>
+                       </div>
+                   </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 w-full max-w-lg md:max-w-5xl mx-auto flex flex-col">
+                      <header className="flex flex-col gap-4 mb-8">
+                          {/* Title moved above buttons as requested */}
+                          <div className="flex justify-center items-center text-center">
+                              <div onClick={handleSecretClick} className="select-none">
+                                  <h1 className="text-4xl md:text-7xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
+                                  <p className="text-yellow-100/70 text-xs font-bold tracking-widest uppercase mt-1">LUCRO • DIVERSÃO • RECOMPENSAS</p>
+                              </div>
+                          </div>
+
+                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved below title */}
+                          <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                              {/* Mission Button */}
+                              <button onClick={onOpenMissions} className="relative group w-full">
+                                   <div className="absolute inset-0 bg-purple-600 rounded-xl blur opacity-30 group-hover:opacity-60 transition"></div>
+                                   <div className="relative flex items-center justify-center gap-3 bg-slate-900/80 px-4 py-3 rounded-xl border border-purple-500/30 hover:bg-slate-800 transition-colors">
+                                       <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                                          <Clock size={18} className="text-purple-400" />
+                                       </div>
+                                       <div className="flex flex-col items-start">
+                                           <span className="text-xs font-bold text-white uppercase tracking-wider">Missão</span>
+                                           <span className="text-[9px] text-gray-400">Prêmios Diários</span>
+                                       </div>
+                                   </div>
+                              </button>
+                              
+                              {/* Login Button */}
+                              <button onClick={user ? onLogoutClick : onLoginClick} className="relative group w-full">
+                                  <div className={`absolute inset-0 ${user ? 'bg-red-600' : 'bg-blue-600'} rounded-xl blur opacity-30 group-hover:opacity-60 transition`}></div>
+                                  <div className={`relative flex items-center justify-center gap-3 bg-slate-900/80 px-4 py-3 rounded-xl border ${user ? 'border-red-500/30' : 'border-blue-500/30'} hover:bg-slate-800 transition-colors`}>
+                                      <div className={`p-1.5 rounded-lg ${user ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
+                                          {user ? <LogOut size={18} className="text-red-400" /> : <LogIn size={18} className="text-blue-400" />}
+                                      </div>
+                                      <div className="flex flex-col items-start">
+                                          <span className="text-xs font-bold text-white uppercase tracking-wider">{user ? 'Sair' : 'Entrar'}</span>
+                                          <span className="text-[9px] text-gray-400">{user ? 'Conta Ativa' : 'Salvar Progresso'}</span>
+                                      </div>
+                                  </div>
+                              </button>
+                          </div>
+                          
+                          {/* Wealth Balance Card */}
+                          <div className="w-full bg-gradient-to-r from-green-900/40 to-black rounded-2xl p-4 border border-green-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(34,197,94,0.1)] relative overflow-hidden">
+                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                              <div className="z-10 flex items-center gap-3">
+                                  <div className="p-3 bg-yellow-500 rounded-full shadow-lg">
+                                      <DollarSign size={24} className="text-black" />
+                                  </div>
+                                  <div>
+                                      <div className="text-xs text-green-400 font-bold uppercase tracking-wider">SALDO MISSÃO</div>
+                                      <div className="text-3xl font-mono font-bold text-white drop-shadow-md flex items-baseline gap-1">
+                                          R$ {cashBalance.toFixed(2).replace('.', ',')}
+                                      </div>
+                                  </div>
+                              </div>
+                              <div className="z-10 flex flex-col items-end gap-2">
+                                  <button onClick={() => { playSound('ui_click'); onWithdraw(); }} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
+                                      <Wallet size={14} /> SACAR
+                                  </button>
+                                  <button onClick={() => { playSound('ui_click'); if(!user) { alert('Faça login para ver o histórico'); return; } setShowHistory(true); }} className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1 bg-black/40 px-2 py-1 rounded border border-white/10 hover:border-white/30 transition-colors">
+                                      <History size={12} /> HISTÓRICO
+                                  </button>
+                              </div>
+                          </div>
+                      </header>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full pb-8">
+                          <h2 className="col-span-1 md:col-span-2 text-white font-bold text-sm uppercase tracking-widest pl-2 border-l-2 border-yellow-500">Oportunidades de Ganho</h2>
+                          {GAMES.map(game => (
+                              <button 
+                                  key={game.id}
+                                  onClick={() => { playSound('ui_click'); onSelect(game.id); }}
+                                  className={`money-card relative h-28 rounded-2xl overflow-hidden group transition-all duration-300 transform hover:scale-[1.02]`}
+                              >
+                                  <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition">
+                                      <TrendingUp size={100} className="text-white/5 -rotate-12 translate-x-4 -translate-y-4" />
+                                  </div>
+                                  
+                                  <div className="absolute inset-0 flex items-center justify-between p-5 z-10">
+                                      <div className="flex items-center gap-4">
+                                          <div className={`p-4 rounded-xl backdrop-blur-md shadow-inner bg-gradient-to-br ${game.color} animate-money-pulse border border-white/10`}>
+                                              {game.icon}
+                                          </div>
+                                          <div className="text-left">
+                                              <h3 className="text-lg font-bold text-white uppercase tracking-wider drop-shadow-md">{game.name}</h3>
+                                              <p className="text-xs text-green-300 font-bold flex items-center gap-1">
+                                                  <Zap size={10} /> $ JOGAR PARA GANHAR $
+                                              </p>
+                                          </div>
+                                      </div>
+                                      <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20 group-hover:bg-yellow-500 group-hover:text-black transition-colors">
+                                          <PlayCircle size={20} />
+                                      </div>
+                                  </div>
+                              </button>
+                          ))}
+                      </div>
+                      
+                      <footer className="mt-auto pt-6 pb-2 text-center text-gray-600 text-[10px] uppercase tracking-widest flex flex-col gap-1">
+                          <div>
+                              <a href="mailto:joguee.e.ganhe@gmail.com" className="hover:text-white transition-colors border-b border-transparent hover:border-gray-500">
+                                  SUPORTE PARA SAQUE
+                              </a>
+                          </div>
+                          <div>JOGUE E GANHA $ &copy; 2026</div>
+                      </footer>
+                      {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
+                  </div>
+              </div>
+          );
+      };
+
+      const App = () => {
+          const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, farm, hangman, checkers
+          const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('coins') || '100'));
+          
+          // Auth State
+          const [user, setUser] = useState(null);
+          const [showAuthModal, setShowAuthModal] = useState(false);
+
+          useEffect(() => {
+              if (!supabase) return;
+              // Check active session on load
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                  setUser(session?.user ?? null);
+              });
+
+              // Listen for changes
+              const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                  setUser(session?.user ?? null);
+              });
+
+              return () => subscription.unsubscribe();
+          }, []);
+
+          const handleLogout = async () => {
+               playSound('ui_click');
+               if (supabase) await supabase.auth.signOut();
+               setUser(null);
+          };
+
+          // --- GLOBAL DAILY MISSIONS STATE ---
+          const [playTime, setPlayTime] = useState(() => {
+              const today = new Date().toDateString();
+              const savedDate = safeStorage.getItem('mission_date');
+              if (savedDate !== today) {
+                  // New day, reset time
+                  safeStorage.setItem('mission_date', today);
+                  safeStorage.setItem('daily_play_time', '0');
+                  safeStorage.setItem('daily_rewards', JSON.stringify({ photo: false, video: false, super: false }));
+                  return 0;
+              }
+              return parseInt(safeStorage.getItem('daily_play_time') || '0');
+          });
+          
+          const [rewards, setRewards] = useState(() => {
+               try { 
+                  const stored = JSON.parse(safeStorage.getItem('daily_rewards') || '{}');
+                  return { 
+                      photo: stored.photo || false, 
+                      video: stored.video || false, 
+                      super: stored.super || false 
+                  };
+               } catch { return { photo: false, video: false, super: false }; }
+          });
+          
+          const [showMissionModal, setShowMissionModal] = useState(false);
+          const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video' | 'super'
+          
+          // --- MANUAL WITHDRAWAL STATE ---
+          const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+          const [showAdminLogin, setShowAdminLogin] = useState(false);
+          const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+          // --- IDLE DETECTION ---
+          const lastActivityRef = useRef(Date.now());
+          useEffect(() => {
+              const updateActivity = () => { lastActivityRef.current = Date.now(); };
+              const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'touchmove', 'click'];
+              events.forEach(e => window.addEventListener(e, updateActivity));
+              return () => events.forEach(e => window.removeEventListener(e, updateActivity));
+          }, []);
+
+          // --- TIMER LOGIC ---
+          useEffect(() => {
+              if (screen === 'hub') return; // Don't count time in menu
+              
+              const interval = setInterval(() => {
+                  // IDLE CHECK: If no activity for 10 seconds, stop counting
+                  if (Date.now() - lastActivityRef.current > 10000) return;
+
+                  setPlayTime(prev => {
+                      const newTime = prev + 1;
+                      
+                      // Save occasionally to avoid spamming storage
+                      if (newTime % 5 === 0) {
+                          safeStorage.setItem('daily_play_time', newTime.toString());
+                      }
+                      
+                      // Check for unlocks
+                      const TIME_PHOTO = 1800; // 30m
+                      const TIME_VIDEO = 3600; // 60m
+                      const TIME_SUPER = 18000; // 5h
+                      
+                      if (newTime === TIME_PHOTO && !rewards.photo) {
+                           const newRewards = { ...rewards, photo: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('photo');
+                           playSound('win');
+                      }
+                      
+                      if (newTime === TIME_VIDEO && !rewards.video) {
+                           const newRewards = { ...rewards, video: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('video');
+                           playSound('win');
+                      }
+
+                      if (newTime === TIME_SUPER && !rewards.super) {
+                           const newRewards = { ...rewards, super: true };
+                           setRewards(newRewards);
+                           safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+                           setShowCongratsModal('super');
+                           playSound('win');
+                      }
+
+                      return newTime;
+                  });
+              }, 1000);
+              
+              return () => clearInterval(interval);
+          }, [screen, rewards]);
+
+
+          // Galaxy State
+          const [equippedShip, setEquippedShip] = useState(() => safeStorage.getItem('equipped_ship') || 'starter');
+          const [unlockedShips, setUnlockedShips] = useState(() => JSON.parse(safeStorage.getItem('unlocked_ships') || '["starter"]'));
+          const [shipAdProgress, setShipAdProgress] = useState(() => JSON.parse(safeStorage.getItem('ship_ad_progress') || '{}'));
+
+          useEffect(() => { safeStorage.setItem('coins', coins.toString()); }, [coins]);
+          useEffect(() => { safeStorage.setItem('equipped_ship', equippedShip); }, [equippedShip]);
+          useEffect(() => { safeStorage.setItem('unlocked_ships', JSON.stringify(unlockedShips)); }, [unlockedShips]);
+          useEffect(() => { safeStorage.setItem('ship_ad_progress', JSON.stringify(shipAdProgress)); }, [shipAdProgress]);
+
+          const addCoins = (amount) => setCoins(c => Math.max(0, c + amount));
+
+          const handleShipAdWatch = (shipId, cost) => {
+              const current = shipAdProgress[shipId] || 0;
+              if (current + 1 >= cost) {
+                  setUnlockedShips(prev => [...prev, shipId]);
+                  setEquippedShip(shipId);
+                  setShipAdProgress(prev => { const n = { ...prev }; delete n[shipId]; return n; });
+                  playSound('levelup');
+              } else {
+                  setShipAdProgress(prev => ({ ...prev, [shipId]: current + 1 }));
+              }
+          };
+
+          const handleWithdrawClick = () => {
+              if (!user) {
+                  playSound('lose');
+                  alert("Você precisa estar logado para solicitar o saque. Faça login ou crie sua conta para continuar.");
+                  setShowAuthModal(true);
+                  return;
+              }
+
+              // Calculate balance to check if withdraw is possible
+              const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
+              if (currentBalance <= 0) {
+                  playSound('lose');
+                  alert("Você não possui saldo para sacar.");
+                  return;
+              }
+              playSound('ui_click');
+              setShowWithdrawModal(true);
+          };
+
+          const processWithdrawal = async (data) => {
+              // Send email notification (Backup for Admin)
+              const subject = encodeURIComponent("SOLICITAÇÃO DE SAQUE - " + data.name);
+              const body = encodeURIComponent(`Solicitação de Saque\n\nNome: ${data.name}\nChave PIX: ${data.pix_key} (${data.pix_type})\nValor: R$ ${data.amount.toFixed(2)}\nEmail: ${data.email}\n\nPor favor, realize o pagamento.`);
+              
+              window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
+              
+              // Zerar saldo
+              const newRewards = { photo: false, video: false, super: false };
+              setRewards(newRewards);
+              safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
+              setShowWithdrawModal(false);
+              playSound('win');
+          };
+
+          const handleAdminAccess = () => {
+              setShowAdminLogin(true);
+          };
+
+          const renderScreen = () => {
+              // Calculate cash balance from missions
+              const cashBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
+
+              switch(screen) {
+                  case 'hub': return (
+                    <MainHub 
+                        onSelect={setScreen} 
+                        coins={coins} 
+                        cashBalance={cashBalance} 
+                        onOpenMissions={() => setShowMissionModal(true)}
+                        user={user}
+                        onLoginClick={() => { playSound('ui_click'); setShowAuthModal(true); }}
+                        onLogoutClick={handleLogout}
+                        onWithdraw={handleWithdrawClick}
+                        onAdminAccess={handleAdminAccess}
+                    />
+                  );
+                  case 'galaxy': return <GalaxyMenu onStart={() => setScreen('galaxy_game')} onShop={() => setScreen('galaxy_shop')} onBack={() => setScreen('hub')} coins={coins} />;
+                  case 'galaxy_game': return <GalaxyInvader onBack={() => setScreen('galaxy')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
+                  case 'galaxy_shop': return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} equipShip={setEquippedShip} unlockedShips={unlockedShips} equippedShip={equippedShip} onBack={() => setScreen('galaxy')} />;
+                  case 'farm': return <FarmGame onBack={() => setScreen('hub')} addCoins={addCoins} coins={coins} />;
+                  case 'hangman': return <HangmanGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
+                  case 'checkers': return <CheckersGame onBack={() => setScreen('hub')} />;
+                  default: return <MainHub onSelect={setScreen} coins={coins} cashBalance={cashBalance} onOpenMissions={() => setShowMissionModal(true)} />;
+              }
+          };
+
+          // Helper to get current balance for modal prop
+          const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
+
+          return (
+              <>
+                  <InstallButton />
+                  {renderScreen()}
+                  {showMissionModal && <MissionModal playTime={playTime} rewards={rewards} onClose={() => setShowMissionModal(false)} />}
+                  {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={() => {}} />}
+                  
+                  {/* WITHDRAWAL MODAL */}
+                  {showWithdrawModal && (
+                      <WithdrawModal 
+                          balance={currentBalance}
+                          onClose={() => setShowWithdrawModal(false)}
+                          onConfirm={processWithdrawal}
+                          user={user}
+                      />
+                  )}
+
+                  {/* ADMIN MODALS */}
+                  {showAdminLogin && (
+                      <AdminLoginModal 
+                          onClose={() => setShowAdminLogin(false)}
+                          onSuccess={() => { setShowAdminLogin(false); setShowAdminPanel(true); }}
+                      />
+                  )}
+                  
+                  {showAdminPanel && (
+                      <AdminPanel onClose={() => setShowAdminPanel(false)} />
+                  )}
+
+                  {/* CONGRATS POPUP */}
+                  {showCongratsModal && (
+                      <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCongratsModal(null)}>
+                          <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-1 rounded-2xl shadow-[0_0_50px_gold]">
+                              <div className="bg-black rounded-xl p-8 text-center max-w-sm">
+                                  <Trophy size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
+                                  <h2 className="text-3xl font-bold text-white mb-2 hero-title">PARABÉNS!</h2>
+                                  <p className="text-gray-300 mb-6">
+                                      Você desbloqueou {showCongratsModal === 'photo' ? 'R$ 0,05' : showCongratsModal === 'video' ? 'R$ 0,10' : 'R$ 0,30'} no PIX!
+                                  </p>
+                                  <button onClick={() => { setShowCongratsModal(null); setShowMissionModal(true); }} className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider">
+                                      RESGATAR RECOMPENSA
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+              </>
+          );
+      };
+
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
