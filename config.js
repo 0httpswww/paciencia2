@@ -1,7 +1,7 @@
 /**
  * CONFIGURAÇÃO PÚBLICA (Frontend)
  * 
- * NOTA: Chaves de API sensíveis e credenciais de banco de dados
+ * NOTA: Credenciais de banco de dados e chaves de API 
  * foram movidas para o backend (api.php) para segurança.
  */
 
@@ -9,7 +9,7 @@ var GAME_CONFIG = {
     // Configurações de Banco de Dados e Auth são carregadas via fetch('./api.php?action=get_config')
     supabase: {}, 
     
-    // Configurações de Publicidade (Públicas por natureza)
+    // Configurações de Publicidade (Públicas)
     ads: {
         popunderZone: '10264533',
         pushZone: '10234210',
@@ -18,7 +18,6 @@ var GAME_CONFIG = {
     }
 };
 
-// Exporta para o Service Worker e Janela
 if (typeof window !== 'undefined') {
     window.GAME_CONFIG = GAME_CONFIG;
 }

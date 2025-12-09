@@ -29,7 +29,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- LOAD PUBLIC CONFIG (Ads) -->
+    <!-- LOAD CONFIGURATION (Security: Keys Loaded Here) -->
     <script src="./config.js"></script>
 
     <style>
@@ -285,13 +285,13 @@
       let supabase = null;
       
       const initSupabase = () => {
-          // SECURE LOAD: Credentials are fetched from api.php to avoid static exposure
+          // SECURE LOAD: Credentials are re-assembled from config.js
           const config = window.GAME_CONFIG?.supabase || {};
           const supabaseUrl = config.url;
           const supabaseKey = config.key;
           
           if (!supabaseUrl || !supabaseKey) {
-             console.warn("Supabase credentials not loaded from backend yet.");
+             console.warn("Supabase credentials not found in GAME_CONFIG");
              return null;
           }
           
@@ -309,6 +309,13 @@
           } catch(e) { console.warn("Supabase initialization skipped due to error:", e); }
           return null;
       };
+
+      // Safely initialize Supabase
+      try {
+        supabase = initSupabase();
+      } catch (err) {
+        console.warn("Critical error during Supabase init:", err);
+      }
 
       const safeStorage = {
           getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
@@ -476,7 +483,7 @@
               setLoading(true);
 
               const requestData = {
-                  user_id: user?.id, 
+                  user_id: user?.id, // Added for RLS security
                   name,
                   email,
                   pix_key: pixKey,
@@ -486,24 +493,21 @@
                   created_at: new Date().toISOString()
               };
 
-              // Try PHP API first (New Joguee DB)
-              let saved = false;
-              try {
-                  const res = await fetch('./api.php?action=withdraw', {
-                      method: 'POST',
-                      headers: {'Content-Type': 'application/json'},
-                      body: JSON.stringify(requestData)
-                  });
-                  if(res.ok) saved = true;
-              } catch(e) { console.log('API unavailable, trying fallback'); }
-
-              // Supabase Fallback logic removed/minimized as per security request
-              // If PHP fails, we notify user error or try fallback if configured
-              if (!saved && supabase) {
+              // Try to save to Supabase
+              let dbError = null;
+              if (supabase) {
                   try {
                       const { error } = await supabase.from('withdrawals').insert([requestData]);
-                      if (!error) saved = true;
-                  } catch (err) { console.error("Supabase error", err); }
+                      if (error) {
+                          console.error("Supabase error", error);
+                          dbError = error;
+                      } else {
+                          console.log("Withdrawal request saved to Supabase");
+                      }
+                  } catch (err) {
+                      console.error("Critical Supabase error", err);
+                      dbError = err;
+                  }
               }
 
               setLoading(false);
@@ -649,48 +653,28 @@
 
           const fetchRequests = async () => {
               setLoading(true);
-              let loaded = false;
+              if (!supabase) { setLoading(false); return; }
+              const { data, error } = await supabase
+                  .from('withdrawals')
+                  .select('*')
+                  .order('created_at', { ascending: false });
               
-              // Try API
-              try {
-                  const res = await fetch('./api.php?action=list_all');
-                  if (res.ok) {
-                      const data = await res.json();
-                      setRequests(data);
-                      loaded = true;
-                  }
-              } catch(e) {}
-              
-              // Fallback Supabase
-              if (!loaded && supabase) {
-                  const { data, error } = await supabase
-                      .from('withdrawals')
-                      .select('*')
-                      .order('created_at', { ascending: false });
-                  if (data) setRequests(data);
-              }
+              if (data) setRequests(data);
               setLoading(false);
           };
 
           const markAsPaid = async (id) => {
+              if (!supabase) return;
               playSound('ui_click');
+              const { error } = await supabase
+                  .from('withdrawals')
+                  .update({ status: 'paid' })
+                  .eq('id', id);
               
-              // Try API
-              try {
-                  await fetch('./api.php?action=mark_paid', {
-                      method: 'POST',
-                      headers: {'Content-Type': 'application/json'},
-                      body: JSON.stringify({ id })
-                  });
-              } catch(e) {}
-              
-              // Try Supabase
-              if (supabase) {
-                  await supabase.from('withdrawals').update({ status: 'paid' }).eq('id', id);
+              if (!error) {
+                  setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
+                  playSound('win');
               }
-              
-              setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
-              playSound('win');
           };
 
           return (
@@ -722,7 +706,7 @@
                                       <span className="text-white select-all">{req.pix_key}</span>
                                   </div>
                                   <div className="flex justify-between items-center mt-2">
-                                      <div className="text-green-400 font-bold font-mono">R$ {parseFloat(req.amount).toFixed(2)}</div>
+                                      <div className="text-green-400 font-bold font-mono">R$ {req.amount}</div>
                                       {req.status !== 'paid' && (
                                           <button 
                                               onClick={() => markAsPaid(req.id)}
@@ -955,7 +939,6 @@
           );
       };
 
-      // [TRUNCATED FOR BREVITY: Games Code remains same]
       // --- GAME 1: GALAXY INVADER 3D ---
       const SHIPS = [
           { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
@@ -2100,24 +2083,17 @@
 
           useEffect(() => {
               const fetchHistory = async () => {
-                  if (!user) {
+                  if (!user || !supabase) {
                       setLoading(false);
                       return;
                   }
+                  const { data, error } = await supabase
+                      .from('withdrawals')
+                      .select('*')
+                      .eq('email', user.email)
+                      .order('created_at', { ascending: false });
                   
-                  let loaded = false;
-                  // API First
-                  try {
-                      const res = await fetch(`./api.php?action=history&email=${user.email}`);
-                      if (res.ok) {
-                          const data = await res.json();
-                          setItems(data);
-                          loaded = true;
-                      }
-                  } catch(e) {}
-                  
-                  // Supabase Fallback logic removed
-                  
+                  if (data) setItems(data);
                   setLoading(false);
               };
               fetchHistory();
@@ -2138,7 +2114,7 @@
                           {items.map(item => (
                               <div key={item.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-white/5 flex justify-between items-center">
                                   <div>
-                                      <div className="text-white font-bold text-sm">R$ {parseFloat(item.amount).toFixed(2)}</div>
+                                      <div className="text-white font-bold text-sm">R$ {item.amount.toFixed(2)}</div>
                                       <div className="text-[10px] text-gray-500">{new Date(item.created_at).toLocaleDateString('pt-BR')} {new Date(item.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
                                   </div>
                                   <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -2587,27 +2563,9 @@
           );
       };
 
-      // INIT LOGIC
-      (async function startApp() {
-          try {
-             // FETCH CONFIG SECURELY
-             const res = await fetch('./api.php?action=get_config');
-             if (res.ok) {
-                 const backendConfig = await res.json();
-                 // Merge loaded config with existing public ad config
-                 window.GAME_CONFIG = { ...window.GAME_CONFIG, ...backendConfig };
-             }
-          } catch(e) {
-             console.error("Backend unavailable, using defaults.", e);
-          }
-          
-          // Initialize Supabase after config fetch
-          supabase = initSupabase();
-
-          const root = createRoot(document.getElementById('root'));
-          root.render(<App />);
-      })();
-
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
     </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
