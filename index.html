@@ -483,7 +483,7 @@
               setLoading(true);
 
               const requestData = {
-                  user_id: user?.id, // Added for RLS security
+                  user_id: user?.id, 
                   name,
                   email,
                   pix_key: pixKey,
@@ -493,21 +493,22 @@
                   created_at: new Date().toISOString()
               };
 
-              // Try to save to Supabase
-              let dbError = null;
-              if (supabase) {
+              // Try PHP API first (New Joguee DB), then Fallback to Supabase
+              let saved = false;
+              try {
+                  const res = await fetch('./api.php?action=withdraw', {
+                      method: 'POST',
+                      headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify(requestData)
+                  });
+                  if(res.ok) saved = true;
+              } catch(e) { console.log('API unavailable, trying fallback'); }
+
+              if (!saved && supabase) {
                   try {
                       const { error } = await supabase.from('withdrawals').insert([requestData]);
-                      if (error) {
-                          console.error("Supabase error", error);
-                          dbError = error;
-                      } else {
-                          console.log("Withdrawal request saved to Supabase");
-                      }
-                  } catch (err) {
-                      console.error("Critical Supabase error", err);
-                      dbError = err;
-                  }
+                      if (!error) saved = true;
+                  } catch (err) { console.error("Supabase error", err); }
               }
 
               setLoading(false);
@@ -653,28 +654,48 @@
 
           const fetchRequests = async () => {
               setLoading(true);
-              if (!supabase) { setLoading(false); return; }
-              const { data, error } = await supabase
-                  .from('withdrawals')
-                  .select('*')
-                  .order('created_at', { ascending: false });
+              let loaded = false;
               
-              if (data) setRequests(data);
+              // Try API
+              try {
+                  const res = await fetch('./api.php?action=list_all');
+                  if (res.ok) {
+                      const data = await res.json();
+                      setRequests(data);
+                      loaded = true;
+                  }
+              } catch(e) {}
+              
+              // Fallback Supabase
+              if (!loaded && supabase) {
+                  const { data, error } = await supabase
+                      .from('withdrawals')
+                      .select('*')
+                      .order('created_at', { ascending: false });
+                  if (data) setRequests(data);
+              }
               setLoading(false);
           };
 
           const markAsPaid = async (id) => {
-              if (!supabase) return;
               playSound('ui_click');
-              const { error } = await supabase
-                  .from('withdrawals')
-                  .update({ status: 'paid' })
-                  .eq('id', id);
               
-              if (!error) {
-                  setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
-                  playSound('win');
+              // Try API
+              try {
+                  await fetch('./api.php?action=mark_paid', {
+                      method: 'POST',
+                      headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify({ id })
+                  });
+              } catch(e) {}
+              
+              // Try Supabase
+              if (supabase) {
+                  await supabase.from('withdrawals').update({ status: 'paid' }).eq('id', id);
               }
+              
+              setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
+              playSound('win');
           };
 
           return (
@@ -706,7 +727,7 @@
                                       <span className="text-white select-all">{req.pix_key}</span>
                                   </div>
                                   <div className="flex justify-between items-center mt-2">
-                                      <div className="text-green-400 font-bold font-mono">R$ {req.amount}</div>
+                                      <div className="text-green-400 font-bold font-mono">R$ {parseFloat(req.amount).toFixed(2)}</div>
                                       {req.status !== 'paid' && (
                                           <button 
                                               onClick={() => markAsPaid(req.id)}
@@ -2083,17 +2104,32 @@
 
           useEffect(() => {
               const fetchHistory = async () => {
-                  if (!user || !supabase) {
+                  if (!user) {
                       setLoading(false);
                       return;
                   }
-                  const { data, error } = await supabase
-                      .from('withdrawals')
-                      .select('*')
-                      .eq('email', user.email)
-                      .order('created_at', { ascending: false });
                   
-                  if (data) setItems(data);
+                  let loaded = false;
+                  // API First
+                  try {
+                      const res = await fetch(`./api.php?action=history&email=${user.email}`);
+                      if (res.ok) {
+                          const data = await res.json();
+                          setItems(data);
+                          loaded = true;
+                      }
+                  } catch(e) {}
+                  
+                  // Supabase Fallback
+                  if (!loaded && supabase) {
+                      const { data, error } = await supabase
+                          .from('withdrawals')
+                          .select('*')
+                          .eq('email', user.email)
+                          .order('created_at', { ascending: false });
+                      if (data) setItems(data);
+                  }
+                  
                   setLoading(false);
               };
               fetchHistory();
@@ -2114,7 +2150,7 @@
                           {items.map(item => (
                               <div key={item.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-white/5 flex justify-between items-center">
                                   <div>
-                                      <div className="text-white font-bold text-sm">R$ {item.amount.toFixed(2)}</div>
+                                      <div className="text-white font-bold text-sm">R$ {parseFloat(item.amount).toFixed(2)}</div>
                                       <div className="text-[10px] text-gray-500">{new Date(item.created_at).toLocaleDateString('pt-BR')} {new Date(item.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
                                   </div>
                                   <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${

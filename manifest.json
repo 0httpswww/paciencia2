@@ -1,6 +1,6 @@
 {
   "name": "JoGos Online",
-  "short_name": "JogosOnline",
+  "short_name": "Joguee",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",
