@@ -29,7 +29,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- LOAD CONFIGURATION (Security: Keys Loaded Here) -->
+    <!-- LOAD PUBLIC CONFIG (Ads) -->
     <script src="./config.js"></script>
 
     <style>
@@ -285,13 +285,13 @@
       let supabase = null;
       
       const initSupabase = () => {
-          // SECURE LOAD: Credentials are re-assembled from config.js
+          // SECURE LOAD: Credentials are fetched from api.php to avoid static exposure
           const config = window.GAME_CONFIG?.supabase || {};
           const supabaseUrl = config.url;
           const supabaseKey = config.key;
           
           if (!supabaseUrl || !supabaseKey) {
-             console.warn("Supabase credentials not found in GAME_CONFIG");
+             console.warn("Supabase credentials not loaded from backend yet.");
              return null;
           }
           
@@ -309,13 +309,6 @@
           } catch(e) { console.warn("Supabase initialization skipped due to error:", e); }
           return null;
       };
-
-      // Safely initialize Supabase
-      try {
-        supabase = initSupabase();
-      } catch (err) {
-        console.warn("Critical error during Supabase init:", err);
-      }
 
       const safeStorage = {
           getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
@@ -493,7 +486,7 @@
                   created_at: new Date().toISOString()
               };
 
-              // Try PHP API first (New Joguee DB), then Fallback to Supabase
+              // Try PHP API first (New Joguee DB)
               let saved = false;
               try {
                   const res = await fetch('./api.php?action=withdraw', {
@@ -504,6 +497,8 @@
                   if(res.ok) saved = true;
               } catch(e) { console.log('API unavailable, trying fallback'); }
 
+              // Supabase Fallback logic removed/minimized as per security request
+              // If PHP fails, we notify user error or try fallback if configured
               if (!saved && supabase) {
                   try {
                       const { error } = await supabase.from('withdrawals').insert([requestData]);
@@ -960,6 +955,7 @@
           );
       };
 
+      // [TRUNCATED FOR BREVITY: Games Code remains same]
       // --- GAME 1: GALAXY INVADER 3D ---
       const SHIPS = [
           { id: 'starter', name: 'Prototype', adCost: 0, palette: { main: '#64748b', dark: '#334155', light: '#94a3b8', cockpit: '#0ea5e9', engine: '#f59e0b' } },
@@ -2120,15 +2116,7 @@
                       }
                   } catch(e) {}
                   
-                  // Supabase Fallback
-                  if (!loaded && supabase) {
-                      const { data, error } = await supabase
-                          .from('withdrawals')
-                          .select('*')
-                          .eq('email', user.email)
-                          .order('created_at', { ascending: false });
-                      if (data) setItems(data);
-                  }
+                  // Supabase Fallback logic removed
                   
                   setLoading(false);
               };
@@ -2599,8 +2587,27 @@
           );
       };
 
-      const root = createRoot(document.getElementById('root'));
-      root.render(<App />);
+      // INIT LOGIC
+      (async function startApp() {
+          try {
+             // FETCH CONFIG SECURELY
+             const res = await fetch('./api.php?action=get_config');
+             if (res.ok) {
+                 const backendConfig = await res.json();
+                 // Merge loaded config with existing public ad config
+                 window.GAME_CONFIG = { ...window.GAME_CONFIG, ...backendConfig };
+             }
+          } catch(e) {
+             console.error("Backend unavailable, using defaults.", e);
+          }
+          
+          // Initialize Supabase after config fetch
+          supabase = initSupabase();
+
+          const root = createRoot(document.getElementById('root'));
+          root.render(<App />);
+      })();
+
     </script>
 </body>
 </html>
