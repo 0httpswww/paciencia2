@@ -228,8 +228,7 @@
       "imports": {
         "react": "https://aistudiocdn.com/react@^19.2.0",
         "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
       }
     }
     </script>
@@ -255,67 +254,40 @@
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
       import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History } from 'lucide-react';
-      import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
       // MONETAG ADS CONFIGURATION
       // ==========================================
-      // Configuration loaded safely from window.GAME_CONFIG
       const MONETAG_DIRECT_LINK = window.GAME_CONFIG?.ads?.directLink || 'https://al5sm.com/4/10264533'; 
 
       const triggerAd = (onReward) => {
-          // Resume audio context if suspended (requires user gesture)
           const ctx = getAudioContext();
           if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-
           playSound('ui_click');
-          
-          // Open Direct Link
           window.open(MONETAG_DIRECT_LINK, '_blank');
-          
-          // Simulate ad watch time and grant reward
-          setTimeout(() => {
-              if (onReward) onReward();
-          }, 2000);
+          setTimeout(() => { if (onReward) onReward(); }, 2000);
       };
 
       // ==========================================
-      // SUPABASE CONFIG
+      // BACKEND API BRIDGE
       // ==========================================
-      let supabase = null;
-      
-      const initSupabase = () => {
-          // SECURE LOAD: Credentials are re-assembled from config.js
-          const config = window.GAME_CONFIG?.supabase || {};
-          const supabaseUrl = config.url;
-          const supabaseKey = config.key;
-          
-          if (!supabaseUrl || !supabaseKey) {
-             console.warn("Supabase credentials not found in GAME_CONFIG");
-             return null;
-          }
-          
+      const API_URL = './api.php';
+
+      const apiCall = async (action, method = 'GET', body = null) => {
           try {
-              if (typeof createClient !== 'undefined') {
-                  return createClient(supabaseUrl, supabaseKey, {
-                      auth: { 
-                        persistSession: true, 
-                        storageKey: 'galaxy_auth_token',
-                        autoRefreshToken: true,
-                        detectSessionInUrl: false
-                      }
-                  });
-              }
-          } catch(e) { console.warn("Supabase initialization skipped due to error:", e); }
-          return null;
+              const options = {
+                  method,
+                  headers: { 'Content-Type': 'application/json' }
+              };
+              if (body) options.body = JSON.stringify(body);
+              const url = `${API_URL}?action=${action}${method === 'GET' && body ? '&' + new URLSearchParams(body) : ''}`;
+              const res = await fetch(url, options);
+              return await res.json();
+          } catch (e) {
+              console.error("API Error:", e);
+              return { error: 'Connection failed. Please check your internet.' };
+          }
       };
-
-      // Safely initialize Supabase
-      try {
-        supabase = initSupabase();
-      } catch (err) {
-        console.warn("Critical error during Supabase init:", err);
-      }
 
       const safeStorage = {
           getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
@@ -356,46 +328,11 @@
                 case 'levelup': osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.linearRampToValueAtTime(880, now + 0.2); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); break;
                 case 'boss_hit': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
                 case 'buy': osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
-                case 'plant': // Digging sound
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-                    gainNode.gain.setValueAtTime(0.15, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
-                    osc.start(now); osc.stop(now + 0.15);
-                    break;
-                case 'harvest': // High pitched success
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.05, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-                    osc.start(now); osc.stop(now + 0.2);
-                    break;
-                case 'scan': // Sci-fi scan sound
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
-                    gainNode.gain.setValueAtTime(0.05, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
-                    osc.start(now); osc.stop(now + 0.2);
-                    break;
-                case 'move_piece': // Wood thud
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-                    osc.start(now); osc.stop(now + 0.1);
-                    break;
-                case 'capture': // Sharp hit
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, now);
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
-                    osc.start(now); osc.stop(now + 0.15);
-                    break;
+                case 'plant': osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.15); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15); osc.start(now); osc.stop(now + 0.15); break;
+                case 'harvest': osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'scan': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.2); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); break;
+                case 'move_piece': osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); break;
+                case 'capture': osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15); osc.start(now); osc.stop(now + 0.15); break;
             }
           } catch(e) {}
       };
@@ -471,9 +408,7 @@
       const WithdrawModal = ({ onClose, balance, onConfirm, user }) => {
           const [name, setName] = useState('');
           const [pixType, setPixType] = useState('cpf');
-          // Pre-fill pix key if available in user metadata
-          const [pixKey, setPixKey] = useState(user?.user_metadata?.pix_key || '');
-          // Pre-fill email from logged in user to ensure history consistency
+          const [pixKey, setPixKey] = useState(user?.pix_key || '');
           const [email, setEmail] = useState(user?.email || '');
           const [loading, setLoading] = useState(false);
           const [success, setSuccess] = useState(false);
@@ -483,40 +418,25 @@
               setLoading(true);
 
               const requestData = {
-                  user_id: user?.id, // Added for RLS security
+                  user_id: user?.id, 
                   name,
                   email,
                   pix_key: pixKey,
                   pix_type: pixType,
-                  amount: balance,
-                  status: 'pending',
-                  created_at: new Date().toISOString()
+                  amount: balance
               };
 
-              // Try to save to Supabase
-              let dbError = null;
-              if (supabase) {
-                  try {
-                      const { error } = await supabase.from('withdrawals').insert([requestData]);
-                      if (error) {
-                          console.error("Supabase error", error);
-                          dbError = error;
-                      } else {
-                          console.log("Withdrawal request saved to Supabase");
-                      }
-                  } catch (err) {
-                      console.error("Critical Supabase error", err);
-                      dbError = err;
-                  }
-              }
+              const res = await apiCall('withdraw', 'POST', requestData);
 
               setLoading(false);
-              setSuccess(true);
-              
-              // Delay closing and triggering callback to allow user to see success msg
-              setTimeout(() => {
-                  onConfirm(requestData);
-              }, 1500);
+              if (res.success) {
+                  setSuccess(true);
+                  setTimeout(() => {
+                      onConfirm(requestData);
+                  }, 1500);
+              } else {
+                  alert("Erro ao solicitar saque. Tente novamente.");
+              }
           };
 
           if (success) {
@@ -597,7 +517,6 @@
 
           const handleLogin = (e) => {
               e.preventDefault();
-              
               // Simple hash to hide plain text passwords
               const hash = (str) => {
                   let h = 0;
@@ -607,10 +526,6 @@
                   }
                   return h.toString();
               };
-
-              // Hashes corresponding to valid passwords
-              // 92668751 represents 'admin'
-              // 1509442 represents '1234'
               const validHashes = ['92668751', '1509442'];
 
               if (validHashes.includes(hash(pass))) {
@@ -653,25 +568,16 @@
 
           const fetchRequests = async () => {
               setLoading(true);
-              if (!supabase) { setLoading(false); return; }
-              const { data, error } = await supabase
-                  .from('withdrawals')
-                  .select('*')
-                  .order('created_at', { ascending: false });
-              
-              if (data) setRequests(data);
+              const data = await apiCall('admin_list');
+              if (Array.isArray(data)) setRequests(data);
               setLoading(false);
           };
 
           const markAsPaid = async (id) => {
-              if (!supabase) return;
               playSound('ui_click');
-              const { error } = await supabase
-                  .from('withdrawals')
-                  .update({ status: 'paid' })
-                  .eq('id', id);
+              const res = await apiCall('admin_update', 'POST', { id, status: 'paid' });
               
-              if (!error) {
+              if (res.success) {
                   setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
                   playSound('win');
               }
@@ -879,27 +785,20 @@
               playSound('ui_click');
               setLoading(true);
               setError(null);
-              
-              if (!supabase) { setError("Erro de conexão (Supabase offline)."); setLoading(false); return; }
 
-              try {
-                  let result;
-                  if (isSignUp) {
-                      if (!pixKey.trim()) throw new Error("Por favor, insira sua chave PIX.");
-                      result = await supabase.auth.signUp({ 
-                          email, 
-                          password,
-                          options: {
-                              data: { pix_key: pixKey }
-                          }
-                      });
-                  } else {
-                      result = await supabase.auth.signInWithPassword({ email, password });
-                  }
-                  
-                  if (result.error) throw result.error;
-                  if (result.data.user) { onLogin(result.data.user); onClose(); }
-              } catch (err) { setError(err.message || "Erro de autenticação"); } finally { setLoading(false); }
+              const action = isSignUp ? 'register' : 'login';
+              const body = { email, password, pix_key: pixKey };
+              
+              const res = await apiCall(action, 'POST', body);
+
+              setLoading(false);
+              
+              if (res.user) {
+                  onLogin(res.user);
+                  onClose();
+              } else {
+                  setError(res.error || "Erro ao conectar.");
+              }
           };
 
           return (
@@ -985,26 +884,10 @@
               let animationFrameId; let lastTime = 0;
               const shipDef = SHIPS.find(s => s.id === equippedShipId) || SHIPS[0];
               const playerImg = generatePlayerSprite(shipDef.palette);
-              
-              // --- PHYSICS / GAMEPLAY CONSTANTS ---
-              // Adjusted for tighter, more arcade-like feel using LERP
-              const LERP_FACTOR = 0.2; // Higher = snappier, Lower = smoother/driftier
-              const MAX_SPEED = 20;
+              const LERP_FACTOR = 0.2; 
               
               let player = { 
-                  x: canvas.width/2, 
-                  y: canvas.height - 100, 
-                  vx: 0, 
-                  vy: 0, 
-                  width: 40, 
-                  height: 40, 
-                  hp: 100, 
-                  weaponLevel: 1, 
-                  lastShot: 0, 
-                  score: 0, 
-                  level: 1, 
-                  xp: 0,
-                  bank: 0 // For tilting effect
+                  x: canvas.width/2, y: canvas.height - 100, vx: 0, vy: 0, width: 40, height: 40, hp: 100, weaponLevel: 1, lastShot: 0, score: 0, level: 1, xp: 0, bank: 0 
               };
               let bullets = [], enemies = [], particles = [], powerups = [], boss = null;
               let input = { x: null, y: null, active: false };
@@ -1024,67 +907,30 @@
                   if (gameStateRef.current !== 'playing') { animationFrameId = requestAnimationFrame(() => update(Date.now())); return; }
                   const dt = time - lastTime; lastTime = time;
 
-                  // --- IMPROVED MOVEMENT (LERP) ---
                   if (input.active) {
-                      // Target position (offset slightly above finger)
-                      const targetX = input.x;
-                      const targetY = input.y - 50;
-                      
-                      // Smoothly follow the target
-                      const dx = targetX - player.x;
-                      const dy = targetY - player.y;
-                      
-                      player.x += dx * LERP_FACTOR;
-                      player.y += dy * LERP_FACTOR;
-                      
-                      // Calculate velocity for banking effect based on delta
+                      const targetX = input.x; const targetY = input.y - 50;
+                      const dx = targetX - player.x; const dy = targetY - player.y;
+                      player.x += dx * LERP_FACTOR; player.y += dy * LERP_FACTOR;
                       player.vx = dx * 0.5;
-                  } else {
-                      // Dampen velocity when not touching
-                      player.vx *= 0.9;
-                  }
+                  } else { player.vx *= 0.9; }
                   
-                  // Clamp Bank Angle
                   player.bank = Math.max(-0.5, Math.min(0.5, player.vx * 0.05));
-
-                  // Bounds
                   if (player.x < 20) { player.x = 20; player.vx = 0; }
                   if (player.x > canvas.width - 20) { player.x = canvas.width - 20; player.vx = 0; }
                   if (player.y < 50) { player.y = 50; }
                   if (player.y > canvas.height - 20) { player.y = canvas.height - 20; }
                   
-                  // --- ENGINE TRAILS ---
                   if (Math.random() > 0.3) {
-                      particles.push({ 
-                          x: player.x - 5 + Math.random()*10, 
-                          y: player.y + 20, 
-                          vx: (Math.random()-0.5), 
-                          vy: Math.random()*2 + 2, 
-                          life: 15, 
-                          color: '#38bdf8', 
-                          alpha: 0.6 
-                      });
+                      particles.push({ x: player.x - 5 + Math.random()*10, y: player.y + 20, vx: (Math.random()-0.5), vy: Math.random()*2 + 2, life: 15, color: '#38bdf8', alpha: 0.6 });
                   }
 
-                  // --- FASTER SHOOTING ---
                   const fireRate = Math.max(100, 250 - (player.weaponLevel * 30));
                   if (time - player.lastShot > fireRate) {
-                      const scale = getScale(player.y); 
-                      const bSpeed = -20 * scale; // Increased bullet speed
-                      
-                      // Muzzle Flash
+                      const scale = getScale(player.y); const bSpeed = -20 * scale; 
                       particles.push({ x: player.x, y: player.y - 15, vx: 0, vy: 0, life: 5, color: 'white', alpha: 1, size: 10 });
-                      
                       bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: player.vx * 0.1, type: 'player', width: 4*scale, height: 12*scale, color: '#38bdf8' });
-                      
-                      if (player.weaponLevel >= 2) { 
-                          bullets.push({ x: player.x - 12, y: player.y, vy: bSpeed * 0.95, vx: -1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
-                          bullets.push({ x: player.x + 12, y: player.y, vy: bSpeed * 0.95, vx: 1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); 
-                      }
-                      if (player.weaponLevel >= 3) {
-                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: -2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
-                          bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: 2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); 
-                      }
+                      if (player.weaponLevel >= 2) { bullets.push({ x: player.x - 12, y: player.y, vy: bSpeed * 0.95, vx: -1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); bullets.push({ x: player.x + 12, y: player.y, vy: bSpeed * 0.95, vx: 1, type: 'player', width: 3*scale, height: 10*scale, color: '#38bdf8' }); }
+                      if (player.weaponLevel >= 3) { bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: -2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); bullets.push({ x: player.x, y: player.y - 20, vy: bSpeed, vx: 2, type: 'player', width: 3*scale, height: 8*scale, color: '#0ea5e9' }); }
                       playSound('shoot'); player.lastShot = time;
                   }
 
@@ -1096,8 +942,6 @@
                   for (let i = enemies.length - 1; i >= 0; i--) {
                       let e = enemies[i]; const scale = getScale(e.y);
                       e.y += e.vy * scale; e.x += e.vx * scale; e.renderW = e.width * scale; e.renderH = e.height * scale;
-                      
-                      // Wiggle movement for enemies
                       e.x += Math.sin(time / 200 + i) * 1;
 
                       if (Math.random() < 0.01 * stats.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
@@ -1119,18 +963,16 @@
                       if (boss.phase === 'enter') { boss.y += 1; if (boss.y > 100) boss.phase = 'attack'; } 
                       else { boss.x += boss.vx; if (boss.x > canvas.width - 50 || boss.x < 50) boss.vx *= -1; if (Math.random() < 0.05) { const angle = Math.atan2(player.y - boss.y, player.x - boss.x); bullets.push({ x: boss.x, y: boss.y + 40, vy: Math.sin(angle)*6, vx: Math.cos(angle)*6, type: 'enemy', width: 8, height: 8, color: '#f0f' }); } }
                       
-                      // FIX: Safe loop with break to prevent accessing boss after it's null
                       for (let j = bullets.length - 1; j >= 0; j--) { 
                           let b = bullets[j]; 
                           if (boss && b.type === 'player' && Math.abs(b.x - boss.x) < boss.renderW/2 && Math.abs(b.y - boss.y) < boss.renderH/2) { 
                               boss.hp--; bullets.splice(j, 1); playSound('boss_hit'); 
                               if (boss.hp <= 0) { 
-                                  // Boss Dead logic
                                   const deathX = boss.x; const deathY = boss.y;
                                   boss = null; 
                                   player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); 
                                   for(let k=0; k<50; k++) particles.push({ x: deathX, y: deathY, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'purple', alpha: 1 }); 
-                                  break; // CRITICAL FIX: Exit loop immediately
+                                  break;
                               } 
                           } 
                       }
@@ -1145,39 +987,14 @@
 
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
                   
-                  // Render Particles
-                  for (let i = particles.length - 1; i >= 0; i--) { 
-                      let p = particles[i]; 
-                      p.x += p.vx; p.y += p.vy; p.life--; 
-                      ctx.fillStyle = p.color; 
-                      ctx.globalAlpha = p.alpha ? (p.life / 20) * p.alpha : p.life / 20; 
-                      const size = p.size || 4;
-                      ctx.fillRect(p.x, p.y, size, size); 
-                      if (p.life <= 0) particles.splice(i, 1); 
-                  } 
-                  ctx.globalAlpha = 1;
+                  for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha ? (p.life / 20) * p.alpha : p.life / 20; const size = p.size || 4; ctx.fillRect(p.x, p.y, size, size); if (p.life <= 0) particles.splice(i, 1); } ctx.globalAlpha = 1;
 
                   const pScale = getScale(player.y);
-                  
-                  // Shadow
                   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 30*pScale, 15*pScale, 5*pScale, 0, 0, Math.PI*2); ctx.fill();
                   
-                  // Ship Render with Rotation
-                  ctx.save(); 
-                  ctx.translate(player.x, player.y); 
-                  ctx.scale(pScale, pScale); 
-                  ctx.rotate(player.bank); 
+                  ctx.save(); ctx.translate(player.x, player.y); ctx.scale(pScale, pScale); ctx.rotate(player.bank); 
                   if (playerImg.complete) ctx.drawImage(playerImg, -20, -20, 40, 40); 
-                  
-                  // Engine Glow
-                  ctx.fillStyle = '#38bdf8';
-                  ctx.globalAlpha = 0.6 + Math.random() * 0.4;
-                  ctx.beginPath();
-                  ctx.arc(0, 15, 5, 0, Math.PI * 2);
-                  ctx.fill();
-                  ctx.globalAlpha = 1;
-                  
-                  ctx.restore();
+                  ctx.fillStyle = '#38bdf8'; ctx.globalAlpha = 0.6 + Math.random() * 0.4; ctx.beginPath(); ctx.arc(0, 15, 5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; ctx.restore();
 
                   enemies.forEach(e => { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(e.x, e.y + e.renderH, e.renderW/3, e.renderH/5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = e.color; ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2, e.renderW, e.renderH); ctx.shadowBlur = 0; ctx.fillStyle = 'red'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW, 3); ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * (e.hp / (2+player.level)), 3); });
                   if (boss) { ctx.fillStyle = 'rgba(128,0,128,0.8)'; ctx.beginPath(); ctx.moveTo(boss.x, boss.y - boss.renderH/2); ctx.lineTo(boss.x + boss.renderW/2, boss.y + boss.renderH/2); ctx.lineTo(boss.x - boss.renderW/2, boss.y + boss.renderH/2); ctx.fill(); ctx.fillStyle = 'gray'; ctx.fillRect(boss.x - 50, boss.y - 70, 100, 8); ctx.fillStyle = '#d946ef'; ctx.fillRect(boss.x - 50, boss.y - 70, 100 * (boss.hp / boss.maxHp), 8); ctx.strokeStyle = 'white'; ctx.strokeRect(boss.x - 50, boss.y - 70, 100, 8); }
@@ -1277,7 +1094,6 @@
                       equipShip(ship.id);
                       playSound('powerup');
                   } else {
-                      // Trigger Direct Link via click and give reward
                       triggerAd(() => {
                           handleShipAdWatch(ship.id, reqAds);
                           playSound('buy');
@@ -1369,10 +1185,10 @@
           useEffect(() => safeStorage.setItem('farm_crop_ads', JSON.stringify(cropAdProgress)), [cropAdProgress]);
 
           const updateMission = (type, id, amount = 1) => { setMissions(prev => prev.map(m => { if (m.claimed) return m; let match = false; if (m.type === 'earn' && type === 'earn') match = true; else if (m.target === id) match = true; if (match) return { ...m, progress: Math.min(m.count, m.progress + amount) }; return m; })); };
-          const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: m.reward }).then(({ error }) => { if (!error) addCoins(m.reward); else addCoins(m.reward); }); } else { addCoins(m.reward); } addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
+          const claimMission = (m) => { if (m.progress >= m.count && !m.claimed) { addCoins(m.reward); addXp(20); playSound('win'); setMissions(prev => prev.map(pm => pm.id === m.id ? { ...pm, claimed: true } : pm)); } };
           
           const handlePlotClick = (index, e) => { 
-            const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: def.reward }).then(({ error }) => { if (!error) addCoins(def.reward); else addCoins(def.reward); }); } else { addCoins(def.reward); } addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } if (supabase && navigator.onLine) { supabase.rpc('add_coins', { amount: -item.cost }).then(({ error }) => { if (!error) addCoins(-item.cost); else addCoins(-item.cost); }); } else { addCoins(-item.cost); } addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
+            const plot = grid[index]; if (plot.crop) { const isAnimal = ANIMALS[plot.crop]; const def = isAnimal ? ANIMALS[plot.crop] : (plot.crop ? CROPS[plot.crop] : null); if (!def) { const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); return; } if (now - plot.plantedAt >= def.time) { addCoins(def.reward); addXp(def.xp); updateMission('harvest', plot.crop); updateMission('earn', null, def.reward); playSound('harvest'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: null, plantedAt: null }; setGrid(newGrid); } } else { const dict = category === 'animals' ? ANIMALS : CROPS; const item = dict[selectedItem]; if (item && coins >= item.cost) { if (level < item.reqLevel) { playSound('lose'); return; } addCoins(-item.cost); addXp(category === 'animals' ? 10 : 2); playSound('plant'); const newGrid = [...grid]; newGrid[index] = { ...plot, crop: selectedItem, plantedAt: now }; setGrid(newGrid); } else { playSound('lose'); } } 
           };
           
           const handleExpand = () => { 
@@ -1413,7 +1229,7 @@
                    </div>
                    {levelUpNotif && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 level-up-anim pointer-events-none flex flex-col items-center"><div className="text-6xl mb-2">⭐</div><h2 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">LEVEL UP!</h2><p className="text-xl font-bold text-white">Nível {level}</p></div>}
                    
-                   {/* Main Game Area - Fixed Camera (No Panning) */}
+                   {/* Main Game Area */}
                    <div className="flex-1 flex items-center justify-center farm-perspective relative overflow-hidden">
                        <div 
                             className="farm-grid-3d grid grid-cols-2 gap-6 p-10 relative origin-center" 
@@ -1798,13 +1614,12 @@
       const CheckersGame = ({ onBack }) => {
         const BOARD_SIZE = 8;
         const [board, setBoard] = useState([]);
-        const [turn, setTurn] = useState('player'); // 'player' (Red) or 'ai' (Black)
-        const [selectedPiece, setSelectedPiece] = useState(null); // {r, c}
-        const [validMoves, setValidMoves] = useState([]); // Array of {r, c, isJump}
-        const [difficulty, setDifficulty] = useState('medium'); // easy, medium, hard
-        const [gameStatus, setGameStatus] = useState('playing'); // playing, player_won, ai_won
+        const [turn, setTurn] = useState('player'); 
+        const [selectedPiece, setSelectedPiece] = useState(null); 
+        const [validMoves, setValidMoves] = useState([]); 
+        const [difficulty, setDifficulty] = useState('medium'); 
+        const [gameStatus, setGameStatus] = useState('playing'); 
         
-        // Initialize Board
         const initBoard = () => {
             const newBoard = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
             for (let r = 0; r < BOARD_SIZE; r++) {
@@ -1824,7 +1639,6 @@
 
         useEffect(() => initBoard(), []);
 
-        // Logic
         const isValidPos = (r, c) => r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
 
         const getMoves = (b, r, c) => {
@@ -1834,15 +1648,13 @@
             const moves = [];
             const directions = [];
             
-            if (piece.type === 'player' || piece.isKing) directions.push([-1, -1], [-1, 1]); // Up
-            if (piece.type === 'ai' || piece.isKing) directions.push([1, -1], [1, 1]); // Down
+            if (piece.type === 'player' || piece.isKing) directions.push([-1, -1], [-1, 1]); 
+            if (piece.type === 'ai' || piece.isKing) directions.push([1, -1], [1, 1]); 
             
             directions.forEach(([dr, dc]) => {
-                // Regular Move
                 if (isValidPos(r + dr, c + dc) && b[r + dr][c + dc] === null) {
                     moves.push({ r: r + dr, c: c + dc, isJump: false });
                 }
-                // Jump Move
                 if (isValidPos(r + dr * 2, c + dc * 2) && 
                     b[r + dr * 2][c + dc * 2] === null &&
                     b[r + dr][c + dc] !== null && 
@@ -1859,11 +1671,9 @@
             const newBoard = board.map(row => [...row]);
             const piece = newBoard[selectedPiece.r][selectedPiece.c];
             
-            // Move piece
             newBoard[move.r][move.c] = piece;
             newBoard[selectedPiece.r][selectedPiece.c] = null;
             
-            // Handle Jump (Capture)
             if (move.isJump) {
                 newBoard[move.jumpR][move.jumpC] = null;
                 playSound('capture');
@@ -1871,7 +1681,6 @@
                 playSound('move_piece');
             }
             
-            // King Promotion
             if (piece.type === 'player' && move.r === 0) { piece.isKing = true; playSound('powerup'); }
             if (piece.type === 'ai' && move.r === BOARD_SIZE - 1) { piece.isKing = true; playSound('powerup'); }
             
@@ -1879,7 +1688,6 @@
             setSelectedPiece(null);
             setValidMoves([]);
             
-            // Check Win Condition
             let playerCount = 0, aiCount = 0;
             newBoard.forEach(row => row.forEach(p => {
                 if (p?.type === 'player') playerCount++;
@@ -1889,21 +1697,18 @@
             if (aiCount === 0) { setGameStatus('player_won'); playSound('win'); return; }
             if (playerCount === 0) { setGameStatus('ai_won'); playSound('lose'); return; }
 
-            // Switch Turn
             setTurn(prev => prev === 'player' ? 'ai' : 'player');
         };
 
         const handleTap = (r, c) => {
             if (turn !== 'player' || gameStatus !== 'playing') return;
 
-            // If tapping a valid move
             const move = validMoves.find(m => m.r === r && m.c === c);
             if (move) {
                 executeMove(move);
                 return;
             }
 
-            // If tapping own piece
             const piece = board[r][c];
             if (piece && piece.type === 'player') {
                 setSelectedPiece({ r, c });
@@ -1915,11 +1720,9 @@
             }
         };
 
-        // AI Logic
         useEffect(() => {
             if (turn === 'ai' && gameStatus === 'playing') {
                 const timer = setTimeout(() => {
-                    // Collect all AI pieces
                     const aiPieces = [];
                     for (let r = 0; r < BOARD_SIZE; r++) {
                         for (let c = 0; c < BOARD_SIZE; c++) {
@@ -1927,7 +1730,6 @@
                         }
                     }
 
-                    // Find all possible moves
                     let allMoves = [];
                     aiPieces.forEach(p => {
                         const moves = getMoves(board, p.r, p.c);
@@ -1940,8 +1742,6 @@
                         return;
                     }
 
-                    // Scoring Strategy
-                    // Jump > King > Edge > Random
                     allMoves.sort((a, b) => {
                         const scoreA = (a.to.isJump ? 10 : 0) + (a.to.r === BOARD_SIZE - 1 ? 5 : 0) + (Math.random() * (difficulty === 'hard' ? 2 : 5));
                         const scoreB = (b.to.isJump ? 10 : 0) + (b.to.r === BOARD_SIZE - 1 ? 5 : 0) + (Math.random() * (difficulty === 'hard' ? 2 : 5));
@@ -1950,7 +1750,6 @@
 
                     const bestMove = allMoves[0];
                     
-                    // Execute AI Move
                     const newBoard = board.map(row => [...row]);
                     const piece = newBoard[bestMove.from.r][bestMove.from.c];
                     newBoard[bestMove.to.r][bestMove.to.c] = piece;
@@ -1967,14 +1766,13 @@
 
                     setBoard(newBoard);
                     
-                    // Check Win Condition
                     let playerCount = 0;
                     newBoard.forEach(row => row.forEach(p => { if (p?.type === 'player') playerCount++; }));
                     if (playerCount === 0) { setGameStatus('ai_won'); playSound('lose'); return; }
 
                     setTurn('player');
 
-                }, 1000); // Thinking delay
+                }, 1000); 
                 return () => clearTimeout(timer);
             }
         }, [turn, board, difficulty, gameStatus]);
@@ -2083,17 +1881,9 @@
 
           useEffect(() => {
               const fetchHistory = async () => {
-                  if (!user || !supabase) {
-                      setLoading(false);
-                      return;
-                  }
-                  const { data, error } = await supabase
-                      .from('withdrawals')
-                      .select('*')
-                      .eq('email', user.email)
-                      .order('created_at', { ascending: false });
-                  
-                  if (data) setItems(data);
+                  if (!user) { setLoading(false); return; }
+                  const data = await apiCall('history', 'GET', { email: user.email });
+                  if (Array.isArray(data)) setItems(data);
                   setLoading(false);
               };
               fetchHistory();
@@ -2114,7 +1904,7 @@
                           {items.map(item => (
                               <div key={item.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-white/5 flex justify-between items-center">
                                   <div>
-                                      <div className="text-white font-bold text-sm">R$ {item.amount.toFixed(2)}</div>
+                                      <div className="text-white font-bold text-sm">R$ {parseFloat(item.amount).toFixed(2)}</div>
                                       <div className="text-[10px] text-gray-500">{new Date(item.created_at).toLocaleDateString('pt-BR')} {new Date(item.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
                                   </div>
                                   <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -2153,7 +1943,6 @@
                   onAdminAccess();
                   setSecretCount(0);
               } else {
-                  // Reset count if not reached 5 clicks quickly enough
                   secretTimerRef.current = setTimeout(() => {
                       setSecretCount(0);
                   }, 1000);
@@ -2194,7 +1983,6 @@
                               </div>
                           </div>
 
-                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved below title */}
                           <div className="grid grid-cols-2 gap-3 w-full mb-2">
                               {/* Mission Button */}
                               <button onClick={onOpenMissions} className="relative group w-full">
@@ -2297,32 +2085,28 @@
       };
 
       const App = () => {
-          const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, farm, hangman, checkers
+          const [screen, setScreen] = useState('hub');
           const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('coins') || '100'));
-          
-          // Auth State
           const [user, setUser] = useState(null);
           const [showAuthModal, setShowAuthModal] = useState(false);
 
           useEffect(() => {
-              if (!supabase) return;
-              // Check active session on load
-              supabase.auth.getSession().then(({ data: { session } }) => {
-                  setUser(session?.user ?? null);
-              });
-
-              // Listen for changes
-              const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-                  setUser(session?.user ?? null);
-              });
-
-              return () => subscription.unsubscribe();
+              // Load persisted user session from localStorage
+              const savedUser = safeStorage.getItem('user_session');
+              if (savedUser) {
+                  try { setUser(JSON.parse(savedUser)); } catch(e) {}
+              }
           }, []);
 
           const handleLogout = async () => {
                playSound('ui_click');
-               if (supabase) await supabase.auth.signOut();
+               safeStorage.setItem('user_session', '');
                setUser(null);
+          };
+
+          const handleLoginSuccess = (userData) => {
+              safeStorage.setItem('user_session', JSON.stringify(userData));
+              setUser(userData);
           };
 
           // --- GLOBAL DAILY MISSIONS STATE ---
@@ -2330,7 +2114,6 @@
               const today = new Date().toDateString();
               const savedDate = safeStorage.getItem('mission_date');
               if (savedDate !== today) {
-                  // New day, reset time
                   safeStorage.setItem('mission_date', today);
                   safeStorage.setItem('daily_play_time', '0');
                   safeStorage.setItem('daily_rewards', JSON.stringify({ photo: false, video: false, super: false }));
@@ -2351,7 +2134,7 @@
           });
           
           const [showMissionModal, setShowMissionModal] = useState(false);
-          const [showCongratsModal, setShowCongratsModal] = useState(null); // 'photo' | 'video' | 'super'
+          const [showCongratsModal, setShowCongratsModal] = useState(null);
           
           // --- MANUAL WITHDRAWAL STATE ---
           const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -2369,24 +2152,20 @@
 
           // --- TIMER LOGIC ---
           useEffect(() => {
-              if (screen === 'hub') return; // Don't count time in menu
+              if (screen === 'hub') return; 
               
               const interval = setInterval(() => {
-                  // IDLE CHECK: If no activity for 10 seconds, stop counting
                   if (Date.now() - lastActivityRef.current > 10000) return;
 
                   setPlayTime(prev => {
                       const newTime = prev + 1;
-                      
-                      // Save occasionally to avoid spamming storage
                       if (newTime % 5 === 0) {
                           safeStorage.setItem('daily_play_time', newTime.toString());
                       }
                       
-                      // Check for unlocks
-                      const TIME_PHOTO = 1800; // 30m
-                      const TIME_VIDEO = 3600; // 60m
-                      const TIME_SUPER = 18000; // 5h
+                      const TIME_PHOTO = 1800;
+                      const TIME_VIDEO = 3600;
+                      const TIME_SUPER = 18000; 
                       
                       if (newTime === TIME_PHOTO && !rewards.photo) {
                            const newRewards = { ...rewards, photo: true };
@@ -2452,7 +2231,6 @@
                   return;
               }
 
-              // Calculate balance to check if withdraw is possible
               const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
               if (currentBalance <= 0) {
                   playSound('lose');
@@ -2464,13 +2242,13 @@
           };
 
           const processWithdrawal = async (data) => {
-              // Send email notification (Backup for Admin)
+              // Notification via mailto is handled client-side for backup
               const subject = encodeURIComponent("SOLICITAÇÃO DE SAQUE - " + data.name);
               const body = encodeURIComponent(`Solicitação de Saque\n\nNome: ${data.name}\nChave PIX: ${data.pix_key} (${data.pix_type})\nValor: R$ ${data.amount.toFixed(2)}\nEmail: ${data.email}\n\nPor favor, realize o pagamento.`);
               
               window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
               
-              // Zerar saldo
+              // Reset rewards locally
               const newRewards = { photo: false, video: false, super: false };
               setRewards(newRewards);
               safeStorage.setItem('daily_rewards', JSON.stringify(newRewards));
@@ -2483,7 +2261,6 @@
           };
 
           const renderScreen = () => {
-              // Calculate cash balance from missions
               const cashBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
 
               switch(screen) {
@@ -2510,7 +2287,6 @@
               }
           };
 
-          // Helper to get current balance for modal prop
           const currentBalance = (rewards.photo ? 0.05 : 0) + (rewards.video ? 0.10 : 0) + (rewards.super ? 0.30 : 0);
 
           return (
@@ -2518,9 +2294,8 @@
                   <InstallButton />
                   {renderScreen()}
                   {showMissionModal && <MissionModal playTime={playTime} rewards={rewards} onClose={() => setShowMissionModal(false)} />}
-                  {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={() => {}} />}
+                  {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={handleLoginSuccess} />}
                   
-                  {/* WITHDRAWAL MODAL */}
                   {showWithdrawModal && (
                       <WithdrawModal 
                           balance={currentBalance}
@@ -2530,7 +2305,6 @@
                       />
                   )}
 
-                  {/* ADMIN MODALS */}
                   {showAdminLogin && (
                       <AdminLoginModal 
                           onClose={() => setShowAdminLogin(false)}
@@ -2542,7 +2316,6 @@
                       <AdminPanel onClose={() => setShowAdminPanel(false)} />
                   )}
 
-                  {/* CONGRATS POPUP */}
                   {showCongratsModal && (
                       <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowCongratsModal(null)}>
                           <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-1 rounded-2xl shadow-[0_0_50px_gold]">
