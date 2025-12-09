@@ -11,7 +11,7 @@ try {
 } catch (e) {}
 
 // Offline Caching
-const CACHE_NAME = 'jogos-online-v4';
+const CACHE_NAME = 'jogos-online-v5';
 const URLS_TO_CACHE = [
     './',
     './config.js',
