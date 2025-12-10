@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1045,6 +1046,7 @@
                   lastShot: 0, 
                   score: 0, 
                   level: 1, 
+                  wave: 1, // Local tracking for wave
                   xp: 0,
                   bank: 0 
               };
@@ -1054,20 +1056,65 @@
               
               const spawnEnemy = (isBoss = false) => {
                   if (boss && !isBoss) return;
-                  const typeRoll = Math.random(); const startX = Math.random() * (canvas.width - 60) + 30;
+                  const startX = Math.random() * (canvas.width - 60) + 30;
+                  const roll = Math.random();
+                  const wave = player.wave;
+
+                  // Base Enemy: Dollar ($)
+                  let enemy = { 
+                      x: startX, 
+                      y: -50, 
+                      z: 0, 
+                      width: 40, 
+                      height: 40, 
+                      hp: 2 + player.level, 
+                      type: 'dollar', 
+                      symbol: '$', 
+                      vy: 3 + Math.random(), 
+                      vx: Math.sin(Date.now()/500), 
+                      color: '#4ade80', // Green
+                      score: 10
+                  };
                   
-                  // Basic: Dollar ($)
-                  let enemy = { x: startX, y: -50, z: 0, width: 40, height: 40, hp: 2 + player.level, type: 'dollar', symbol: '$', vy: 3 + Math.random(), vx: Math.sin(Date.now()/500), color: '#4ade80' }; // Green
+                  // Wave 1+: Euro (€) - Blue, slightly faster
+                  if (wave >= 1 && roll > 0.85) {
+                      enemy = { ...enemy, type: 'euro', symbol: '€', color: '#3b82f6', hp: 3 + player.level, vy: 4, score: 15 };
+                  }
                   
-                  // Medium: Bitcoin (₿)
-                  if (stats.wave > 2 && typeRoll > 0.7) enemy = { ...enemy, type: 'bitcoin', symbol: '₿', hp: 5, vy: 5, color: '#f59e0b', width: 45, height: 45 }; // Orange
+                  // Wave 2+: Litecoin (Ł) - Silver, Fast
+                  if (wave >= 2 && roll > 0.7 && roll <= 0.85) {
+                      enemy = { ...enemy, type: 'litecoin', symbol: 'Ł', color: '#d1d5db', vy: 4.5 + Math.random(), hp: 3 + player.level, score: 20 };
+                  }
                   
-                  // Heavy: Ethereum (Ξ)
-                  if (stats.wave > 4 && typeRoll > 0.9) enemy = { ...enemy, type: 'eth', symbol: 'Ξ', hp: 20, vy: 1, width: 60, height: 60, color: '#60a5fa' }; // Blue
+                  // Wave 3+: Yen (¥) - Pink/Red, Swarm
+                  if (wave >= 3 && roll > 0.6 && roll <= 0.7) {
+                      enemy = { ...enemy, type: 'yen', symbol: '¥', color: '#fb7185', hp: 2 + player.level, vy: 5, score: 12 };
+                  }
+
+                  // Wave 4+: Bitcoin (₿) - Orange, Tanky
+                  if (wave >= 4 && roll > 0.9) { 
+                      enemy = { ...enemy, type: 'bitcoin', symbol: '₿', color: '#f59e0b', width: 45, height: 45, hp: 8 + player.level * 1.5, vy: 2, score: 35 };
+                  }
                   
+                  // Wave 5+: Doge (Ð) - Gold, Erratic
+                  if (wave >= 5 && roll > 0.92) {
+                      enemy = { ...enemy, type: 'doge', symbol: 'Ð', color: '#fbbf24', hp: 6 + player.level, vx: Math.sin(Date.now()/200)*3, score: 30 };
+                  }
+
+                  // Wave 7+: Ethereum (Ξ) - Purple, Boss-lite
+                  if (wave >= 7 && roll > 0.96) {
+                      enemy = { ...enemy, type: 'eth', symbol: 'Ξ', color: '#a855f7', width: 50, height: 50, hp: 15 + player.level * 2, vy: 1.5, score: 60 };
+                  }
+
+                  // Wave 10+: Tether (₮) - Emerald, High HP
+                  if (wave >= 10 && roll > 0.98) {
+                      enemy = { ...enemy, type: 'tether', symbol: '₮', color: '#10b981', hp: 20 + player.level, vy: 2, score: 50 };
+                  }
+
+                  enemy.maxHp = enemy.hp; // Store Max HP for bar
                   enemies.push(enemy);
               };
-              const spawnBoss = () => { boss = { x: canvas.width/2, y: -100, width: 120, height: 100, hp: 100 * stats.wave, maxHp: 100 * stats.wave, phase: 'enter', vx: 2, vy: 1 }; playSound('levelup'); };
+              const spawnBoss = () => { boss = { x: canvas.width/2, y: -100, width: 120, height: 100, hp: 100 * player.wave, maxHp: 100 * player.wave, phase: 'enter', vx: 2, vy: 1 }; playSound('levelup'); };
 
               const update = (time) => {
                   if (gameStateRef.current !== 'playing') { animationFrameId = requestAnimationFrame(() => update(Date.now())); return; }
@@ -1117,8 +1164,8 @@
                       playSound('shoot'); player.lastShot = time;
                   }
 
-                  if (Math.random() < 0.03 + (stats.wave * 0.005) && !boss) spawnEnemy();
-                  if (player.score > stats.wave * 3000 && !boss) spawnBoss();
+                  if (Math.random() < 0.03 + (player.wave * 0.005) && !boss) spawnEnemy();
+                  if (player.score > player.wave * 3000 && !boss) spawnBoss();
 
                   for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; b.y += b.vy; b.x += b.vx; if (b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1); }
 
@@ -1127,7 +1174,7 @@
                       e.y += e.vy * scale; e.x += e.vx * scale; e.renderW = e.width * scale; e.renderH = e.height * scale;
                       e.x += Math.sin(time / 200 + i) * 1;
 
-                      if (Math.random() < 0.01 * stats.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
+                      if (Math.random() < 0.01 * player.wave) bullets.push({ x: e.x, y: e.y + e.renderH/2, vy: 5*scale, vx: 0, type: 'enemy', width: 6*scale, height: 6*scale, color: 'red' });
                       
                       for (let j = bullets.length - 1; j >= 0; j--) {
                           let b = bullets[j];
@@ -1136,19 +1183,19 @@
                               for(let k=0; k<3; k++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 10, color: 'yellow', alpha: 1, type: 'spark' });
                               if (e.hp <= 0) { 
                                   enemies.splice(i, 1); 
-                                  const points = e.type === 'eth' ? 50 : (e.type === 'bitcoin' ? 20 : 10);
+                                  const points = e.score || 10;
                                   player.score += points; 
                                   player.xp += points / 2; 
                                   addCoins(1); 
                                   playSound('explosion'); 
                                   triggerShake(); 
                                   
-                                  // Money Explosion
+                                  // Money Explosion with Enemy Color
                                   for(let k=0; k<12; k++) particles.push({ x: e.x, y: e.y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 25, color: e.color, alpha: 1, type: 'spark' }); 
                                   
                                   // Floating Score
-                                  const label = e.type === 'dollar' ? '+$10' : (e.type === 'bitcoin' ? '+₿20' : '+Ξ50');
-                                  particles.push({ x: e.x, y: e.y, vx: 0, vy: -3, life: 40, color: '#4ade80', alpha: 1, type: 'text', text: label, size: 24 });
+                                  const label = `+${e.symbol}${points}`;
+                                  particles.push({ x: e.x, y: e.y, vx: 0, vy: -3, life: 40, color: e.color, alpha: 1, type: 'text', text: label, size: 24 });
                                   
                                   if (Math.random() < 0.1) powerups.push({ x: e.x, y: e.y, type: 'weapon_up' }); 
                                   break; 
@@ -1171,7 +1218,10 @@
                               if (boss.hp <= 0) { 
                                   const deathX = boss.x; const deathY = boss.y;
                                   boss = null; 
-                                  player.score += 1000; player.xp += 200; addCoins(50); setStats(s => ({ ...s, wave: s.wave + 1 })); playSound('win'); triggerShake(); 
+                                  player.score += 1000; player.xp += 200; addCoins(50); 
+                                  player.wave++; // Increment local wave
+                                  setStats(s => ({ ...s, wave: s.wave + 1 })); // Sync React state
+                                  playSound('win'); triggerShake(); 
                                   
                                   for(let k=0; k<50; k++) particles.push({ x: deathX, y: deathY, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 40, color: 'gold', alpha: 1, type: 'spark' }); 
                                   particles.push({ x: deathX, y: deathY, vx: 0, vy: -2, life: 60, color: 'gold', alpha: 1, type: 'text', text: 'JACKPOT! +$1000', size: 32 });
@@ -1186,7 +1236,7 @@
                   for (let i = bullets.length - 1; i >= 0; i--) { let b = bullets[i]; if (b.type === 'enemy' && Math.abs(b.x - player.x) < player.width/2 && Math.abs(b.y - player.y) < player.height/2) { player.hp -= 10; bullets.splice(i, 1); triggerShake(); playSound('explosion'); } }
 
                   if (player.xp >= player.level * 100) { player.xp -= player.level * 100; player.level++; playSound('levelup'); }
-                  if (time % 60 === 0) { setStats({ score: player.score, hp: player.hp, wave: stats.wave, level: player.level, xp: player.xp }); }
+                  if (time % 60 === 0) { setStats({ score: player.score, hp: player.hp, wave: player.wave, level: player.level, xp: player.xp }); }
                   if (player.hp <= 0) { setGameState('gameover'); }
 
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1236,8 +1286,8 @@
                       
                       // HP Bar
                       ctx.fillStyle = 'red'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW, 3); 
-                      const maxHp = e.type === 'eth' ? 20 : (e.type === 'bitcoin' ? 5 : 2+player.level);
-                      ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * Math.min(1, Math.max(0, e.hp / maxHp)), 3); 
+                      // Use e.hp and try to estimate maxHP based on type (simplified for visual)
+                      ctx.fillStyle = 'lime'; ctx.fillRect(e.x - e.renderW/2, e.y - e.renderH/2 - 5, e.renderW * Math.min(1, Math.max(0, e.hp / e.maxHp)), 3); 
                   });
 
                   if (boss) { 
