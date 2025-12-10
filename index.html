@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1002,7 +1003,7 @@
           const P = palette.main; const D = palette.dark; const L = palette.light;
           const C = palette.cockpit; const W = '#ffffff'; const B = palette.engine;
           const pixelSize = 2;
-          const grid = ["      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ", "   12233221   ", "   12233221   ", "  1222222221  ", "  1222222221  ", " 122114411221 ", " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "];
+          const grid = ["      11      ", "     1221     ", "     1441     ", "    124521    ", "    124421    ", "   12233221   ", "   12233221   ", "  12222222221  ", "  1222222221  ", " 122114411221 ", " 121124421121 ", " 121222222121 ", "12212222221221", "12211666611221", "111 116611 111", "     1111     "];
           const colorMap = { '1': D, '2': P, '3': L, '4': C, '5': W, '6': B };
           for(let y=0; y<grid.length; y++) { for(let x=0; x<grid[y].length; x++) { const char = grid[y][x]; if(colorMap[char]) { ctx.fillStyle = colorMap[char]; ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } }
           const img = new Image(); img.src = canvas.toDataURL(); return img;
@@ -1114,6 +1115,7 @@
                   enemy.maxHp = enemy.hp; // Store Max HP for bar
                   enemies.push(enemy);
               };
+              
               const spawnBoss = () => { boss = { x: canvas.width/2, y: -100, width: 120, height: 100, hp: 100 * player.wave, maxHp: 100 * player.wave, phase: 'enter', vx: 2, vy: 1 }; playSound('levelup'); };
 
               const update = (time) => {
