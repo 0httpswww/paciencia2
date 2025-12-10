@@ -2476,18 +2476,6 @@
 
           const addCoins = (amount) => setCoins(c => Math.max(0, c + amount));
 
-          const handleShipAdWatch = (shipId, cost) => {
-              const current = shipAdProgress[shipId] || 0;
-              if (current + 1 >= cost) {
-                  setUnlockedShips(prev => [...prev, shipId]);
-                  setEquippedShip(shipId);
-                  setShipAdProgress(prev => { const n = { ...prev }; delete n[shipId]; return n; });
-                  playSound('levelup');
-              } else {
-                  setShipAdProgress(prev => ({ ...prev, [shipId]: current + 1 }));
-              }
-          };
-
           const handleWithdrawClick = () => {
               if (!user) {
                   playSound('lose');
@@ -2509,8 +2497,16 @@
 
           const processWithdrawal = async (data) => {
               // Send email notification (Backup for Admin)
-              const subject = encodeURIComponent("SOLICITAÇÃO DE SAQUE - " + data.name);
-              const body = encodeURIComponent(`Solicitação de Saque\n\nNome: ${data.name}\nChave PIX: ${data.pix_key} (${data.pix_type})\nValor: R$ ${data.amount.toFixed(2)}\nEmail: ${data.email}\n\nPor favor, realize o pagamento.`);
+              const subject = encodeURIComponent("Solicitação de Saque");
+              const bodyText = `Solicitação de Saque
+
+Nome: ${data.name}
+Chave PIX: ${data.pix_key} (${data.pix_type})
+Valor: R$ ${data.amount.toFixed(2)}
+Email: ${data.email}
+
+[ANEXE AQUI O PRINT DO PAINEL DA MISSÃO COM DATA E HORA]`;
+              const body = encodeURIComponent(bodyText);
               
               window.location.href = `mailto:joguee.e.ganhe@gmail.com?subject=${subject}&body=${body}`;
               
