@@ -357,7 +357,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp, Grab, Hand, Scissors } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -2843,6 +2843,145 @@
           );
       };
 
+      // --- GAME 7: ROCK PAPER SCISSORS (NEON) ---
+      const RockPaperScissorsGame = ({ onBack, addCoins }) => {
+          const [playerChoice, setPlayerChoice] = useState(null); // 'rock', 'paper', 'scissors'
+          const [cpuChoice, setCpuChoice] = useState(null);
+          const [result, setResult] = useState(null); // 'win', 'lose', 'draw'
+          const [score, setScore] = useState(0);
+          const [streak, setStreak] = useState(0);
+          const [isAnimating, setIsAnimating] = useState(false);
+
+          const CHOICES = [
+              { id: 'rock', icon: <Grab size={48} />, name: 'PEDRA', color: 'from-red-500 to-orange-500', beat: 'scissors' },
+              { id: 'paper', icon: <Hand size={48} />, name: 'PAPEL', color: 'from-blue-500 to-cyan-500', beat: 'rock' },
+              { id: 'scissors', icon: <Scissors size={48} />, name: 'TESOURA', color: 'from-purple-500 to-pink-500', beat: 'paper' }
+          ];
+
+          const playTurn = (choiceId) => {
+              if (isAnimating) return;
+              setIsAnimating(true);
+              setPlayerChoice(choiceId);
+              setCpuChoice(null);
+              setResult(null);
+              playSound('ui_click');
+
+              // Animation delay simulation
+              setTimeout(() => {
+                  const cpu = CHOICES[Math.floor(Math.random() * CHOICES.length)].id;
+                  setCpuChoice(cpu);
+
+                  if (choiceId === cpu) {
+                      setResult('draw');
+                      playSound('scan');
+                  } else if (CHOICES.find(c => c.id === choiceId).beat === cpu) {
+                      setResult('win');
+                      setScore(s => s + 1);
+                      setStreak(s => s + 1);
+                      addCoins(5 + streak); // Bonus coins for streak
+                      playSound('win');
+                  } else {
+                      setResult('lose');
+                      setStreak(0);
+                      playSound('lose');
+                  }
+                  setIsAnimating(false);
+              }, 1000);
+          };
+
+          const renderChoiceIcon = (id) => {
+              if (!id) return <HelpCircle size={48} className="text-gray-700 animate-pulse" />;
+              const choice = CHOICES.find(c => c.id === id);
+              return (
+                  <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${choice.color} flex items-center justify-center shadow-[0_0_30px_currentColor] text-white animate-[zoomIn_0.3s]`}>
+                      {choice.icon}
+                  </div>
+              );
+          };
+
+          return (
+              <div className="w-full h-full bg-[#0a0a0a] flex flex-col items-center justify-center relative safe-area-padding overflow-hidden">
+                  {/* Neon Background */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-black"></div>
+                  <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/hexellence.png')]"></div>
+                  
+                  {/* Header */}
+                  <div className="absolute top-0 w-full p-6 flex justify-between items-start z-50">
+                      <button onClick={onBack} className="p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 text-white backdrop-blur transition"><ChevronLeft /></button>
+                      <div className="flex flex-col items-center">
+                          <h1 className="text-3xl font-bold font-['Rajdhani'] text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 tracking-widest drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">JO-KEN-PO</h1>
+                          <div className="flex gap-4 mt-2">
+                              <div className="bg-black/50 px-3 py-1 rounded border border-white/10 text-xs font-mono text-gray-300">SCORE: <span className="text-white font-bold">{score}</span></div>
+                              <div className="bg-black/50 px-3 py-1 rounded border border-orange-500/30 text-xs font-mono text-orange-400">STREAK: <span className="text-white font-bold">x{streak}</span></div>
+                          </div>
+                      </div>
+                      <div className="w-12"></div>
+                  </div>
+
+                  {/* Battle Arena */}
+                  <div className="flex-1 w-full flex flex-col items-center justify-center gap-8 relative z-10">
+                      
+                      <div className="flex items-center justify-center gap-8 md:gap-20">
+                          {/* Player */}
+                          <div className="flex flex-col items-center gap-4">
+                              <div className={`w-32 h-32 rounded-full border-4 border-white/10 bg-black/40 flex items-center justify-center relative ${isAnimating ? 'animate-bounce' : ''}`}>
+                                  {renderChoiceIcon(playerChoice)}
+                                  <div className="absolute -bottom-3 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-lg">Você</div>
+                              </div>
+                          </div>
+
+                          {/* VS */}
+                          <div className="text-4xl font-black italic text-white/20">VS</div>
+
+                          {/* CPU */}
+                          <div className="flex flex-col items-center gap-4">
+                              <div className={`w-32 h-32 rounded-full border-4 border-white/10 bg-black/40 flex items-center justify-center relative ${isAnimating ? 'animate-bounce' : ''}`}>
+                                  {renderChoiceIcon(cpuChoice)}
+                                  <div className="absolute -bottom-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-lg">CPU</div>
+                              </div>
+                          </div>
+                      </div>
+
+                      {/* Result Text */}
+                      <div className="h-12 flex items-center justify-center">
+                          {result && (
+                              <div className={`text-4xl font-black uppercase tracking-widest animate-[zoomIn_0.2s] drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]
+                                  ${result === 'win' ? 'text-green-400' : result === 'lose' ? 'text-red-500' : 'text-yellow-400'}
+                              `}>
+                                  {result === 'win' ? 'VITÓRIA!' : result === 'lose' ? 'DERROTA!' : 'EMPATE!'}
+                              </div>
+                          )}
+                          {isAnimating && <div className="text-gray-500 font-mono animate-pulse">PROCESSANDO...</div>}
+                      </div>
+
+                  </div>
+
+                  {/* Controls */}
+                  <div className="w-full p-8 pb-12 z-20">
+                      <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                          {CHOICES.map((choice) => (
+                              <button
+                                  key={choice.id}
+                                  onClick={() => playTurn(choice.id)}
+                                  disabled={isAnimating}
+                                  className={`
+                                      group relative h-24 rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center justify-center gap-2 overflow-hidden transition-all duration-200 active:scale-95 hover:border-white/30
+                                      ${playerChoice === choice.id ? 'border-white ring-2 ring-white/50' : ''}
+                                  `}
+                              >
+                                  <div className={`absolute inset-0 bg-gradient-to-br ${choice.color} opacity-10 group-hover:opacity-20 transition-opacity`}></div>
+                                  <div className={`text-white transition-transform group-hover:scale-110 drop-shadow-md`}>
+                                      {React.cloneElement(choice.icon, { size: 32 })}
+                                  </div>
+                                  <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest z-10">{choice.name}</span>
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+          );
+      };
+
       const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw, onAdminAccess }) => {
           const [showHistory, setShowHistory] = useState(false);
           const GAMES = [
@@ -2851,7 +2990,8 @@
               { id: 'flappy', name: 'Flappy Coin', icon: <ArrowUp size={32} />, color: 'from-yellow-500 to-amber-600', desc: 'Aventura Financeira' },
               { id: 'hangman', name: 'Forca Neon', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Quebra-cabeça Cyberpunk' },
               { id: 'checkers', name: 'Damas Reais', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Estratégia Clássica 3D' },
-              { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral de Luxo' }
+              { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral de Luxo' },
+              { id: 'rps', name: 'Jo-Ken-Po Neon', icon: <Grab size={32} />, color: 'from-pink-600 to-rose-600', desc: 'Pedra, Papel e Tesoura' }
           ];
 
           const [secretCount, setSecretCount] = useState(0);
@@ -3006,7 +3146,7 @@
       };
 
       const App = () => {
-          const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, crypto, hangman, checkers, memory
+          const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, crypto, hangman, checkers, memory, rps
           const [coins, setCoins] = useState(() => parseInt(safeStorage.getItem('coins') || '100'));
           
           // Auth State
@@ -3226,6 +3366,7 @@ Anexe aqui o print do painel da missão mostrando a data, hora e a barra cheia.`
                   case 'hangman': return <HangmanGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   case 'checkers': return <CheckersGame onBack={() => setScreen('hub')} />;
                   case 'memory': return <MemoryGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
+                  case 'rps': return <RockPaperScissorsGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   default: return <MainHub onSelect={setScreen} coins={coins} cashBalance={cashBalance} onOpenMissions={() => setShowMissionModal(true)} />;
               }
           };
