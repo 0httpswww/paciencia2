@@ -357,7 +357,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -498,6 +498,14 @@
                     gainNode.gain.setValueAtTime(0.1, now);
                     gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
                     osc.start(now); osc.stop(now + 0.15);
+                    break;
+                case 'jump': // Flappy Jump - High pitched blip
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(300, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
                     break;
             }
           } catch(e) {}
@@ -1747,6 +1755,244 @@
           );
       };
 
+      // --- GAME 6: FLAPPY COIN ---
+      const FlappyCoinGame = ({ onBack, addCoins }) => {
+          const canvasRef = useRef(null);
+          const [gameState, setGameState] = useState('start'); // start, playing, gameover
+          const [score, setScore] = useState(0);
+          
+          const GRAVITY = 0.3;
+          const JUMP = -6;
+          const SPEED = 3;
+          const GAP = 200;
+          const PIPE_WIDTH = 60;
+          
+          const gameRef = useRef({
+              player: { y: 300, velocity: 0, radius: 15 },
+              pipes: [],
+              frame: 0,
+              score: 0
+          });
+
+          // Reset Logic
+          const resetGame = () => {
+              gameRef.current = {
+                  player: { y: 300, velocity: 0, radius: 15 },
+                  pipes: [],
+                  frame: 0,
+                  score: 0
+              };
+              setScore(0);
+              setGameState('start');
+          };
+
+          const handleJump = useCallback(() => {
+              if (gameState === 'start') setGameState('playing');
+              if (gameState !== 'playing') return;
+              
+              gameRef.current.player.velocity = JUMP;
+              playSound('jump');
+          }, [gameState]);
+
+          useEffect(() => {
+              const canvas = canvasRef.current;
+              const ctx = canvas.getContext('2d');
+              let animationFrameId;
+
+              const loop = () => {
+                  const { player, pipes, frame } = gameRef.current;
+                  
+                  // Clear canvas
+                  ctx.fillStyle = '#111827'; // Dark financial bg
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  
+                  // Draw Background Chart Grid
+                  ctx.strokeStyle = '#1f2937';
+                  ctx.lineWidth = 1;
+                  for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+                  for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
+
+                  // Draw Background Chart Line (Decorative)
+                  ctx.strokeStyle = '#374151';
+                  ctx.lineWidth = 2;
+                  ctx.beginPath();
+                  ctx.moveTo(0, canvas.height/2);
+                  for(let i=0; i<canvas.width; i+=20) {
+                       ctx.lineTo(i, canvas.height/2 + Math.sin(i/50 + frame/50) * 100);
+                  }
+                  ctx.stroke();
+
+                  if (gameState === 'playing') {
+                      // Update Player
+                      player.velocity += GRAVITY;
+                      player.y += player.velocity;
+                      
+                      // Spawning Pipes (Candles)
+                      // Every 120 frames or so depending on width
+                      if (frame % 100 === 0) {
+                          const minHeight = 50;
+                          const availableHeight = canvas.height - GAP - minHeight * 2;
+                          const topHeight = Math.random() * availableHeight + minHeight;
+                          pipes.push({ x: canvas.width, topHeight, passed: false });
+                      }
+
+                      // Update Pipes
+                      for (let i = pipes.length - 1; i >= 0; i--) {
+                          const p = pipes[i];
+                          p.x -= SPEED;
+                          
+                          // Remove if off screen
+                          if (p.x + PIPE_WIDTH < 0) {
+                              pipes.splice(i, 1);
+                              continue;
+                          }
+                          
+                          // Collision Detection
+                          // AABB collision logic (Circle vs Rect simplified to box)
+                          const hitTop = player.y - player.radius < p.topHeight && player.x + player.radius > p.x && player.x - player.radius < p.x + PIPE_WIDTH;
+                          const hitBottom = player.y + player.radius > p.topHeight + GAP && player.x + player.radius > p.x && player.x - player.radius < p.x + PIPE_WIDTH;
+                          
+                          if (hitTop || hitBottom || player.y + player.radius > canvas.height || player.y - player.radius < 0) {
+                              setGameState('gameover');
+                              playSound('lose');
+                          }
+                          
+                          // Score
+                          if (!p.passed && player.x > p.x + PIPE_WIDTH) {
+                              p.passed = true;
+                              gameRef.current.score += 1;
+                              setScore(gameRef.current.score);
+                              playSound('harvest'); // Ding sound
+                              
+                              if (gameRef.current.score % 10 === 0) {
+                                  // Bonus coin every 10 points
+                                  addCoins(1);
+                              }
+                          }
+                      }
+                      
+                      gameRef.current.frame++;
+                  }
+
+                  // Render Pipes (Candles)
+                  pipes.forEach(p => {
+                      // Top Candle (Red - Resistance)
+                      ctx.fillStyle = '#ef4444'; 
+                      ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
+                      // Wick
+                      ctx.fillStyle = '#f87171';
+                      ctx.fillRect(p.x + PIPE_WIDTH/2 - 1, p.topHeight - 10, 2, 20); // Small visual wick detail if wanted, or simple rect
+                      // Bottom Candle (Green - Support)
+                      ctx.fillStyle = '#22c55e';
+                      ctx.fillRect(p.x, p.topHeight + GAP, PIPE_WIDTH, canvas.height - (p.topHeight + GAP));
+                  });
+
+                  // Render Player (Bitcoin)
+                  ctx.save();
+                  ctx.translate(player.x, player.y);
+                  ctx.rotate(Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (player.velocity * 0.1))));
+                  
+                  ctx.fillStyle = '#f59e0b'; // Gold
+                  ctx.beginPath();
+                  ctx.arc(0, 0, player.radius, 0, Math.PI*2);
+                  ctx.fill();
+                  
+                  ctx.strokeStyle = '#fff';
+                  ctx.lineWidth = 2;
+                  ctx.stroke();
+                  
+                  ctx.fillStyle = '#fff';
+                  ctx.font = 'bold 20px sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillText('₿', 0, 0);
+                  
+                  ctx.restore();
+
+                  // Ground line (optional)
+                  ctx.fillStyle = '#374151';
+                  ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+
+                  animationFrameId = requestAnimationFrame(loop);
+              };
+              
+              const handleResize = () => {
+                   canvas.width = window.innerWidth;
+                   canvas.height = window.innerHeight;
+                   // Adjust player X on resize
+                   gameRef.current.player.x = canvas.width / 3;
+              };
+              window.addEventListener('resize', handleResize);
+              handleResize();
+              
+              loop();
+              return () => {
+                  window.removeEventListener('resize', handleResize);
+                  cancelAnimationFrame(animationFrameId);
+              };
+          }, [gameState, addCoins]);
+
+          return (
+              <div 
+                className="w-full h-full relative overflow-hidden bg-gray-900 select-none" 
+                onClick={handleJump}
+              >
+                  <canvas ref={canvasRef} className="block w-full h-full" />
+                  
+                  {/* UI Layer */}
+                  <div className="absolute top-0 w-full p-6 flex justify-between items-start pointer-events-none safe-area-padding">
+                      <button onClick={(e) => { e.stopPropagation(); onBack(); }} className="pointer-events-auto p-3 bg-white/10 rounded-full backdrop-blur text-white hover:bg-white/20 z-50">
+                          <ChevronLeft size={24} />
+                      </button>
+                      <div className="flex flex-col items-center pointer-events-none">
+                          <h1 className="text-4xl font-bold font-mono text-white drop-shadow-md">{score}</h1>
+                          <div className="text-xs text-green-400 font-bold tracking-widest uppercase">PONTOS</div>
+                      </div>
+                      <div className="w-12"></div>
+                  </div>
+
+                  {/* Start Screen */}
+                  {gameState === 'start' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-40 pointer-events-none">
+                          <div className="bg-black/80 p-8 rounded-2xl border border-yellow-500/30 text-center animate-bounce">
+                              <ArrowUp size={48} className="text-yellow-400 mx-auto mb-2" />
+                              <h2 className="text-2xl font-bold text-white mb-2">TOQUE PARA VOAR</h2>
+                              <p className="text-gray-400 text-sm">Desvie dos gráficos!</p>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Game Over Screen */}
+                  {gameState === 'gameover' && (
+                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur animate-fade-in p-4">
+                          <div className="bg-gray-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                              <TrendingDown size={64} className="text-red-500 mx-auto mb-4" />
+                              <h2 className="text-3xl font-bold text-white mb-2 hero-title">MERCADO CAIU!</h2>
+                              <p className="text-gray-400 mb-6">Pontuação Final: <span className="text-white font-bold text-xl">{score}</span></p>
+                              
+                              <button 
+                                  onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      triggerAd(() => {
+                                          resetGame();
+                                          playSound('ui_click');
+                                      });
+                                  }} 
+                                  className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg uppercase tracking-wider mb-3 flex items-center justify-center gap-2 shadow-lg"
+                              >
+                                  <RefreshCw size={20} /> TENTAR NOVAMENTE
+                              </button>
+                              
+                              <button onClick={(e) => { e.stopPropagation(); onBack(); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg uppercase tracking-wider">
+                                  VOLTAR AO MENU
+                              </button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          );
+      };
+
       // --- GAME 3: HANGMAN (Luxurious Dark & Cyan) ---
       const HangmanGame = ({ onBack, addCoins }) => {
         const WORDS = [
@@ -2602,6 +2848,7 @@
           const GAMES = [
               { id: 'galaxy', name: 'Invasor Galáctico', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Tiro Espacial Arcade' },
               { id: 'crypto', name: 'Fazenda Cripto', icon: <Cpu size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Simulador de Mineração' },
+              { id: 'flappy', name: 'Flappy Coin', icon: <ArrowUp size={32} />, color: 'from-yellow-500 to-amber-600', desc: 'Aventura Financeira' },
               { id: 'hangman', name: 'Forca Neon', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Quebra-cabeça Cyberpunk' },
               { id: 'checkers', name: 'Damas Reais', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Estratégia Clássica 3D' },
               { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral de Luxo' }
@@ -2975,6 +3222,7 @@ Anexe aqui o print do painel da missão mostrando a data, hora e a barra cheia.`
                   case 'galaxy_game': return <GalaxyInvader onBack={() => setScreen('galaxy')} equippedShipId={equippedShip} addCoins={addCoins} currentCoins={coins} />;
                   case 'galaxy_shop': return <ShopScreen adProgress={shipAdProgress} handleShipAdWatch={handleShipAdWatch} equipShip={setEquippedShip} unlockedShips={unlockedShips} equippedShip={equippedShip} onBack={() => setScreen('galaxy')} />;
                   case 'crypto': return <CryptoFarmGame onBack={() => setScreen('hub')} addCoins={addCoins} coins={coins} />;
+                  case 'flappy': return <FlappyCoinGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   case 'hangman': return <HangmanGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   case 'checkers': return <CheckersGame onBack={() => setScreen('hub')} />;
                   case 'memory': return <MemoryGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
