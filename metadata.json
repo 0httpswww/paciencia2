@@ -1,7 +1,5 @@
 {
   "name": "joguee",
   "description": "Jogue e Ganhe Dinheiro Real",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }
