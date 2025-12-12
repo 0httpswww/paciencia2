@@ -357,7 +357,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp, Grab, Hand, Scissors, Mic } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp, Grab, Hand, Scissors, Mic, Layers } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -1993,402 +1993,336 @@
           );
       };
 
-      // --- GAME 8: AEROBALL NEON (Microphone Breath Game) ---
-      const BreathBalloonGame = ({ onBack, addCoins }) => {
-          const canvasRef = useRef(null);
-          const [gameState, setGameState] = useState('start'); // start, playing, gameover
-          const [score, setScore] = useState(0);
-          const [micPermission, setMicPermission] = useState('prompt'); // prompt, granted, denied
-          const [volume, setVolume] = useState(0);
+      // --- GAME 8: NEON CARDS (UNO STYLE) ---
+      const UnoGame = ({ onBack, addCoins }) => {
+          const COLORS = ['red', 'blue', 'green', 'yellow'];
+          const NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+2'];
 
-          const audioContextRef = useRef(null);
-          const analyserRef = useRef(null);
-          const sourceRef = useRef(null);
-          const rafRef = useRef(null);
-
-          // Game Constants
-          const GRAVITY = 0.15;
-          const LIFT_MULTIPLIER = 0.5; 
-          const OBSTACLE_SPEED = 2.5;
-          const BALLOON_RADIUS = 20;
-          
-          const gameRef = useRef({
-              balloon: { y: 0, velocity: 0 }, // x is center of screen
-              obstacles: [], // { x, y, width, height, type }
-              collectables: [],
-              particles: [],
-              frame: 0,
-              score: 0
-          });
-
-          // Initialize Audio
-          const initAudio = async () => {
-              try {
-                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                  const analyser = audioCtx.createAnalyser();
-                  const source = audioCtx.createMediaStreamSource(stream);
-                  
-                  analyser.fftSize = 256;
-                  source.connect(analyser);
-                  
-                  audioContextRef.current = audioCtx;
-                  analyserRef.current = analyser;
-                  sourceRef.current = source;
-                  
-                  setMicPermission('granted');
-                  startGame();
-              } catch (err) {
-                  console.error("Mic error:", err);
-                  setMicPermission('denied');
+          const createDeck = () => {
+              let deck = [];
+              COLORS.forEach(color => {
+                  NUMBERS.forEach(value => {
+                      deck.push({ id: Math.random(), color, value, type: 'number' });
+                      if (value !== '0') deck.push({ id: Math.random(), color, value, type: 'number' });
+                  });
+              });
+              for (let i = 0; i < 4; i++) {
+                  deck.push({ id: Math.random(), color: 'wild', value: 'W', type: 'wild' });
+                  deck.push({ id: Math.random(), color: 'wild', value: '+4', type: 'wild4' });
               }
+              return deck.sort(() => Math.random() - 0.5);
           };
 
-          const resetGame = () => {
-              if (canvasRef.current) {
-                  const h = canvasRef.current.height;
-                  const w = canvasRef.current.width;
-                  gameRef.current = {
-                      balloon: { y: h - 100, velocity: 0 },
-                      obstacles: [],
-                      collectables: [],
-                      particles: [],
-                      frame: 0,
-                      score: 0
-                  };
-                  setScore(0);
-                  setGameState('playing');
-              }
-          };
+          const [deck, setDeck] = useState(createDeck());
+          const [discardPile, setDiscardPile] = useState([]);
+          const [playerHand, setPlayerHand] = useState([]);
+          const [cpuHand, setCpuHand] = useState([]);
+          const [turn, setTurn] = useState('player'); // 'player' | 'cpu'
+          const [activeColor, setActiveColor] = useState(null);
+          const [gameStatus, setGameStatus] = useState('start'); // start, playing, won, lost
+          const [message, setMessage] = useState('');
 
-          const startGame = () => {
-              if (audioContextRef.current?.state === 'suspended') {
-                  audioContextRef.current.resume();
+          const initGame = () => {
+              const newDeck = createDeck();
+              const pHand = newDeck.splice(0, 7);
+              const cHand = newDeck.splice(0, 7);
+              const startCard = newDeck.shift();
+              
+              // Ensure start card isn't wild for simplicity
+              if (startCard.color === 'wild') {
+                  newDeck.push(startCard);
+                  // Quick retry recursive or simple reload for simplicity in this constrained env
+                  return initGame();
               }
-              resetGame();
+
+              setDeck(newDeck);
+              setPlayerHand(pHand);
+              setCpuHand(cHand);
+              setDiscardPile([startCard]);
+              setActiveColor(startCard.color);
+              setTurn('player');
+              setGameStatus('playing');
+              setMessage('Sua Vez!');
           };
 
           useEffect(() => {
-              const canvas = canvasRef.current;
-              const ctx = canvas.getContext('2d');
-              
-              const loop = () => {
-                  if (gameState !== 'playing') {
-                      rafRef.current = requestAnimationFrame(loop);
+              if (gameStatus === 'start') initGame();
+          }, []);
+
+          const drawCard = (targetHand, setTargetHand, count = 1) => {
+              if (deck.length < count) {
+                  // Reshuffle discard into deck if empty
+                  if (discardPile.length > 1) {
+                      const top = discardPile[discardPile.length - 1];
+                      const newDeck = discardPile.slice(0, discardPile.length - 1).sort(() => Math.random() - 0.5);
+                      setDiscardPile([top]);
+                      setDeck(prev => [...prev, ...newDeck]);
+                      // We'll let the next render cycle handle the draw
+                      return;
+                  } else {
+                       setMessage("Sem cartas!");
+                       return;
+                  }
+              }
+              const drawn = deck.slice(0, count);
+              setDeck(prev => prev.slice(count));
+              setTargetHand(prev => [...prev, ...drawn]);
+              playSound('move_piece');
+              return drawn;
+          };
+
+          const handlePlayCard = (card) => {
+              if (turn !== 'player' || gameStatus !== 'playing') return;
+
+              const topCard = discardPile[discardPile.length - 1];
+              const isMatch = card.color === activeColor || card.value === topCard.value || card.color === 'wild';
+
+              if (isMatch) {
+                  playSound('ui_click');
+                  setPlayerHand(prev => prev.filter(c => c.id !== card.id));
+                  setDiscardPile(prev => [...prev, card]);
+
+                  // Special Card Logic
+                  if (card.color === 'wild') {
+                      // Auto-pick color based on most abundant color in hand to keep flow fast
+                      const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
+                      playerHand.forEach(c => { if(c.color !== 'wild') counts[c.color]++; });
+                      const bestColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                      setActiveColor(bestColor);
+                      setMessage(`Cor alterada para ${bestColor.toUpperCase()}!`);
+                      if (card.value === '+4') {
+                          drawCard(cpuHand, setCpuHand, 4);
+                          setTurn('player'); // Skip opponent
+                          return; // Keep turn
+                      }
+                  } else {
+                      setActiveColor(card.color);
+                      if (card.value === '+2') {
+                          drawCard(cpuHand, setCpuHand, 2);
+                          setTurn('player'); // Skip opponent
+                          return;
+                      }
+                  }
+
+                  if (playerHand.length === 1) { // Will be 0 after update
+                      playSound('win');
+                      setGameStatus('won');
+                      addCoins(50);
                       return;
                   }
-
-                  // 1. Audio Processing
-                  let currentVol = 0;
-                  if (analyserRef.current) {
-                      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-                      analyserRef.current.getByteFrequencyData(dataArray);
-                      
-                      // Calculate average volume
-                      let sum = 0;
-                      for(let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                      const average = sum / dataArray.length;
-                      
-                      // Normalize 0-100 range roughly
-                      // dataArray values are 0-255. Average usually low for speech/breath.
-                      // Let's amplify a bit.
-                      currentVol = Math.min(100, (average / 50) * 100); 
-                  }
-                  setVolume(currentVol);
-
-                  // 2. Physics
-                  const { balloon, obstacles, collectables, particles } = gameRef.current;
-                  const w = canvas.width;
-                  const h = canvas.height;
-
-                  // Gravity pulls down constantly
-                  balloon.velocity += GRAVITY;
-
-                  // Breath pushes UP (negative Y)
-                  // Thresholds: 20-40 (Light), 40-70 (Med), 70-100 (Hard)
-                  if (currentVol > 10) {
-                      // Apply lift based on volume intensity
-                      const lift = (currentVol / 100) * LIFT_MULTIPLIER; // max roughly 0.5 acceleration up per frame
-                      balloon.velocity -= lift;
-                  }
-
-                  // Terminal velocity limits
-                  balloon.velocity = Math.max(-6, Math.min(6, balloon.velocity));
                   
-                  // Apply movement
-                  balloon.y += balloon.velocity;
-
-                  // Boundaries
-                  if (balloon.y > h - BALLOON_RADIUS) {
-                      setGameState('gameover'); // Fell off
-                      playSound('lose');
-                  }
-                  if (balloon.y < BALLOON_RADIUS) {
-                      balloon.y = BALLOON_RADIUS;
-                      balloon.velocity = 0;
+                  if (playerHand.length === 2) {
+                       playSound('scan'); // UNO alert sound
+                       setMessage("UNO!");
                   }
 
-                  // 3. Spawning
-                  gameRef.current.frame++;
-                  const frame = gameRef.current.frame;
+                  setTurn('cpu');
+              } else {
+                  playSound('lose'); // Invalid move sound
+              }
+          };
 
-                  // Spawn Obstacles (Top moving down)
-                  if (frame % 80 === 0) {
-                      const type = Math.random() > 0.5 ? 'block' : 'spike';
-                      const obsW = type === 'block' ? 80 + Math.random() * 60 : 40;
-                      const obsH = 30;
-                      const obsX = Math.random() * (w - obsW);
-                      
-                      obstacles.push({
-                          x: obsX,
-                          y: -50,
-                          width: obsW,
-                          height: obsH,
-                          type: type,
-                          color: type === 'spike' ? '#ef4444' : '#a855f7' // Red spike, Purple block
-                      });
-                  }
+          const handlePlayerDraw = () => {
+              if (turn !== 'player') return;
+              drawCard(playerHand, setPlayerHand, 1);
+              setTurn('cpu');
+          };
 
-                  // Spawn Coins
-                  if (frame % 150 === 0) {
-                      collectables.push({
-                          x: Math.random() * (w - 30) + 15,
-                          y: -50,
-                          radius: 12,
-                          val: 1
-                      });
-                  }
+          // CPU Logic
+          useEffect(() => {
+              if (turn === 'cpu' && gameStatus === 'playing') {
+                  setTimeout(() => {
+                      const topCard = discardPile[discardPile.length - 1];
+                      const validCards = cpuHand.filter(c => c.color === activeColor || c.value === topCard.value || c.color === 'wild');
 
-                  // 4. Update Entities & Collision
-                  // Balloon Hitbox
-                  const bx = w / 2;
-                  const by = balloon.y;
-                  const br = BALLOON_RADIUS;
+                      if (validCards.length > 0) {
+                          // Play Logic
+                          // Prefer non-wilds first to save wilds
+                          validCards.sort((a,b) => (a.color === 'wild' ? 1 : -1));
+                          const cardToPlay = validCards[0];
 
-                  // Obstacles
-                  for (let i = obstacles.length - 1; i >= 0; i--) {
-                      const o = obstacles[i];
-                      o.y += OBSTACLE_SPEED;
+                          setCpuHand(prev => prev.filter(c => c.id !== cardToPlay.id));
+                          setDiscardPile(prev => [...prev, cardToPlay]);
+                          playSound('move_piece');
 
-                      // Circle vs Rect Collision
-                      // Find closest point on rect to circle center
-                      const clampX = Math.max(o.x, Math.min(bx, o.x + o.width));
-                      const clampY = Math.max(o.y, Math.min(by, o.y + o.height));
-                      const dx = bx - clampX;
-                      const dy = by - clampY;
-                      const distance = Math.sqrt(dx*dx + dy*dy);
-
-                      if (distance < br - 4) { // -4 grace pixels
-                          setGameState('gameover');
-                          playSound('explosion');
-                      }
-
-                      if (o.y > h) obstacles.splice(i, 1);
-                  }
-
-                  // Collectables
-                  for (let i = collectables.length - 1; i >= 0; i--) {
-                      const c = collectables[i];
-                      c.y += OBSTACLE_SPEED;
-                      
-                      const dx = bx - c.x;
-                      const dy = by - c.y;
-                      const dist = Math.sqrt(dx*dx + dy*dy);
-                      
-                      if (dist < br + c.radius) {
-                          collectables.splice(i, 1);
-                          gameRef.current.score += 5;
-                          addCoins(1);
-                          playSound('harvest');
-                          // Particle effect
-                          for(let k=0; k<5; k++) {
-                              particles.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 20, color: '#fbbf24' });
+                          if (cardToPlay.color === 'wild') {
+                               const colors = ['red', 'blue', 'green', 'yellow'];
+                               const randColor = colors[Math.floor(Math.random() * colors.length)];
+                               setActiveColor(randColor);
+                               setMessage(`CPU mudou para ${randColor.toUpperCase()}`);
+                               if (cardToPlay.value === '+4') {
+                                   drawCard(playerHand, setPlayerHand, 4);
+                                   setTurn('cpu'); // CPU goes again (Skip player)
+                                   return; 
+                               }
+                          } else {
+                               setActiveColor(cardToPlay.color);
+                               if (cardToPlay.value === '+2') {
+                                   drawCard(playerHand, setPlayerHand, 2);
+                                   setTurn('cpu'); 
+                                   return;
+                               }
                           }
-                      } else if (c.y > h) collectables.splice(i, 1);
-                  }
-                  
-                  // Score over time
-                  if (frame % 60 === 0) {
-                      gameRef.current.score += 1;
-                      setScore(gameRef.current.score);
-                  }
 
-                  // Particles Update
-                  for (let i = particles.length - 1; i >= 0; i--) {
-                      let p = particles[i];
-                      p.x += p.vx;
-                      p.y += p.vy;
-                      p.life--;
-                      if (p.life <= 0) particles.splice(i, 1);
-                  }
-
-                  // 5. Draw
-                  ctx.fillStyle = '#050505';
-                  ctx.fillRect(0, 0, w, h);
-
-                  // Draw Particles
-                  particles.forEach(p => {
-                      ctx.fillStyle = p.color;
-                      ctx.globalAlpha = p.life / 20;
-                      ctx.beginPath();
-                      ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
-                      ctx.fill();
-                  });
-                  ctx.globalAlpha = 1;
-
-                  // Draw Balloon (Neon Style)
-                  ctx.shadowBlur = 20;
-                  ctx.shadowColor = '#22d3ee'; // Cyan glow
-                  ctx.fillStyle = '#000';
-                  ctx.strokeStyle = '#22d3ee';
-                  ctx.lineWidth = 3;
-                  ctx.beginPath();
-                  ctx.arc(bx, by, br, 0, Math.PI*2);
-                  ctx.fill();
-                  ctx.stroke();
-                  ctx.shadowBlur = 0;
-                  
-                  // Inner Detail (Volume indicator)
-                  const innerR = br * (currentVol / 100);
-                  ctx.fillStyle = `rgba(34, 211, 238, ${currentVol/100})`;
-                  ctx.beginPath();
-                  ctx.arc(bx, by, Math.max(2, innerR), 0, Math.PI*2);
-                  ctx.fill();
-
-                  // Draw Obstacles
-                  obstacles.forEach(o => {
-                      ctx.shadowBlur = 10;
-                      ctx.shadowColor = o.color;
-                      ctx.strokeStyle = o.color;
-                      ctx.fillStyle = '#000';
-                      ctx.lineWidth = 2;
-                      
-                      if (o.type === 'spike') {
-                          // Draw triangles or simple rect for now
-                          ctx.strokeRect(o.x, o.y, o.width, o.height);
-                          // X inside
-                          ctx.beginPath();
-                          ctx.moveTo(o.x, o.y); ctx.lineTo(o.x+o.width, o.y+o.height);
-                          ctx.moveTo(o.x+o.width, o.y); ctx.lineTo(o.x, o.y+o.height);
-                          ctx.stroke();
+                          if (cpuHand.length === 1) { // 0 after update
+                              setGameStatus('lost');
+                              playSound('lose');
+                              return;
+                          }
+                          setTurn('player');
                       } else {
-                          ctx.fillRect(o.x, o.y, o.width, o.height);
-                          ctx.strokeRect(o.x, o.y, o.width, o.height);
+                          // Draw
+                          drawCard(cpuHand, setCpuHand, 1);
+                          setTurn('player');
                       }
-                      ctx.shadowBlur = 0;
-                  });
+                  }, 1500);
+              }
+          }, [turn, gameStatus, activeColor]); // Dependencies simplifed for effect
 
-                  // Draw Collectables
-                  collectables.forEach(c => {
-                      ctx.shadowBlur = 15;
-                      ctx.shadowColor = '#fbbf24';
-                      ctx.fillStyle = '#fbbf24';
-                      ctx.beginPath();
-                      ctx.arc(c.x, c.y, c.radius, 0, Math.PI*2);
-                      ctx.fill();
-                      ctx.shadowBlur = 0;
-                  });
-                  
-                  rafRef.current = requestAnimationFrame(loop);
+          const Card = ({ card, onClick, isFaceUp = true, isPlayable = false }) => {
+              const gradients = {
+                  red: 'bg-gradient-to-br from-red-500 to-red-800',
+                  blue: 'bg-gradient-to-br from-blue-500 to-blue-900',
+                  green: 'bg-gradient-to-br from-emerald-500 to-green-800',
+                  yellow: 'bg-gradient-to-br from-yellow-400 to-amber-600',
+                  wild: 'bg-[conic-gradient(at_center,_var(--tw-gradient-stops))] from-red-500 via-blue-500 to-green-500'
               };
 
-              const handleResize = () => {
-                   canvas.width = window.innerWidth;
-                   canvas.height = window.innerHeight;
-                   if (gameRef.current.balloon.y === 0) {
-                       gameRef.current.balloon.y = canvas.height - 100;
-                   }
-              };
-              
-              window.addEventListener('resize', handleResize);
-              handleResize();
-              
-              loop();
-              return () => {
-                  window.removeEventListener('resize', handleResize);
-                  cancelAnimationFrame(rafRef.current);
-              };
-          }, [gameState, addCoins]); // Missing dependencies like volume, but ref usage mitigates
+              if (!isFaceUp) {
+                  return (
+                      <div className="w-16 h-24 md:w-20 md:h-28 rounded-xl bg-gradient-to-br from-slate-900 to-black border-2 border-slate-700 flex items-center justify-center shadow-lg relative overflow-hidden">
+                           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
+                           <Layers className="text-gray-600" size={32} />
+                      </div>
+                  );
+              }
+
+              return (
+                  <div 
+                      onClick={() => isPlayable && onClick(card)}
+                      className={`
+                          w-16 h-24 md:w-20 md:h-28 rounded-xl ${gradients[card.color]} 
+                          flex items-center justify-center shadow-xl border-2 border-white/20 
+                          relative overflow-hidden transition-all duration-300
+                          ${isPlayable ? 'cursor-pointer hover:-translate-y-4 hover:shadow-[0_0_20px_white]' : ''}
+                      `}
+                  >
+                      {/* Gloss */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
+                      
+                      {/* Center Content */}
+                      <div className="w-10 h-10 md:w-14 md:h-14 bg-white/90 rounded-full flex items-center justify-center shadow-inner">
+                          <span className={`text-xl md:text-2xl font-black ${card.color === 'wild' ? 'text-black' : `text-${card.color}-600`}`} style={{ color: card.color === 'wild' ? 'black' : '' }}>
+                              {card.value}
+                          </span>
+                      </div>
+                      
+                      {/* Corner Numbers */}
+                      <span className="absolute top-1 left-1 text-xs font-bold text-white drop-shadow-md">{card.value}</span>
+                      <span className="absolute bottom-1 right-1 text-xs font-bold text-white drop-shadow-md rotate-180">{card.value}</span>
+                  </div>
+              );
+          };
 
           return (
-              <div className="w-full h-full relative bg-[#050505] overflow-hidden select-none safe-area-padding">
-                   {/* Background Elements */}
-                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-black opacity-50"></div>
-                   
-                   <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
+              <div className="w-full h-full bg-[#0a0a0a] flex flex-col relative overflow-hidden safe-area-padding">
+                   {/* Background */}
+                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-black"></div>
+                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
 
-                   {/* UI Layer */}
-                   <div className="absolute top-0 w-full p-4 flex justify-between items-start pointer-events-none z-50">
-                        <button onClick={(e) => { e.stopPropagation(); onBack(); }} className="pointer-events-auto p-3 bg-white/10 rounded-full backdrop-blur text-white hover:bg-white/20">
-                            <ChevronLeft size={24} />
-                        </button>
+                   {/* Header */}
+                   <div className="w-full p-4 flex justify-between items-center z-20 bg-black/40 backdrop-blur border-b border-white/10">
+                        <button onClick={onBack} className="p-2 rounded-full bg-white/10 text-white"><ChevronLeft /></button>
                         <div className="flex flex-col items-center">
-                            <div className="text-4xl font-bold font-mono text-cyan-400 drop-shadow-[0_0_10px_cyan]">{score}</div>
-                            {/* Volume Meter UI */}
-                            <div className="w-32 h-2 bg-gray-800 rounded-full mt-2 border border-gray-600 overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-green-500 to-red-500 transition-all duration-75" style={{ width: `${volume}%` }}></div>
-                            </div>
+                            <h1 className="text-xl font-bold font-['Rajdhani'] text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 tracking-widest drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">NEON CARDS</h1>
+                            <div className="text-xs text-gray-400 font-mono">{message}</div>
                         </div>
-                        <div className="w-12"></div>
+                        <div className="w-10"></div> {/* Spacer */}
                    </div>
 
-                   {/* Start / Permission Screen */}
-                   {gameState === 'start' && (
-                       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-                           <div className="bg-[#111] border border-cyan-500/30 p-8 rounded-2xl text-center max-w-sm w-full shadow-[0_0_30px_rgba(34,211,238,0.1)]">
-                               <Mic size={64} className={`mx-auto mb-4 ${micPermission === 'denied' ? 'text-red-500' : 'text-cyan-400 animate-pulse'}`} />
-                               <h2 className="text-2xl font-bold text-white mb-2 hero-title">AEROBALL NEON</h2>
-                               
-                               {micPermission === 'denied' ? (
-                                   <div className="text-red-400 mb-6">
-                                       <p className="font-bold">Permissão de microfone negada.</p>
-                                       <p className="text-sm mt-2">Habilite o microfone nas configurações do navegador para jogar.</p>
+                   {/* Game Area */}
+                   <div className="flex-1 flex flex-col items-center justify-between py-6 relative z-10">
+                       
+                       {/* CPU Hand */}
+                       <div className="flex justify-center -space-x-4">
+                           {cpuHand.map((c, i) => (
+                               <div key={c.id} style={{ transform: `translateY(${i%2===0 ? '0' : '2px'})` }}>
+                                   <Card card={c} isFaceUp={false} />
+                               </div>
+                           ))}
+                       </div>
+
+                       {/* Center Pile */}
+                       <div className="flex items-center gap-8">
+                           {/* Draw Pile */}
+                           <div onClick={handlePlayerDraw} className={`cursor-pointer transition-transform active:scale-95 ${turn==='player' ? 'animate-pulse' : ''}`}>
+                               <div className="w-20 h-28 rounded-xl bg-slate-900 border-2 border-slate-600 flex items-center justify-center shadow-2xl relative">
+                                    <Layers className="text-slate-500" />
+                                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">{deck.length}</div>
+                               </div>
+                               {turn === 'player' && <div className="text-[10px] text-center text-gray-400 mt-2 font-bold uppercase">COMPRAR</div>}
+                           </div>
+
+                           {/* Discard Pile */}
+                           <div className="relative">
+                               {discardPile.slice(-3).map((c, i) => (
+                                   <div key={c.id} className="absolute top-0 left-0" style={{ transform: `rotate(${i * 5 - 10}deg)` }}>
+                                       <Card card={c} />
                                    </div>
-                               ) : (
-                                   <>
-                                       <p className="text-gray-300 mb-2">Controle o balão com o sopro!</p>
-                                       <ul className="text-sm text-gray-500 mb-6 text-left space-y-1 list-disc pl-4">
-                                           <li>Sopre forte para subir</li>
-                                           <li>Pare para descer</li>
-                                           <li>Desvie dos espinhos e blocos</li>
-                                       </ul>
-                                       <button 
-                                           onClick={() => { playSound('ui_click'); initAudio(); }} 
-                                           className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
-                                       >
-                                           <Mic size={18} /> ATIVAR MIC & JOGAR
-                                       </button>
-                                   </>
-                               )}
+                               ))}
+                               {/* Active Color Indicator */}
+                               <div className={`absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full shadow-[0_0_10px_currentColor] transition-colors duration-500 
+                                   ${activeColor === 'red' ? 'bg-red-500 text-red-500' : 
+                                     activeColor === 'blue' ? 'bg-blue-500 text-blue-500' : 
+                                     activeColor === 'green' ? 'bg-green-500 text-green-500' : 
+                                     activeColor === 'yellow' ? 'bg-yellow-500 text-yellow-500' : 'bg-white text-white'}`}
+                               ></div>
                            </div>
                        </div>
-                   )}
 
-                   {/* Game Over Screen */}
-                   {gameState === 'gameover' && (
+                       {/* Player Hand */}
+                       <div className="flex justify-center -space-x-6 md:-space-x-4 px-4 overflow-x-auto w-full pb-4 pt-8">
+                           {playerHand.map((c, i) => {
+                               const topCard = discardPile[discardPile.length - 1];
+                               const isPlayable = turn === 'player' && (c.color === activeColor || c.value === topCard.value || c.color === 'wild');
+                               return (
+                                   <div key={c.id} className="transform transition-transform hover:-translate-y-4 hover:z-10 origin-bottom" style={{ transform: `rotate(${(i - playerHand.length/2) * 5}deg)` }}>
+                                       <Card card={c} isPlayable={isPlayable} onClick={handlePlayCard} />
+                                   </div>
+                               )
+                           })}
+                       </div>
+
+                   </div>
+
+                   {/* Game Over Modal */}
+                   {gameStatus !== 'playing' && gameStatus !== 'start' && (
                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur animate-fade-in p-4">
-                          <div className="bg-gray-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl max-w-sm w-full">
-                              <Skull size={64} className="text-red-500 mx-auto mb-4" />
-                              <h2 className="text-3xl font-bold text-white mb-2 hero-title">GAME OVER</h2>
-                              <p className="text-gray-400 mb-6">Pontuação Final: <span className="text-cyan-400 font-bold text-xl">{score}</span></p>
-                              
-                              <button 
-                                  onClick={() => { 
-                                      triggerAd(() => {
-                                          startGame();
-                                          playSound('ui_click');
-                                      });
-                                  }} 
-                                  className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg uppercase tracking-wider mb-3 flex items-center justify-center gap-2 shadow-lg"
-                              >
-                                  <RefreshCw size={20} /> TENTAR NOVAMENTE
-                              </button>
-                              
-                              <button onClick={() => onBack()} className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg uppercase tracking-wider">
+                           <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-2xl border border-white/10 text-center shadow-2xl max-w-sm w-full">
+                               {gameStatus === 'won' ? (
+                                   <>
+                                       <Trophy size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
+                                       <h2 className="text-3xl font-bold text-white mb-2 hero-title">VITÓRIA!</h2>
+                                       <p className="text-gray-400 mb-6">+50 Moedas</p>
+                                   </>
+                               ) : (
+                                   <>
+                                       <Skull size={64} className="text-red-500 mx-auto mb-4" />
+                                       <h2 className="text-3xl font-bold text-red-500 mb-2 hero-title">DERROTA</h2>
+                                       <p className="text-gray-400 mb-6">A CPU venceu desta vez.</p>
+                                   </>
+                               )}
+                               <button 
+                                  onClick={() => { triggerAd(() => initGame()); playSound('ui_click'); }}
+                                  className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg uppercase tracking-wider mb-3 flex items-center justify-center gap-2 shadow-lg"
+                               >
+                                  <RefreshCw size={20} /> JOGAR NOVAMENTE
+                               </button>
+                               <button onClick={onBack} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg uppercase tracking-wider border border-white/10">
                                   VOLTAR AO MENU
-                              </button>
-                          </div>
-                      </div>
+                               </button>
+                           </div>
+                       </div>
                    )}
               </div>
           );
@@ -3393,7 +3327,7 @@
               { id: 'checkers', name: 'Damas Reais', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Estratégia Clássica 3D' },
               { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral de Luxo' },
               { id: 'rps', name: 'Jo-Ken-Po Neon', icon: <Grab size={32} />, color: 'from-pink-600 to-rose-600', desc: 'Pedra, Papel e Tesoura' },
-              { id: 'aeroball', name: 'Aeroball Neon', icon: <Mic size={32} />, color: 'from-cyan-500 to-teal-500', desc: 'Jogo Controlado por Sopro' }
+              { id: 'uno', name: 'Neon Cards', icon: <Layers size={32} />, color: 'from-fuchsia-600 to-purple-600', desc: 'Clássico de Cartas Deluxe' }
           ];
 
           const [secretCount, setSecretCount] = useState(0);
@@ -3778,7 +3712,7 @@ Anexe aqui o print do painel da missão mostrando a data, hora e a barra cheia.`
                   case 'checkers': return <CheckersGame onBack={() => setScreen('hub')} />;
                   case 'memory': return <MemoryGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   case 'rps': return <RockPaperScissorsGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
-                  case 'aeroball': return <BreathBalloonGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
+                  case 'uno': return <UnoGame onBack={() => setScreen('hub')} addCoins={addCoins} />;
                   default: return <MainHub onSelect={setScreen} coins={coins} cashBalance={cashBalance} onOpenMissions={() => setShowMissionModal(true)} />;
               }
           };
