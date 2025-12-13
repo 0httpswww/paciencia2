@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>JOGUE E GANHE $</title>
+    <title>JOGUE E GANHE | PREMIUM</title>
     <meta name="description" content="Jogue e Ganhe Recompensas! Arcade, Racing & Learning.">
-    <meta name="theme-color" content="#0a0a0a">
+    <meta name="theme-color" content="#000000">
 
     <!-- ========================================== -->
     <!-- MONETAG ADS CONFIGURATION                  -->
@@ -76,7 +76,7 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@1,700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -90,7 +90,6 @@
             user-select: none; 
             -webkit-user-select: none; 
             overflow: hidden;
-            /* FIX: Use 100% and fixed position to prevent scrollbar issues on mobile */
             width: 100%;
             height: 100%;
             position: fixed;
@@ -98,232 +97,189 @@
             left: 0;
         }
 
-        /* --- WEALTH THEME BACKGROUNDS --- */
+        /* --- LUXURY & WEALTH THEME OVERHAUL --- */
         .premium-bg {
-            background-color: #050505;
+            background-color: #020202;
             background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0, 50, 20, 0.2) 0%, transparent 40%),
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            position: relative;
-        }
-        
-        .premium-bg::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 50%;
-            background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .wealth-bg {
-            background-color: #020602;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.15) 0%, transparent 30%),
-                radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.15) 0%, transparent 30%),
-                linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
             background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
             position: relative;
         }
 
-        /* --- VIGNETTE & SCANLINES --- */
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0.3;
+        /* Gold Gradient Text */
+        .text-gold-gradient {
+            background: linear-gradient(to bottom, #FFD700 0%, #FDB931 50%, #C5961B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 0px 15px rgba(255, 215, 0, 0.4);
+            font-weight: 900;
         }
 
-        /* --- PREMIUM BUTTONS --- */
-        .premium-btn {
+        /* Neon Green Accent */
+        .text-neon-money {
+            color: #00FF41;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        /* Gold Metallic Button */
+        .btn-gold {
+            background: linear-gradient(180deg, #FDB931 0%, #B8860B 100%);
+            border: 1px solid #FFED4A;
+            color: #000;
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 2px;
             position: relative;
-            background: rgba(20, 20, 20, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            color: white;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
         }
 
-        .premium-btn:hover {
+        .btn-gold:hover {
             transform: translateY(-2px) scale(1.02);
-            border-color: rgba(255, 255, 255, 0.6);
-            box-shadow: 
-                0 0 20px rgba(255, 255, 255, 0.1),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
-            background: rgba(30, 30, 30, 0.9);
+            box-shadow: 0 0 30px rgba(218, 165, 32, 0.7), inset 0 1px 0 rgba(255,255,255,0.6);
+            filter: brightness(1.1);
         }
 
-        .premium-btn:active {
-            transform: translateY(1px) scale(0.98);
-        }
-
-        /* White Shine Effect */
-        .premium-btn::after {
+        .btn-gold::after {
             content: '';
             position: absolute;
-            top: 0;
+            top: -100%;
             left: -100%;
+            width: 300%;
+            height: 300%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.8), transparent);
+            transform: rotate(45deg) translate(-100%, -100%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(45deg) translate(-100%, -100%); }
+            100% { transform: rotate(45deg) translate(100%, 100%); }
+        }
+
+        /* Glass Luxury Card */
+        .glass-card {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .glass-card-gold {
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.9), rgba(40, 30, 0, 0.3));
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card-gold:hover {
+            border-color: rgba(255, 215, 0, 0.8);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        @keyframes float-reverse {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(-5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delay { animation: float-reverse 7s ease-in-out infinite 1s; }
+        .animate-float-fast { animation: float 4s ease-in-out infinite; }
+
+        /* Stock Ticker */
+        .ticker-wrap {
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: 0.5s;
+            background: #000;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+            height: 36px;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            z-index: 50;
+        }
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 25s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
 
-        .premium-btn:hover::after {
-            left: 100%;
-        }
-
-        /* --- TYPOGRAPHY & TITLES --- */
-        .hero-title {
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        .gold-gradient-text {
-            background: linear-gradient(to bottom, #FFD700, #FDB931, #C5961B);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
-            font-weight: 800;
-        }
-        
-        .money-card {
-            background: linear-gradient(145deg, rgba(10, 40, 10, 0.8), rgba(0, 20, 0, 0.9));
-            border: 1px solid rgba(0, 255, 0, 0.2);
-            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
-        }
-        
-        .money-card:hover {
-            border-color: #FFD700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-
-        @keyframes moneyPulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
-        }
-        
-        .animate-money-pulse {
-            animation: moneyPulse 2s infinite;
-        }
-
-        /* --- UTILS --- */
-        .cursor-grab { cursor: grab; }
-        .cursor-grabbing { cursor: grabbing; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* --- GAME SPECIFIC PRESERVED STYLES --- */
+        /* --- PRESERVED GAME STYLES --- */
         .space-3d { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); perspective: 1000px; overflow: hidden; }
         .grid-floor { position: absolute; bottom: -50%; left: -50%; width: 200%; height: 100%; background-image: linear-gradient(rgba(56, 189, 248, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.2) 1px, transparent 1px); background-size: 80px 80px; transform: rotateX(60deg); animation: gridMove 4s linear infinite; z-index: 0; mask-image: linear-gradient(to top, black 0%, transparent 60%); }
         @keyframes gridMove { 0% { transform: rotateX(60deg) translateY(0); } 100% { transform: rotateX(60deg) translateY(80px); } }
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-        @keyframes swing { 0% { transform: rotate(2deg); } 50% { transform: rotate(-2deg); } 100% { transform: rotate(2deg); } }
-        .hangman-swing { transform-origin: 140px 20px; animation: swing 3s infinite ease-in-out; }
         
-        /* CRYPTO MINING FARM STYLES - WORKSHOP THEME */
         .server-room-scene { 
             background-color: #2c2c2c;
-            /* Pixel Art Brick Wall Pattern */
-            background-image: 
-                linear-gradient(335deg, rgba(0,0,0,0.3) 23px, transparent 23px),
-                linear-gradient(155deg, rgba(0,0,0,0.3) 23px, transparent 23px),
-                linear-gradient(335deg, rgba(0,0,0,0.3) 23px, transparent 23px),
-                linear-gradient(155deg, rgba(0,0,0,0.3) 23px, transparent 23px);
+            background-image: linear-gradient(335deg, rgba(0,0,0,0.3) 23px, transparent 23px), linear-gradient(155deg, rgba(0,0,0,0.3) 23px, transparent 23px);
             background-size: 58px 58px;
-            background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
         }
         .farm-perspective { perspective: 1000px; overflow: auto; }
         .farm-grid-3d { transform-style: preserve-3d; transition: transform 0.3s ease-out; }
-        
-        /* Machine Slot sits on shelf */
-        .miner-slot { 
-            background: #1e293b; 
-            box-shadow: inset 0 0 10px #000;
-            transform-style: preserve-3d; 
-            image-rendering: pixelated;
-            border-bottom: none;
-            position: relative;
-        }
-        
-        /* SHELF STYLE */
-        .miner-slot::after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: -10%;
-            width: 120%;
-            height: 12px;
-            background: #475569; /* Metal Shelf */
-            border-top: 2px solid #94a3b8; /* Highlight */
-            border-bottom: 4px solid #1e293b; /* Shadow */
-            border-radius: 2px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.6);
-            z-index: 0;
-            transform: translateZ(10px);
-        }
-
-        .miner-slot:hover { border: 1px solid rgba(56, 189, 248, 0.8); box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
-        
-        /* PIXEL ART ANIMATIONS */
-        @keyframes fanSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .miner-slot { background: #1e293b; box-shadow: inset 0 0 10px #000; transform-style: preserve-3d; image-rendering: pixelated; position: relative; }
+        .miner-slot::after { content: ''; position: absolute; bottom: -12px; left: -10%; width: 120%; height: 12px; background: #475569; border-top: 2px solid #94a3b8; border-bottom: 4px solid #1e293b; transform: translateZ(10px); }
         .pixel-fan { animation: fanSpin 0.2s linear infinite; }
-        
-        @keyframes ledBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes fanSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .pixel-led { animation: ledBlink 1s step-end infinite; }
-        .pixel-led-fast { animation: ledBlink 0.1s step-end infinite; }
+        @keyframes ledBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
+        .checkers-3d-scene { perspective: 800px; overflow: hidden; }
+        .checkers-board { transform-style: preserve-3d; transform: rotateX(45deg); transition: transform 0.5s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .checker-piece { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .checker-piece:hover { transform: translateY(-5px); }
+        
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        
+        .hero-title { font-family: 'Rajdhani', sans-serif; text-transform: uppercase; font-weight: 900; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
 
-        .level-up-anim { animation: levelUp 2s ease-out forwards; }
-        @keyframes levelUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
-        
-        /* New Animations */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* Marquee Animation */
-        @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-        
         .safe-area-padding {
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Matrix/Hacker Text */
-        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
-        .text-glow { text-shadow: 0 0 5px currentColor; }
-        .animate-blink { animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        
-        /* Checkers 3D */
-        .checkers-3d-scene { perspective: 800px; overflow: hidden; }
-        .checkers-board { transform-style: preserve-3d; transform: rotateX(45deg); transition: transform 0.5s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .checker-piece { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .checker-piece:hover { transform: translateY(-5px); }
-        .king-crown { text-shadow: 0 0 5px gold; }
-        
-        /* Memory Card Flip */
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
+        /* Particles for Wealth Effect */
+        .wealth-particle {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            animation: rise 5s infinite;
+        }
+        @keyframes rise {
+            0% { bottom: -10%; opacity: 0; transform: translateX(0); }
+            20% { opacity: 0.5; }
+            80% { opacity: 0.2; }
+            100% { bottom: 120%; opacity: 0; transform: translateX(50px); }
+        }
     </style>
     <script type="importmap">
 {
@@ -357,7 +313,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
       import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
       import { createRoot } from 'react-dom/client';
-      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp, Grab, Hand, Scissors, Mic, Layers } from 'lucide-react';
+      import { Rocket, ChevronLeft, Sprout, CheckCircle, Maximize, ShoppingCart, Coins, Lock, Check, Brain, RefreshCw, Zap, Download, PlayCircle, ClipboardList, X, PlusCircle, Save, Cloud, LogIn, LogOut, Loader2, Pause, Heart, Skull, Move, HelpCircle, Lightbulb, Gamepad2, Activity, TrendingUp, ShieldAlert, ExternalLink, RefreshCcw, Target, BarChart2, Radio, AlertTriangle, Volume2, VolumeX, Trophy, Clock, Image as ImageIcon, Film, DollarSign, Wallet, Crown, Grid, Gem, User, Key, Mail, History, Server, Cpu, HardDrive, Fan, Wifi, Info, TrendingDown, ArrowUp, Grab, Hand, Scissors, Mic, Layers, ShieldCheck, CreditCard, Banknote } from 'lucide-react';
       import { createClient } from '@supabase/supabase-js';
 
       // ==========================================
@@ -566,10 +522,10 @@
 
       // --- Reusable Components ---
       const Modal = ({ title, onClose, children }) => (
-          <div className="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
-              <div className="bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col max-h-[90%] relative">
-                  <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#151515]">
-                      <h2 className="text-xl font-bold text-white hero-title">{title}</h2>
+          <div className="absolute inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}>
+              <div className="glass-card-gold w-full max-w-sm rounded-2xl overflow-hidden flex flex-col max-h-[90%] relative border border-yellow-500/30">
+                  <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/60">
+                      <h2 className="text-xl font-bold text-gold-gradient hero-title tracking-wider">{title}</h2>
                       <button onClick={() => { playSound('ui_click'); onClose(); }}><X className="text-gray-400 hover:text-white" /></button>
                   </div>
                   <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
@@ -646,29 +602,29 @@
 
           return (
               <Modal title="SOLICITAR SAQUE PIX" onClose={onClose}>
-                  <div className="bg-yellow-900/20 border border-yellow-600/30 p-3 rounded mb-4 text-center">
-                      <div className="text-xs text-gray-400 uppercase tracking-widest">Saldo Disponível</div>
-                      <div className="text-2xl font-bold text-yellow-400 font-mono">R$ {balance.toFixed(2)}</div>
+                  <div className="bg-yellow-900/20 border border-yellow-600/30 p-4 rounded-xl mb-6 text-center shadow-[0_0_20px_rgba(255,215,0,0.1)]">
+                      <div className="text-xs text-yellow-500 font-bold uppercase tracking-widest mb-1">Saldo Disponível</div>
+                      <div className="text-3xl font-black text-white font-mono drop-shadow-[0_0_10px_gold]">R$ {balance.toFixed(2)}</div>
                   </div>
                   
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Nome Completo</label>
-                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Nome Completo</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-yellow-500/50 transition">
                               <User size={16} className="text-gray-500 mr-2" />
-                              <input type="text" value={name} onChange={e => setName(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Seu nome" required />
+                              <input type="text" value={name} onChange={e => setName(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm font-bold" placeholder="Seu nome" required />
                           </div>
                       </div>
 
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Tipo de Chave PIX</label>
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Tipo de Chave PIX</label>
                           <div className="flex gap-2 mt-1">
                               {['cpf', 'email', 'phone', 'random'].map(type => (
                                   <button 
                                       key={type}
                                       type="button"
                                       onClick={() => setPixType(type)}
-                                      className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border ${pixType === type ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-[#050505] border-white/10 text-gray-500'}`}
+                                      className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border transition-all ${pixType === type ? 'bg-green-600/20 border-green-500 text-green-400 shadow-[0_0_10px_rgba(0,255,65,0.2)]' : 'bg-[#050505] border-white/10 text-gray-500 hover:bg-white/5'}`}
                                   >
                                       {type}
                                   </button>
@@ -677,26 +633,26 @@
                       </div>
 
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Chave PIX</label>
-                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Chave PIX</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-yellow-500/50 transition">
                               <Key size={16} className="text-gray-500 mr-2" />
-                              <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="Sua chave pix" required />
+                              <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm font-bold" placeholder="Sua chave pix" required />
                           </div>
                       </div>
 
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Seu Email (Para contato)</label>
-                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-2">
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Seu Email (Para contato)</label>
+                          <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-yellow-500/50 transition">
                               <Mail size={16} className="text-gray-500 mr-2" />
-                              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="email@exemplo.com" required />
+                              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm font-bold" placeholder="email@exemplo.com" required />
                           </div>
                       </div>
 
-                      <button type="submit" disabled={loading} className="mt-2 w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2">
-                          {loading ? <Loader2 className="animate-spin" /> : <><Wallet size={18} /> CONFIRMAR SAQUE</>}
+                      <button type="submit" disabled={loading} className="mt-4 w-full py-4 btn-gold rounded-lg shadow-lg flex items-center justify-center gap-2">
+                          {loading ? <Loader2 className="animate-spin" /> : <><Wallet size={20} /> CONFIRMAR SAQUE</>}
                       </button>
                       <p className="text-[10px] text-center text-gray-500 mt-2">
-                          *Ao confirmar, a solicitação será enviada para análise manual.
+                          *Ao confirmar, a solicitação será enviada para análise manual de segurança.
                       </p>
                   </form>
               </Modal>
@@ -911,70 +867,70 @@
                           <div className="text-2xl font-bold font-mono text-white tracking-widest">{timeString}</div>
                       </div>
 
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center">
-                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider">Tempo Jogado Hoje</p>
-                          <div className="text-3xl font-bold text-white font-mono">{formatTime(playTime)}</div>
+                      <div className="bg-[#0f0f0f] p-4 rounded-xl border border-white/10 text-center shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+                          <p className="text-gray-400 text-xs mb-1 uppercase tracking-wider font-bold">Tempo Jogado Hoje</p>
+                          <div className="text-3xl font-black text-white font-mono drop-shadow-[0_0_10px_white]">{formatTime(playTime)}</div>
                       </div>
 
                       {/* Reward 1: 0.10 for 25m */}
-                      <div className={`p-4 rounded-xl border ${rewards.photo ? 'bg-green-900/20 border-green-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                      <div className={`p-4 rounded-xl border transition-all ${rewards.photo ? 'bg-green-900/20 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
                           <div className="flex items-center gap-3 mb-3">
-                              <div className={`p-2 rounded-lg ${rewards.photo ? 'bg-green-500 text-black' : 'bg-slate-800 text-gray-500'}`}>
+                              <div className={`p-2 rounded-lg ${rewards.photo ? 'bg-green-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
                                   <Wallet size={24} />
                               </div>
                               <div className="flex-1">
-                                  <h3 className="font-bold text-white">R$ 0,10 NO PIX</h3>
+                                  <h3 className="font-bold text-white uppercase tracking-wide">R$ 0,10 NO PIX</h3>
                                   <p className="text-xs text-gray-400">Jogue 25 minutos</p>
                               </div>
                               {rewards.photo ? <CheckCircle className="text-green-500" /> : <Lock size={16} className="text-gray-600" />}
                           </div>
                           {rewards.photo ? (
-                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,10</button>
+                              <button onClick={() => handleClaim('photo')} className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs shadow-lg uppercase tracking-wider">RESGATAR R$ 0,10</button>
                           ) : (
-                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_PHOTO) * 100)}%` }}></div>
+                              <div className="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-white/5">
+                                  <div className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `${Math.min(100, (playTime / TIME_PHOTO) * 100)}%` }}></div>
                               </div>
                           )}
                       </div>
 
                       {/* Reward 2: 0.10 for 40m */}
-                      <div className={`p-4 rounded-xl border ${rewards.video ? 'bg-purple-900/20 border-purple-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                      <div className={`p-4 rounded-xl border transition-all ${rewards.video ? 'bg-purple-900/20 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-white/5 border-white/10'}`}>
                           <div className="flex items-center gap-3 mb-3">
-                              <div className={`p-2 rounded-lg ${rewards.video ? 'bg-purple-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                              <div className={`p-2 rounded-lg ${rewards.video ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-500'}`}>
                                   <DollarSign size={24} />
                               </div>
                               <div className="flex-1">
-                                  <h3 className="font-bold text-white">R$ 0,10 NO PIX</h3>
+                                  <h3 className="font-bold text-white uppercase tracking-wide">R$ 0,10 NO PIX</h3>
                                   <p className="text-xs text-gray-400">Jogue 40 minutos</p>
                               </div>
                               {rewards.video ? <CheckCircle className="text-purple-500" /> : <Lock size={16} className="text-gray-600" />}
                           </div>
                           {rewards.video ? (
-                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,10</button>
+                              <button onClick={() => handleClaim('video')} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-xs shadow-lg uppercase tracking-wider">RESGATAR R$ 0,10</button>
                           ) : (
-                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
+                              <div className="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-white/5">
+                                  <div className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" style={{ width: `${Math.min(100, (playTime / TIME_VIDEO) * 100)}%` }}></div>
                               </div>
                           )}
                       </div>
 
                       {/* Reward 3: 0.25 for 1 hour */}
-                      <div className={`p-4 rounded-xl border ${rewards.super ? 'bg-red-900/20 border-red-500/50' : 'bg-slate-900/50 border-slate-700'}`}>
+                      <div className={`p-4 rounded-xl border transition-all ${rewards.super ? 'bg-yellow-900/20 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'bg-white/5 border-white/10'}`}>
                           <div className="flex items-center gap-3 mb-3">
-                              <div className={`p-2 rounded-lg ${rewards.super ? 'bg-red-500 text-white' : 'bg-slate-800 text-gray-500'}`}>
+                              <div className={`p-2 rounded-lg ${rewards.super ? 'bg-yellow-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
                                   <Crown size={24} />
                               </div>
                               <div className="flex-1">
-                                  <h3 className="font-bold text-white">R$ 0,25 NO PIX</h3>
+                                  <h3 className="font-bold text-white uppercase tracking-wide">R$ 0,25 NO PIX</h3>
                                   <p className="text-xs text-gray-400">Jogue 1 hora</p>
                               </div>
-                              {rewards.super ? <CheckCircle className="text-red-500" /> : <Lock size={16} className="text-gray-600" />}
+                              {rewards.super ? <CheckCircle className="text-yellow-500" /> : <Lock size={16} className="text-gray-600" />}
                           </div>
                           {rewards.super ? (
-                              <button onClick={() => handleClaim('super')} className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-xs">RESGATAR R$ 0,25</button>
+                              <button onClick={() => handleClaim('super')} className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 text-black rounded font-bold text-xs shadow-lg uppercase tracking-wider">RESGATAR R$ 0,25</button>
                           ) : (
-                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                  <div className="h-full bg-cyan-500" style={{ width: `${Math.min(100, (playTime / TIME_SUPER) * 100)}%` }}></div>
+                              <div className="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-white/5">
+                                  <div className="h-full bg-yellow-400 shadow-[0_0_10px_gold]" style={{ width: `${Math.min(100, (playTime / TIME_SUPER) * 100)}%` }}></div>
                               </div>
                           )}
                       </div>
@@ -1021,34 +977,34 @@
           };
 
           return (
-              <Modal title={isSignUp ? "CRIAR CONTA" : "LOGIN"} onClose={onClose}>
+              <Modal title={isSignUp ? "CRIAR CONTA VIP" : "LOGIN"} onClose={onClose}>
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                      {error && <div className="bg-red-500/20 text-red-400 p-2 rounded text-xs border border-red-500/30">{error}</div>}
+                      {error && <div className="bg-red-500/20 text-red-400 p-2 rounded text-xs border border-red-500/30 font-bold">{error}</div>}
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Email</label>
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="seu@email.com" required />
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Email</label>
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-yellow-500/50 outline-none transition font-bold" placeholder="seu@email.com" required />
                       </div>
                       
                       {isSignUp && (
                           <div>
-                              <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Sua Chave PIX</label>
-                              <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-white/50 transition">
+                              <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Sua Chave PIX</label>
+                              <div className="flex items-center bg-[#050505] border border-white/10 rounded px-3 py-3 mt-1 focus-within:border-yellow-500/50 transition">
                                   <Key size={16} className="text-gray-500 mr-2" />
-                                  <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm" placeholder="CPF, Email, Tel ou Aleatória" required={isSignUp} />
+                                  <input type="text" value={pixKey} onChange={e => setPixKey(e.target.value)} className="bg-transparent text-white w-full outline-none text-sm font-bold" placeholder="CPF, Email, Tel ou Aleatória" required={isSignUp} />
                               </div>
                               <p className="text-[10px] text-gray-500 mt-1">*Necessário para receber pagamentos.</p>
                           </div>
                       )}
 
                       <div>
-                          <label className="text-xs text-gray-500 font-bold ml-1 uppercase">Senha</label>
-                          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-white/50 outline-none transition" placeholder="******" required />
+                          <label className="text-xs text-gray-400 font-bold ml-1 uppercase">Senha</label>
+                          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-[#050505] border border-white/10 rounded p-3 text-white focus:border-yellow-500/50 outline-none transition font-bold" placeholder="******" required />
                       </div>
-                      <button type="submit" disabled={loading} className="premium-btn w-full py-3 rounded mt-2 flex justify-center font-bold tracking-wider">
+                      <button type="submit" disabled={loading} className="btn-gold w-full py-4 rounded mt-4 flex justify-center font-black tracking-widest text-lg">
                           {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? "REGISTRAR" : "ENTRAR")}
                       </button>
                       <div className="text-center text-xs text-gray-500 mt-4">
-                          <button type="button" onClick={() => { playSound('ui_click'); setIsSignUp(!isSignUp); setError(null); }} className="text-white hover:text-gray-300 font-bold underline">
+                          <button type="button" onClick={() => { playSound('ui_click'); setIsSignUp(!isSignUp); setError(null); }} className="text-yellow-500 hover:text-yellow-400 font-bold underline uppercase tracking-wider">
                               {isSignUp ? "Já tenho conta" : "Criar nova conta"}
                           </button>
                       </div>
@@ -1431,23 +1387,22 @@
 
       const GalaxyMenu = ({ onStart, onShop, onBack, coins }) => (
           <div className="w-full h-full flex flex-col items-center justify-center relative premium-bg safe-area-padding">
-               <div className="scanlines"></div>
                <div className="z-10 flex flex-col items-center gap-8 w-full max-w-md px-4 animate-fade-in">
                    <div className="relative">
-                      <Rocket size={100} className="text-blue-500 drop-shadow-[0_0_30px_rgba(59,130,246,0.8)]" />
+                      <Rocket size={100} className="text-blue-500 drop-shadow-[0_0_30px_rgba(59,130,246,0.8)] animate-float" />
                       <div className="absolute -inset-8 bg-blue-500/20 blur-2xl rounded-full"></div>
                    </div>
-                   <h1 className="text-4xl md:text-6xl font-bold text-center hero-title leading-tight">INVASOR<br/><span className="text-blue-400">GALÁCTICO</span></h1>
+                   <h1 className="text-4xl md:text-6xl font-black text-center hero-title leading-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">INVASOR<br/><span className="text-blue-400">GALÁCTICO</span></h1>
                    <div className="flex items-center gap-3 bg-black/60 px-6 py-3 rounded-full border border-yellow-500/30 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                         <Coins size={24} className="text-yellow-400 drop-shadow-[0_0_10px_gold]" />
                         <span className="font-bold text-2xl text-yellow-400 tracking-wider">{coins}</span>
                    </div>
                    <div className="w-full grid gap-6 mt-8">
-                       <button onClick={() => { playSound('ui_click'); onStart(); }} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-24 rounded-2xl flex items-center justify-center gap-4 text-2xl font-bold tracking-widest group">
+                       <button onClick={() => { playSound('ui_click'); onStart(); }} onMouseEnter={() => playSound('ui_hover')} className="glass-card-gold w-full h-24 rounded-2xl flex items-center justify-center gap-4 text-2xl font-bold tracking-widest group border border-white/20 hover:bg-white/10">
                             <span className="group-hover:text-blue-400 transition-colors">INICIAR MISSÃO</span>
                             <ChevronLeft className="rotate-180 group-hover:translate-x-2 transition-transform" size={28} />
                        </button>
-                       <button onClick={() => { playSound('ui_click'); onShop(); }} onMouseEnter={() => playSound('ui_hover')} className="premium-btn w-full h-20 rounded-2xl flex items-center justify-center gap-4 text-xl font-bold tracking-wider text-yellow-400 group">
+                       <button onClick={() => { playSound('ui_click'); onShop(); }} onMouseEnter={() => playSound('ui_hover')} className="glass-card w-full h-20 rounded-2xl flex items-center justify-center gap-4 text-xl font-bold tracking-wider text-yellow-400 group border border-yellow-600/30 hover:bg-yellow-900/10">
                             <ShoppingCart size={24} />
                             <span>LOJA DE NAVES</span>
                        </button>
@@ -1481,7 +1436,7 @@
               };
 
               return (
-                  <div className={`premium-btn relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
+                  <div className={`glass-card relative rounded-xl p-4 flex flex-col items-center gap-3 transition-transform ${isEquipped ? 'border-green-500 border-2 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : ''}`}>
                       <div className="text-sm font-bold text-gray-300">{ship.name}</div>
                       <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center relative overflow-hidden">
                            <img src={spriteUrl} className="w-12 h-12 rendering-pixelated" alt={ship.name} />
@@ -1520,7 +1475,6 @@
 
           return (
               <div className="w-full h-full bg-[#050505] flex flex-col premium-bg safe-area-padding">
-                   <div className="scanlines"></div>
                    <div className="p-4 flex items-center justify-between bg-black/50 backdrop-blur border-b border-gray-800">
                       <button onClick={onBack} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
                       <h1 className="text-xl font-bold hero-title">LOJA DE NAVES</h1>
@@ -3026,7 +2980,7 @@
                           <ChevronLeft />
                       </button>
                       <div className="flex flex-col items-center">
-                          <h1 className="text-xl font-bold gold-gradient-text tracking-widest uppercase">MEMÓRIA CRIPTO</h1>
+                          <h1 className="text-xl font-bold text-gold-gradient tracking-widest uppercase">MEMÓRIA CRIPTO</h1>
                           <div className="flex gap-4 text-xs font-mono text-gray-400">
                               <span>JOGADAS: <span className="text-white">{moves}</span></span>
                               <span>PARES: <span className="text-white">{matched.length / 2}/{ITEMS.length}</span></span>
@@ -3320,14 +3274,14 @@
       const MainHub = ({ onSelect, coins, onOpenMissions, cashBalance, user, onLoginClick, onLogoutClick, onWithdraw, onAdminAccess }) => {
           const [showHistory, setShowHistory] = useState(false);
           const GAMES = [
-              { id: 'galaxy', name: 'Invasor Galáctico', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Tiro Espacial Arcade' },
-              { id: 'crypto', name: 'Fazenda Cripto', icon: <Cpu size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Simulador de Mineração' },
+              { id: 'galaxy', name: 'Invasor Galáctico', icon: <Rocket size={32} />, color: 'from-blue-600 to-indigo-600', desc: 'Arcade Espacial' },
+              { id: 'crypto', name: 'Fazenda Cripto', icon: <Cpu size={32} />, color: 'from-green-600 to-emerald-600', desc: 'Simulador Mining' },
               { id: 'flappy', name: 'Flappy Coin', icon: <ArrowUp size={32} />, color: 'from-yellow-500 to-amber-600', desc: 'Aventura Financeira' },
-              { id: 'hangman', name: 'Forca Neon', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Quebra-cabeça Cyberpunk' },
-              { id: 'checkers', name: 'Damas Reais', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Estratégia Clássica 3D' },
-              { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral de Luxo' },
-              { id: 'rps', name: 'Jo-Ken-Po Neon', icon: <Grab size={32} />, color: 'from-pink-600 to-rose-600', desc: 'Pedra, Papel e Tesoura' },
-              { id: 'uno', name: 'Neon Cards', icon: <Layers size={32} />, color: 'from-fuchsia-600 to-purple-600', desc: 'Clássico de Cartas Deluxe' }
+              { id: 'hangman', name: 'Forca Neon', icon: <Brain size={32} />, color: 'from-purple-600 to-fuchsia-600', desc: 'Puzzle Cyberpunk' },
+              { id: 'checkers', name: 'Damas Reais', icon: <Grid size={32} />, color: 'from-amber-600 to-red-700', desc: 'Estratégia 3D' },
+              { id: 'memory', name: 'Memória Cripto', icon: <Gem size={32} />, color: 'from-yellow-600 to-yellow-800', desc: 'Treino Cerebral' },
+              { id: 'rps', name: 'Jo-Ken-Po Neon', icon: <Grab size={32} />, color: 'from-pink-600 to-rose-600', desc: 'Batalha Clássica' },
+              { id: 'uno', name: 'Neon Cards', icon: <Layers size={32} />, color: 'from-fuchsia-600 to-purple-600', desc: 'Cartas Deluxe' }
           ];
 
           const [secretCount, setSecretCount] = useState(0);
@@ -3350,145 +3304,260 @@
                   }, 1000);
               }
           };
+          
+          const gamesSectionRef = useRef(null);
+          const scrollToGames = () => {
+              playSound('ui_click');
+              gamesSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+          };
 
           return (
-              <div className="w-full h-full wealth-bg flex flex-col overflow-hidden safe-area-padding">
-                   {/* Ticker Section */}
-                   <div className="w-full bg-black/60 border-b border-white/10 backdrop-blur-sm z-30 relative shrink-0">
-                       <div className="overflow-hidden whitespace-nowrap py-1">
-                           <div className="inline-flex items-center gap-6 animate-[marquee_30s_linear_infinite] pl-[100%]">
-                                <Gem size={14} className="text-cyan-400 shrink-0" />
-                                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 tracking-wider text-xs whitespace-nowrap">
-                                    GANHE ATÉ $0,45
-                                </span>
-                                <span className="text-white/50 text-[10px]">•</span>
-                                <span className="text-gray-200 text-[10px] font-bold tracking-widest whitespace-nowrap">
-                                    TODOS OS DIAS JOGANDO GRATIS SEM INVESTIR NADA
-                                </span>
-                                <DollarSign size={14} className="text-green-500 shrink-0" />
-                                <span className="text-white/50 text-[10px]">•</span>
-                                <Gem size={14} className="text-purple-400 shrink-0" />
-                                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-blue-300 tracking-wider text-xs whitespace-nowrap">
-                                    PAGAMENTOS VIA PIX
-                                </span>
-                                <span className="text-white/50 text-[10px]">•</span>
-                                <ShieldAlert size={14} className="text-red-500 shrink-0" />
-                                <span className="font-bold text-red-500 tracking-wider text-xs whitespace-nowrap">
-                                    NÃO USE ADBLOCK
-                                </span>
-                                <span className="text-white/50 text-[10px]">•</span>
-                                <span className="font-bold text-green-400 tracking-wider text-xs whitespace-nowrap">
-                                    VEJA OS ANUNCIOS PARA QUE VC RECEBA SEU $ DINHEIRO
-                                </span>
-                           </div>
+              <div className="w-full h-full premium-bg flex flex-col overflow-hidden safe-area-padding">
+                   {/* Stock Ticker */}
+                   <div className="ticker-wrap shrink-0 border-b border-yellow-500/20 bg-black/90 z-50">
+                       <div className="ticker-move flex items-center gap-12 py-2 px-4 text-xs font-mono font-bold tracking-widest">
+                            <span className="text-neon-money flex items-center gap-1 drop-shadow-[0_0_5px_rgba(0,255,65,0.5)]"><TrendingUp size={12}/> BTC +4.5%</span>
+                            <span className="text-yellow-400 flex items-center gap-1 drop-shadow-[0_0_5px_gold]"><DollarSign size={12}/> GANHE ATÉ R$ 0,45 DIÁRIOS</span>
+                            <span className="text-blue-400 flex items-center gap-1"><ShieldCheck size={12}/> PAGAMENTOS VIA PIX</span>
+                            <span className="text-purple-400 flex items-center gap-1"><Gem size={12}/> ETH +2.1%</span>
+                            <span className="text-white flex items-center gap-1">JOGUE AGORA</span>
                        </div>
                    </div>
 
-                  <div className="flex-1 overflow-y-auto p-2 w-full max-w-lg md:max-w-5xl mx-auto flex flex-col scrollbar-hide">
-                      <header className="flex flex-col gap-2 mb-2 shrink-0">
-                          {/* Title moved above buttons as requested */}
-                          <div className="flex justify-center items-center text-center">
-                              <div onClick={handleSecretClick} className="select-none">
-                                  <h1 className="text-2xl md:text-5xl font-bold hero-title gold-gradient-text tracking-tighter whitespace-nowrap">JOGUE E GANHE $</h1>
-                                  <p className="text-yellow-100/70 text-[10px] font-bold tracking-widest uppercase mt-0.5">LUCRO • DIVERSÃO • RECOMPENSAS</p>
-                              </div>
-                          </div>
+                   {/* Main Content Area */}
+                   <div className="flex-1 overflow-y-auto scrollbar-hide pb-20">
+                       
+                       {/* Top Nav / User Stats */}
+                       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-lg border-b border-white/10 px-6 py-4 flex justify-between items-center shadow-2xl">
+                           <div className="flex items-center gap-3 bg-gradient-to-r from-gray-900 to-black px-4 py-2 rounded-full border border-yellow-500/30 shadow-[0_0_20px_rgba(255,215,0,0.15)] group hover:border-yellow-500/60 transition-colors">
+                               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-inner animate-pulse">
+                                   <DollarSign size={16} className="text-black font-black" />
+                               </div>
+                               <div className="flex flex-col">
+                                   <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Saldo Atual</span>
+                                   <span className="font-mono font-bold text-white text-base text-gold-gradient">R$ {cashBalance.toFixed(2).replace('.', ',')}</span>
+                               </div>
+                           </div>
 
-                          {/* REPOSITIONED: Action Grid (Login & Mission) - Moved below title */}
-                          <div className="grid grid-cols-2 gap-2 w-full mb-1">
-                              {/* Mission Button */}
-                              <button onClick={onOpenMissions} className="relative group w-full">
-                                   <div className="absolute inset-0 bg-purple-600 rounded-xl blur opacity-30 group-hover:opacity-60 transition"></div>
-                                   <div className="relative flex items-center justify-center gap-2 bg-slate-900/80 px-3 py-2 rounded-xl border border-purple-500/30 hover:bg-slate-800 transition-colors h-full">
-                                       <div className="p-1.5 bg-purple-500/20 rounded-lg shrink-0">
-                                          <Clock size={16} className="text-purple-400" />
-                                       </div>
-                                       <div className="flex flex-col items-start overflow-hidden">
-                                           <span className="text-[10px] font-bold text-white uppercase tracking-wider truncate">Missão</span>
-                                           <span className="text-[8px] text-gray-400 truncate">Prêmios Diários</span>
-                                       </div>
+                           <div className="flex items-center gap-3">
+                               {user ? (
+                                   <div className="flex items-center gap-2">
+                                       <span className="text-xs text-gray-400 hidden md:block">{user.email.split('@')[0]}</span>
+                                       <button onClick={onLogoutClick} className="p-2 rounded-full bg-red-900/20 text-red-400 border border-red-500/30 hover:bg-red-900/40 hover:shadow-[0_0_15px_red] transition-all">
+                                           <LogOut size={18} />
+                                       </button>
                                    </div>
-                              </button>
-                              
-                              {/* Login Button */}
-                              <button onClick={user ? onLogoutClick : onLoginClick} className="relative group w-full">
-                                  <div className={`absolute inset-0 ${user ? 'bg-red-600' : 'bg-blue-600'} rounded-xl blur opacity-30 group-hover:opacity-60 transition`}></div>
-                                  <div className={`relative flex items-center justify-center gap-2 bg-slate-900/80 px-3 py-2 rounded-xl border ${user ? 'border-red-500/30' : 'border-blue-500/30'} hover:bg-slate-800 transition-colors h-full`}>
-                                      <div className={`p-1.5 rounded-lg shrink-0 ${user ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
-                                          {user ? <LogOut size={16} className="text-red-400" /> : <LogIn size={16} className="text-blue-400" />}
-                                      </div>
-                                      <div className="flex flex-col items-start overflow-hidden">
-                                          <span className="text-[10px] font-bold text-white uppercase tracking-wider truncate">{user ? 'Sair' : 'Entrar'}</span>
-                                          <span className="text-[8px] text-gray-400 truncate">{user ? 'Conta Ativa' : 'Salvar Progresso'}</span>
-                                      </div>
-                                  </div>
-                              </button>
-                          </div>
-                          
-                          {/* Wealth Balance Card */}
-                          <div className="w-full bg-gradient-to-r from-green-900/40 to-black rounded-xl p-3 border border-green-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(34,197,94,0.1)] relative overflow-hidden shrink-0">
-                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                              <div className="z-10 flex items-center gap-3">
-                                  <div className="p-2 bg-yellow-500 rounded-full shadow-lg">
-                                      <DollarSign size={20} className="text-black" />
-                                  </div>
-                                  <div>
-                                      <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider">SALDO MISSÃO</div>
-                                      <div className="text-2xl font-mono font-bold text-white drop-shadow-md flex items-baseline gap-1">
-                                          R$ {cashBalance.toFixed(2).replace('.', ',')}
-                                      </div>
-                                  </div>
-                              </div>
-                              <div className="z-10 flex flex-col items-end gap-1.5">
-                                  <button onClick={() => { playSound('ui_click'); onWithdraw(); }} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95">
-                                      <Wallet size={12} /> SACAR
-                                  </button>
-                                  <button onClick={() => { playSound('ui_click'); if(!user) { alert('Faça login para ver o histórico'); return; } setShowHistory(true); }} className="text-[9px] font-bold text-gray-400 hover:text-white flex items-center gap-1 bg-black/40 px-2 py-1 rounded border border-white/10 hover:border-white/30 transition-colors">
-                                      <History size={10} /> HISTÓRICO
-                                  </button>
-                              </div>
-                          </div>
-                      </header>
+                               ) : (
+                                   <button onClick={onLoginClick} className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 text-white text-xs font-bold uppercase tracking-wider hover:from-blue-500 hover:to-blue-700 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all">
+                                       Login
+                                   </button>
+                               )}
+                           </div>
+                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full pb-2 shrink-0">
-                          <h2 className="col-span-2 md:col-span-4 text-white font-bold text-[10px] uppercase tracking-widest pl-2 border-l-2 border-yellow-500 mb-1">Oportunidades de Ganho</h2>
-                          {GAMES.map(game => (
-                              <button 
-                                  key={game.id}
-                                  onClick={() => { playSound('ui_click'); onSelect(game.id); }}
-                                  className={`money-card relative h-24 rounded-xl overflow-hidden group transition-all duration-300 transform hover:scale-[1.02]`}
-                              >
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center p-2 z-10 gap-1">
-                                      <div className={`p-2 rounded-lg backdrop-blur-md shadow-inner bg-gradient-to-br ${game.color} animate-money-pulse border border-white/10`}>
-                                          {React.cloneElement(game.icon, { size: 24 })}
-                                      </div>
-                                      <div className="text-center w-full">
-                                          <h3 className="text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-md leading-tight truncate px-1">{game.name}</h3>
-                                          <p className="text-[8px] text-green-300 font-bold flex items-center justify-center gap-1 mt-0.5">
-                                              <Zap size={8} /> JOGAR
-                                          </p>
-                                      </div>
-                                  </div>
-                                  <div className="absolute top-1 right-1 opacity-50">
-                                       <PlayCircle size={12} className="text-white/30" />
-                                  </div>
-                              </button>
-                          ))}
-                      </div>
-                      
-                      <footer className="mt-auto pt-2 pb-2 text-center text-gray-600 text-[8px] uppercase tracking-widest flex flex-col gap-1 shrink-0">
-                          <div>
-                              <a href="mailto:joguee.e.ganhe@gmail.com?subject=Solicita%C3%A7%C3%A3o%20de%20Saque&body=Solicita%C3%A7%C3%A3o%20de%20Saque%0A%0ANome%3A%20%0AChave%20PIX%3A%20%20(cpf%2Cemail%20ou%20outras)%0AValor%3A%20%0AEmail%3A%20%0A%0APor%20favor%2C%20realize%20o%20pagamento." className="hover:text-white transition-colors border-b border-transparent hover:border-gray-500">
-                                  SUPORTE TÉCNICO
-                              </a>
-                          </div>
-                          <div>JOGUE E GANHA $ &copy; 2026</div>
-                      </footer>
-                      {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
-                  </div>
+                       {/* NEW: PREMIUM HERO SECTION */}
+                       <div className="relative w-full px-4 py-16 md:py-24 flex flex-col items-center justify-center text-center overflow-hidden">
+                           
+                           {/* Wealth Particles */}
+                           <div className="absolute inset-0 z-0 opacity-30">
+                               <div className="wealth-particle text-yellow-500 left-[10%]" style={{animationDelay: '0s'}}><BitcoinLogo size={24} /></div>
+                               <div className="wealth-particle text-green-500 left-[30%]" style={{animationDelay: '1s'}}>$</div>
+                               <div className="wealth-particle text-purple-500 left-[70%]" style={{animationDelay: '2s'}}><Gem size={20} /></div>
+                               <div className="wealth-particle text-yellow-500 left-[90%]" style={{animationDelay: '3s'}}><Coins size={24} /></div>
+                           </div>
+
+                           <div className="z-10 flex flex-col items-center animate-fade-in relative">
+                               <div className="absolute -top-20 -left-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-[80px]"></div>
+                               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-green-500/10 rounded-full blur-[80px]"></div>
+
+                               <div className="flex gap-2 mb-4 animate-float-fast">
+                                   <span className="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] font-bold uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(255,215,0,0.2)]">Premium Gaming</span>
+                                   <span className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-[10px] font-bold uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(0,255,65,0.2)]">Crypto Rewards</span>
+                               </div>
+
+                               <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tighter drop-shadow-2xl mb-4" onClick={handleSecretClick}>
+                                   JOGUE & <br/>
+                                   <span className="text-gold-gradient text-6xl md:text-8xl">CONQUISTE</span>
+                               </h1>
+                               
+                               <p className="text-sm md:text-lg text-gray-400 max-w-lg mx-auto font-medium tracking-wide mb-8 leading-relaxed">
+                                   Transforme sua habilidade em <span className="text-white font-bold">dinheiro real</span>. A plataforma de jogos mais luxuosa e rentável do mercado.
+                               </p>
+
+                               <button onClick={scrollToGames} className="btn-gold px-12 py-5 rounded-lg text-sm md:text-lg z-20 hover:scale-105 transform transition shadow-[0_0_40px_rgba(255,215,0,0.4)] flex items-center gap-3">
+                                   <PlayCircle size={24} fill="black" /> COMEÇAR AGORA
+                               </button>
+                           </div>
+                       </div>
+                       
+                       {/* Ad Banner Placeholder (Aesthetic) */}
+                       <div className="w-full px-6 mb-12">
+                           <div className="w-full h-24 bg-gradient-to-r from-gray-900 via-black to-gray-900 rounded-xl border border-white/10 flex items-center justify-center relative overflow-hidden group">
+                               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                               <div className="flex flex-col items-center z-10 opacity-70 group-hover:opacity-100 transition-opacity">
+                                   <span className="text-xs text-gray-500 uppercase tracking-widest font-bold">Espaço Publicitário Premium</span>
+                                   <span className="text-[10px] text-gray-600">Monetize seu tempo</span>
+                               </div>
+                           </div>
+                       </div>
+
+                       {/* Benefits Section */}
+                       <div className="px-6 grid grid-cols-3 gap-2 md:gap-4 mb-12">
+                           {[
+                               { icon: <DollarSign size={20} />, title: "Dinheiro Real", color: "text-green-400" },
+                               { icon: <Zap size={20} />, title: "Saque Rápido", color: "text-yellow-400" },
+                               { icon: <ShieldCheck size={20} />, title: "Seguro & Vip", color: "text-blue-400" }
+                           ].map((item, idx) => (
+                               <div key={idx} className="bg-black/40 border border-white/5 p-4 rounded-xl flex flex-col items-center justify-center gap-2 backdrop-blur-sm hover:bg-white/5 transition-colors group">
+                                   <div className={`p-3 rounded-full bg-white/5 group-hover:scale-110 transition-transform ${item.color} shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>
+                                       {item.icon}
+                                   </div>
+                                   <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-gray-300 text-center">{item.title}</span>
+                               </div>
+                           ))}
+                       </div>
+
+                       {/* Mission & Withdraw Quick Actions */}
+                       <div className="px-6 mb-12 grid grid-cols-2 gap-4">
+                            <button onClick={onOpenMissions} className="glass-card p-6 rounded-2xl flex flex-col items-center justify-center gap-3 relative overflow-hidden group h-32">
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-black opacity-50"></div>
+                                <div className="absolute top-0 right-0 p-2 opacity-50"><Clock className="text-purple-500" size={48} /></div>
+                                <div className="relative z-10 p-3 bg-black/40 rounded-full border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                                    <Target className="text-purple-400" size={24} />
+                                </div>
+                                <div className="flex flex-col items-center z-10">
+                                    <span className="text-sm font-black uppercase tracking-widest text-white">Missões</span>
+                                    <span className="text-[10px] text-purple-300">Ganhe Diariamente</span>
+                                </div>
+                            </button>
+                            
+                            <button onClick={onWithdraw} className="glass-card-gold p-6 rounded-2xl flex flex-col items-center justify-center gap-3 relative overflow-hidden group h-32 border border-yellow-500/40">
+                                <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/20 to-black opacity-50"></div>
+                                <div className="absolute top-0 right-0 p-2 opacity-50"><Wallet className="text-yellow-500" size={48} /></div>
+                                <div className="relative z-10 p-3 bg-black/40 rounded-full border border-yellow-500/80 shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse">
+                                    <DollarSign className="text-yellow-400" size={24} />
+                                </div>
+                                <div className="flex flex-col items-center z-10">
+                                    <span className="text-sm font-black uppercase tracking-widest text-white">Sacar PIX</span>
+                                    <span className="text-[10px] text-yellow-200">Retirada Imediata</span>
+                                </div>
+                            </button>
+                       </div>
+                       
+                       {/* "How It Works" Redesigned */}
+                       <div className="px-6 py-10 bg-gradient-to-b from-gray-900/50 to-black border-y border-white/5 mb-12 relative overflow-hidden">
+                           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent"></div>
+                           <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent"></div>
+                           
+                           <h3 className="text-center text-lg font-black text-white uppercase tracking-[0.3em] mb-10 drop-shadow-md">Rota da Riqueza</h3>
+                           
+                           <div className="flex justify-between items-start text-center relative max-w-md mx-auto">
+                               {/* Connecting Line */}
+                               <div className="absolute top-5 left-8 right-8 h-0.5 bg-gray-800 -z-0"></div>
+                               
+                               <div className="flex flex-col items-center gap-3 z-10 group">
+                                   <div className="w-10 h-10 rounded-full bg-black border-2 border-gray-700 group-hover:border-white transition-colors flex items-center justify-center text-sm font-bold shadow-lg">1</div>
+                                   <div className="flex flex-col">
+                                       <span className="text-xs font-bold text-white uppercase">Jogue</span>
+                                       <span className="text-[9px] text-gray-500">Divirta-se</span>
+                                   </div>
+                               </div>
+                               
+                               <div className="flex flex-col items-center gap-3 z-10 group">
+                                   <div className="w-10 h-10 rounded-full bg-black border-2 border-gray-700 group-hover:border-yellow-500 transition-colors flex items-center justify-center text-sm font-bold shadow-lg text-yellow-500">2</div>
+                                   <div className="flex flex-col">
+                                       <span className="text-xs font-bold text-white uppercase">Acumule</span>
+                                       <span className="text-[9px] text-gray-500">Ganhos Reais</span>
+                                   </div>
+                               </div>
+                               
+                               <div className="flex flex-col items-center gap-3 z-10 group">
+                                   <div className="w-10 h-10 rounded-full bg-black border-2 border-green-700 group-hover:border-green-400 transition-colors flex items-center justify-center text-sm font-bold shadow-[0_0_15px_rgba(0,255,65,0.3)] text-green-400">3</div>
+                                   <div className="flex flex-col">
+                                       <span className="text-xs font-bold text-white uppercase">Receba</span>
+                                       <span className="text-[9px] text-gray-500">Via PIX</span>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+
+                       {/* Games Grid */}
+                       <div ref={gamesSectionRef} className="px-4 pb-16 max-w-4xl mx-auto">
+                           <h2 className="text-xl font-black text-white mb-6 flex items-center gap-3 px-2">
+                               <div className="p-2 bg-yellow-500 rounded text-black"><Gamepad2 size={20} /></div>
+                               <span className="uppercase tracking-widest text-gold-gradient">Jogos Premium</span>
+                           </h2>
+                           
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                               {GAMES.map(game => (
+                                   <button 
+                                      key={game.id}
+                                      onClick={() => { playSound('ui_click'); onSelect(game.id); }}
+                                      className="group relative h-40 rounded-2xl overflow-hidden border border-white/10 hover:border-yellow-500/50 transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,215,0,0.15)] bg-black"
+                                   >
+                                       {/* Card Background Gradient */}
+                                       <div className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-20 group-hover:opacity-40 transition-opacity duration-500`}></div>
+                                       
+                                       {/* Metallic Texture Overlay */}
+                                       <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+
+                                       <div className="absolute top-3 right-3 opacity-50 group-hover:opacity-100 transition-opacity transform group-hover:rotate-12 duration-500">
+                                           <div className="bg-black/50 p-1.5 rounded-lg border border-white/20 backdrop-blur-md">
+                                                {React.cloneElement(game.icon, { size: 16, className: 'text-white' })}
+                                           </div>
+                                       </div>
+                                       
+                                       <div className="absolute bottom-0 w-full p-4 flex flex-col items-start bg-gradient-to-t from-black via-black/80 to-transparent pt-8">
+                                           <h3 className="text-sm font-black text-white uppercase tracking-wider leading-tight mb-1 group-hover:text-yellow-400 transition-colors font-['Rajdhani']">{game.name}</h3>
+                                           <p className="text-[9px] text-gray-400 w-full text-left font-mono">{game.desc}</p>
+                                           
+                                           <div className="w-full h-0.5 bg-gray-800 mt-3 rounded-full overflow-hidden group-hover:bg-gray-700">
+                                               <div className="h-full bg-yellow-500 w-0 group-hover:w-full transition-all duration-700"></div>
+                                           </div>
+                                       </div>
+                                   </button>
+                               ))}
+                           </div>
+                       </div>
+
+                       {/* Elegant Footer */}
+                       <footer className="text-center pb-12 pt-8 border-t border-white/5 bg-black">
+                           <div className="flex justify-center gap-4 mb-6 opacity-40">
+                               <BitcoinLogo size={24} />
+                               <Gem size={24} />
+                               <Landmark size={24} />
+                           </div>
+                           <p className="text-[10px] text-gray-600 uppercase tracking-[0.2em] font-bold">Jogue e Ganhe $ &copy; 2026</p>
+                           <p className="text-[9px] text-gray-700 mt-1">Plataforma Certificada</p>
+                           
+                           <button onClick={() => { playSound('ui_click'); if(!user) { alert('Faça login para ver o histórico'); return; } setShowHistory(true); }} className="mt-6 px-6 py-2 border border-white/10 rounded-full text-[10px] text-gray-400 hover:text-white hover:border-white/30 transition uppercase tracking-wider bg-white/5">
+                               Histórico de Saques
+                           </button>
+                       </footer>
+                   </div>
+
+                   {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
               </div>
           );
       };
+
+      // Helper Component for Bitcoin Logo
+      const BitcoinLogo = ({size, className}) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-5.71m0 0c-4.925.869-6.141-6.025-1.217-5.71m1.217 5.71l.946-5.71m-2.163 0l.946-5.71m-2.163 5.71h-2.163m4.326 5.71h-2.163m2.163 0h-2.163" />
+        </svg>
+      );
+      
+      const Landmark = ({size, className}) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+           <line x1="3" y1="22" x2="21" y2="22" />
+           <line x1="6" y1="18" x2="6" y2="11" />
+           <line x1="10" y1="18" x2="10" y2="11" />
+           <line x1="14" y1="18" x2="14" y2="11" />
+           <line x1="18" y1="18" x2="18" y2="11" />
+           <polygon points="12 2 20 7 4 7" />
+        </svg>
+      );
 
       const App = () => {
           const [screen, setScreen] = useState('hub'); // hub, galaxy, galaxy_shop, crypto, hangman, checkers, memory, rps
