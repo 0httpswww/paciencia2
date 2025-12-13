@@ -8,6 +8,11 @@
     <meta name="theme-color" content="#000000">
 
     <!-- ========================================== -->
+    <!-- EXOCLICK VERIFICATION                      -->
+    <!-- ========================================== -->
+    <meta name="6a97888e-site-verification" content="48a8758e6a4cbbdaa8cd7a85483f117e">
+
+    <!-- ========================================== -->
     <!-- MONETAG ADS CONFIGURATION                  -->
     <!-- ========================================== -->
     
@@ -531,6 +536,17 @@
                   <div className="p-4 overflow-y-auto flex-1 z-10 scrollbar-hide">{children}</div>
               </div>
           </div>
+      );
+
+      // --- ADS BANNER COMPONENT ---
+      const AdBanner = ({ className }) => (
+        <div className={`w-full flex justify-center my-6 ${className}`}>
+            <div className="w-full max-w-[320px] md:max-w-[728px] h-[50px] md:h-[90px] bg-gray-900/50 border border-white/10 rounded flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold z-10 mb-1">Publicidade</span>
+                <div className="text-[9px] text-gray-600 font-mono z-10">Espaço para Banner</div>
+            </div>
+        </div>
       );
 
       // --- WITHDRAWAL & ADMIN COMPONENTS ---
@@ -3390,6 +3406,7 @@
                            </div>
                        </div>
                        
+                       <AdBanner />
 
                        {/* Benefits Section */}
                        <div className="px-6 grid grid-cols-3 gap-2 md:gap-4 mb-12">
@@ -3470,6 +3487,8 @@
                                </div>
                            </div>
                        </div>
+
+                       <AdBanner />
 
                        {/* Games Grid */}
                        <div ref={gamesSectionRef} className="px-4 pb-16 max-w-4xl mx-auto">
