@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,15 +14,34 @@
     <meta name="6a97888e-site-verification" content="48a8758e6a4cbbdaa8cd7a85483f117e">
 
     <!-- ========================================== -->
-    <!-- AD PROVIDERS CONFIGURATION                 -->
+    <!-- MONETAG ADS CONFIGURATION                  -->
     <!-- ========================================== -->
     
-    <!-- EXOCLICK AD PROVIDER (Outstream Video) -->
-    <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"></script>
+    <!-- 1. Popunder (OnClick) - Zone: 10264533 - FORCE REFRESH 40s -->
+    <script>
+        (function() {
+            const injectPopunder = () => {
+                // Remove script anterior se existir para limpar eventos antigos
+                const existing = document.getElementById('monetag-popunder-force');
+                if (existing) existing.remove();
 
-    <!-- MONETAG ADS CONFIGURATION -->
-    <!-- 1. Popunder (OnClick) - Zone: 10264533 -->
-    <script>(function(s){s.dataset.zone='10264533',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+                const s = document.createElement('script');
+                s.dataset.zone = '10264533';
+                s.src = 'https://al5sm.com/tag.min.js';
+                s.id = 'monetag-popunder-force';
+                
+                // Injeta no documento
+                (document.documentElement || document.body).appendChild(s);
+                console.log('Ads: Popunder Refreshed (40s cycle)');
+            };
+
+            // Inicia imediatamente
+            injectPopunder();
+            
+            // Força o recarregamento a cada 40 segundos
+            setInterval(injectPopunder, 40000);
+        })();
+    </script>
     
     <!-- 2. Push Notifications - Zone: 10234210 -->
     <script src="https://5gvci.com/pfe/current/tag.min.js?z=10234210" data-cfasync="false" async></script>
@@ -542,74 +562,13 @@
           </div>
       );
 
-      // --- EXOCLICK ADS COMPONENTS ---
-      
-      // Outstream Video Ad (Zone 5799114)
-      const ExoOutstreamAd = () => {
-          useEffect(() => {
-              try {
-                  // Initialize AdProvider
-                  (window.AdProvider = window.AdProvider || []).push({"serve": {}});
-              } catch (e) {
-                  console.error("ExoClick Ad init error:", e);
-              }
-          }, []);
-
-          return (
-              <div className="flex justify-center my-4 min-h-[50px]">
-                   {/* Zone 5799114 */}
-                   <ins className="eas6a97888e37" data-zoneid="5799114"></ins>
-              </div>
-          );
-      };
-
-      // Periodic Video Ad Modal (Zone 5799104)
-      const VideoAdModal = ({ onClose }) => {
-          return (
-              <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-fade-in">
-                  <div className="bg-black border border-yellow-500/50 p-2 rounded-xl relative shadow-[0_0_50px_rgba(255,215,0,0.3)] animate-[zoomIn_0.3s]">
-                      <button 
-                          onClick={onClose} 
-                          className="absolute -top-4 -right-4 bg-red-600 text-white rounded-full p-2 border border-white z-50 hover:bg-red-500 shadow-lg transform transition hover:scale-110"
-                      >
-                          <X size={20} />
-                      </button>
-                      
-                      <div className="w-[300px] h-[250px] bg-black flex items-center justify-center">
-                          <iframe 
-                              src="https://s.magsrv.com/splash.php?idzone=5799104" 
-                              width="300" 
-                              height="250" 
-                              frameBorder="0" 
-                              scrolling="no"
-                              className="rounded-lg w-full h-full"
-                              title="Advertisement"
-                          ></iframe>
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-2 px-1">
-                          <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-                              Patrocinado
-                          </div>
-                          <div className="text-[9px] text-yellow-500/50">
-                              ExoClick Video
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          );
-      };
-
-      // --- ADS BANNER COMPONENT UPDATED ---
+      // --- ADS BANNER COMPONENT ---
       const AdBanner = ({ className }) => (
-        <div className={`w-full flex flex-col justify-center items-center my-6 ${className}`}>
-            <div className="w-full max-w-[320px] md:max-w-[728px] min-h-[60px] bg-gray-900/50 border border-white/10 rounded flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm p-2">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold z-10 mb-1 w-full text-center border-b border-white/5 pb-1">Publicidade</span>
-                
-                {/* Insert Outstream Ad Here */}
-                <ExoOutstreamAd />
-                
+        <div className={`w-full flex justify-center my-6 ${className}`}>
+            <div className="w-full max-w-[320px] md:max-w-[728px] h-[50px] md:h-[90px] bg-gray-900/50 border border-white/10 rounded flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold z-10 mb-1">Publicidade</span>
+                <div className="text-[9px] text-gray-600 font-mono z-10">Espaço para Banner</div>
             </div>
         </div>
       );
@@ -3640,7 +3599,6 @@
           // Auth State
           const [user, setUser] = useState(null);
           const [showAuthModal, setShowAuthModal] = useState(false);
-          const [showVideoAd, setShowVideoAd] = useState(false);
 
           useEffect(() => {
               if (!supabase) return;
@@ -3655,15 +3613,6 @@
               });
 
               return () => subscription.unsubscribe();
-          }, []);
-
-          // --- VIDEO AD TIMER (Every 60s) ---
-          useEffect(() => {
-              const videoAdTimer = setInterval(() => {
-                  setShowVideoAd(true);
-              }, 60000); // 60000ms = 1 minute
-
-              return () => clearInterval(videoAdTimer);
           }, []);
 
           const handleLogout = async () => {
@@ -3880,7 +3829,6 @@ Anexe aqui o print do painel da missão mostrando a data, hora e a barra cheia.`
                   {renderScreen()}
                   {showMissionModal && <MissionModal playTime={playTime} rewards={rewards} onClose={() => setShowMissionModal(false)} />}
                   {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onLogin={() => {}} />}
-                  {showVideoAd && <VideoAdModal onClose={() => setShowVideoAd(false)} />}
                   
                   {/* WITHDRAWAL MODAL */}
                   {showWithdrawModal && (
