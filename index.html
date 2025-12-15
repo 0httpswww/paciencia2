@@ -65,6 +65,7 @@
     <!-- MONETAG ADS CONFIGURATION                  -->
     <!-- ========================================== -->
     <meta name="monetag" content="336172892d5c6d348479b19437f218d4">
+    <meta name="monetag" content="c2cc94a5ff9f37a19c493d44724b3330">
     
     <!-- 1. Popunder (OnClick) - Zone: 10264533 - FORCE REFRESH 40s -->
     <script>
@@ -397,7 +398,7 @@
       // AD COMPONENTS (EXOCLICK)
       // ==========================================
       
-      // Outstream Video Banner (Responsive)
+      // Outstream Video Banner (Responsive) - Updated Zone 5799932
       const ExoClickBanner = () => {
           useEffect(() => {
               try {
@@ -408,11 +409,12 @@
           }, []);
 
           return (
-              <div className="flex justify-center items-center my-4 overflow-hidden relative z-50 w-full px-4">
-                   <div className="bg-black/60 p-2 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl w-full max-w-[400px] flex justify-center min-h-[100px]">
-                        {/* Adaptable Container */}
-                        <div className="w-full h-full flex items-center justify-center">
-                            <ins className="eas6a97888e37" data-zoneid="5799114"></ins>
+              <div className="flex justify-center items-center my-6 overflow-hidden relative z-40 w-full px-4">
+                   <div className="bg-black/60 p-1 md:p-2 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl w-full max-w-[340px] md:max-w-[728px] flex justify-center min-h-[150px] md:min-h-[200px] relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse pointer-events-none"></div>
+                        <div className="w-full h-full flex items-center justify-center z-10">
+                            {/* Exoclick Outstream Video Zone */}
+                            <ins className="eas6a97888e37" data-zoneid="5799932"></ins>
                         </div>
                    </div>
               </div>
